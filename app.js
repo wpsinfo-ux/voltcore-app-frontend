@@ -1,6 +1,7 @@
 const SUPABASE_URL = 'https://eoqfuawvljotvyfrcbj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
 let supabaseClient = null;
+
 if (window.supabase && SUPABASE_URL) {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
@@ -18,8 +19,7 @@ let meusVeiculos = [
 ];
 let saldoCarteira = 684.50;
 let extratoTransacoes = [
-    { title: 'Depósito PIX Confirmado', desc: '28/10/2026 • 03:48 PM - Recarga de Saldo na Carteira VoltCore Pay', value: '+ R$ 500,00', type: 'credit' },
-    { title: 'VAGA 01 / TORRE SUL (Gioviale)', desc: '26/10/2026 • 12:00 PM às 12:42 PM (14.2 kWh • Ociosidade Inclusa)', value: 'R$ 18,96', type: 'debit' }
+    { title: 'Depósito PIX Confirmado', desc: '28/10/2026 • 03:48 PM - Recarga de Saldo na Carteira VoltCore Pay', value: '+ R$ 500,00', type: 'credit' }
 ];
 
 let moradoresCondominio = [
@@ -100,7 +100,7 @@ function abrirTermosPrivacidade() {
             <p class="text-slate-600"><strong>1. Coleta de Dados:</strong> Coletamos dados cadastrais (nome, e-mail, telefone, unidade residencial e veículos cadastrados) estritamente necessários para a gestão de recargas, controle de ociosidade e prestação de contas aos condomínios.</p>
             <p class="text-slate-600"><strong>2. Segurança da Informação:</strong> Seus dados de transações e acesso são armazenados em ambiente seguro com criptografia avançada e protocolos de auditoria ativa (SDI).</p>
             <p class="text-slate-600"><strong>3. Direitos do Titular:</strong> O usuário pode solicitar a qualquer momento a atualização ou exclusão de seus dados diretamente através do suporte técnico autorizado.</p>
-            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
+            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
         </div>
     `;
     showCustomModal('Termos de Privacidade & LGPD', htmlTermos, 'fa-shield-halved', 'lime');
@@ -118,8 +118,8 @@ function abrirLeitorQrCodeCamera() {
             </div>
             <p class="text-[10px] text-slate-500">Câmera ativa para escanear o código do carregador ou totem.</p>
             <div class="flex gap-2">
-                <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR LEITURA</button>
-                <button onclick="closeModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-2 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR</button>
+                <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR LEITURA</button>
+                <button onclick="closeModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR</button>
             </div>
         </div>
     `;
@@ -143,7 +143,7 @@ function simularLeituraQrSucesso() {
             <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-lg mx-auto"><i class="fa-solid fa-bolt"></i></div>
             <h4 class="font-bold text-slate-900 text-xs">Dispositivo Validado com Sucesso!</h4>
             <p class="text-[10px] text-slate-600">Comunicação estabelecida com o eletroposto. O veículo está pronto para carregar com total segurança.</p>
-            <button onclick="closeModal(); switchTab('stations');" class="w-full bg-slate-900 text-white font-bold py-2 rounded-xl text-xs mt-1 cursor-pointer pointer-events-auto">VER PAINEL DE CARGA</button>
+            <button onclick="closeModal(); switchTab('stations');" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-1 cursor-pointer pointer-events-auto">VER PAINEL DE CARGA</button>
         </div>
     `, 'fa-bolt', 'emerald');
     showToast('QR Code validado! Sessão de recarga iniciada.');
@@ -151,7 +151,7 @@ function simularLeituraQrSucesso() {
 
 function abrirPlanejarViagem() {
     const htmlViagem = `
-        <div class="space-y-2.5 text-left text-xs">
+        <div class="space-y-3 text-left text-xs">
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Destino da Viagem (Cidade / Estabelecimento):</label>
                 <input type="text" id="input-destino-viagem" placeholder="Ex: Sorocaba, Foz do Iguaçu, Uberaba..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
@@ -160,11 +160,11 @@ function abrirPlanejarViagem() {
                 <label class="block font-bold text-slate-700 mb-1">Autonomia Atual do Veículo (%):</label>
                 <input type="number" id="input-autonomia-viagem" value="80" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            <div id="resultado-calculo-viagem" class="hidden p-2.5 bg-lime-50 rounded-xl border border-lime-200 space-y-1">
+            <div id="resultado-calculo-viagem" class="hidden p-3 bg-lime-50 rounded-xl border border-lime-200 space-y-1">
                 <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada VoltCore:</p>
                 <p id="texto-rota-calculada" class="text-[10px] text-lime-700 font-medium"></p>
             </div>
-            <button onclick="executarPlanejamentoViagem()" class="w-full bg-slate-900 text-white font-extrabold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS & PARADAS</button>
+            <button onclick="executarPlanejamentoViagem()" class="w-full bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS & PARADAS</button>
         </div>
     `;
     showCustomModal('Planejar Viagem de Longa Distância', htmlViagem, 'fa-route', 'lime');
@@ -210,7 +210,7 @@ function abrirModalMeusDados() {
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade</label>
                 <input type="text" id="edit-user-condo" value="${userData.condo}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            <button onclick="salvarMeusDados()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR DADOS</button>
+            <button onclick="salvarMeusDados()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR DADOS</button>
         </div>
     `;
     showCustomModal('Meus Dados & Cadastro', htmlDados, 'fa-user', 'lime');
@@ -233,7 +233,7 @@ function abrirModalEditarFoto() {
         <div class="space-y-3 text-left text-xs">
             <p class="text-slate-600">Selecione uma imagem do seu dispositivo para atualizar o perfil:</p>
             <input type="file" id="input-arquivo-foto" accept="image/*" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium text-xs cursor-pointer pointer-events-auto">
-            <button onclick="processarArquivoFoto()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR FOTO DO DISPOSITIVO</button>
+            <button onclick="processarArquivoFoto()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR FOTO DO DISPOSITIVO</button>
         </div>
     `;
     showCustomModal('Alterar Foto de Perfil', htmlFoto, 'fa-camera', 'lime');
@@ -275,7 +275,7 @@ function abrirModalAdicionarVeiculo() {
                     <option value="Elétrico (CHAdeMO)">Elétrico (CHAdeMO)</option>
                 </select>
             </div>
-            <button onclick="confirmarAdicionarVeiculo()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">CADASTRAR VEÍCULOS</button>
+            <button onclick="confirmarAdicionarVeiculo()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">CADASTRAR VEÍCULOS</button>
         </div>
     `;
     showCustomModal('Cadastrar Novo Veículo', htmlCarro, 'fa-car', 'lime');
@@ -303,7 +303,7 @@ function abrirModalDeposito() {
         <div class="space-y-2 text-left">
             <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para adicionar à carteira via PIX / Cartão:</p>
             <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 0,00" value="R$ 0,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
-            <button onclick="confirmarDepositoPix()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">GERAR PIX (COPIA E COLA)</button>
+            <button onclick="confirmarDepositoPix()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">GERAR PIX (COPIA E COLA)</button>
         </div>
     `;
     showCustomModal('Adicionar Saldos • Adquirente Pix / Cartão', htmlDep, 'fa-wallet', 'lime');
@@ -333,7 +333,7 @@ function confirmarDepositoPix() {
                 <p class="text-xs font-mono text-lime-400 font-bold mt-1">00020126580014br.gov.bcb.pix...[CHAVE_DINAMICA_${valor.toFixed(2)}]</p>
             </div>
             <p class="text-[10px] text-slate-600">Escaneie o QR Code no seu banco ou clique no botão abaixo para confirmar o crédito imediato de R$ ${valor.toFixed(2).replace('.', ',')}.</p>
-            <button onclick="finalizarCreditoPix(${valor})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR PAGAMENTO PIX</button>
+            <button onclick="finalizarCreditoPix(${valor})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR PAGAMENTO PIX</button>
         </div>
     `;
     showCustomModal('Pagamento Pix Instantâneo', htmlPix, 'fa-qrcode', 'emerald');
@@ -415,23 +415,74 @@ function removerVeiculo(index) {
     showToast('Veículo removido com sucesso!');
 }
 
+// ----------------- INTEGRAÇÃO SÓLIDA COM SUPABASE & REALTIME -----------------
 async function carregarEstacoesDoBanco() {
-    inicializarEstacoesLocais();
+    if (!supabaseClient) {
+        carregarFallbackLocal();
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient.from('stations').select('*').order('id', { ascending: true });
+        if (error || !data || data.length === 0) {
+            carregarFallbackLocal();
+            await sincronizarEstadoInicialSupabase();
+        } else {
+            stations = data;
+            renderStations();
+            renderCommercialStations();
+        }
+    } catch (err) {
+        console.error('Erro ao conectar Supabase, usando cache local:', err);
+        carregarFallbackLocal();
+    }
+
+    // Ativar WebSocket Realtime para sincronização instantânea entre computador e celular
+    if (supabaseClient && !window.supabaseRealtimeIniciado) {
+        window.supabaseRealtimeIniciado = true;
+        supabaseClient
+            .channel('public:stations')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'stations' }, payload => {
+                console.log('🔄 Sincronização em tempo real recebida:', payload);
+                carregarEstacoesDoBanco();
+            })
+            .subscribe();
+    }
+}
+
+async function sincronizarEstadoInicialSupabase() {
+    if (!supabaseClient) return;
+    for (const st of stations) {
+        await supabaseClient.from('stations').upsert([st]);
+    }
+}
+
+function carregarFallbackLocal() {
+    const saved = localStorage.getItem('voltcore_stations_v2');
+    if (saved) {
+        try { stations = JSON.parse(saved); } catch(e){}
+    } else {
+        stations = [
+            { id: 1, name: 'VAGA 01 / 2º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 2, name: 'VAGA 02 / 1º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector CCS2 (7.4 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 3, name: 'VAGA 03 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 4, name: 'VAGA 01 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector CCS2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 5, name: 'VAGA 02 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 6, name: 'VAGA ATM-01 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 7, name: 'VAGA ATM-02 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 }
+        ];
+    }
     renderStations();
     renderCommercialStations();
 }
 
-function inicializarEstacoesLocais() {
-    stations = [
-        { id: 1, name: 'VAGA 01 / 2º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Reservado', user: 'Wanderson Pedro da Silva', kwh: 0, cost: 0, timer: 900 },
-        { id: 2, name: 'VAGA 02 / 1º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector CCS2 (7.4 kW)', status: 'Em Uso', user: 'Jose Bronzeri', kwh: 5.85, cost: 7.02, timer: 2684 },
-        { id: 3, name: 'VAGA 03 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-        { id: 4, name: 'VAGA 01 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector CCS2 (22 kW)', status: 'Em Uso', user: 'Wanderson Pedro da Silva', kwh: 1.75, cost: 2.10, timer: 215 },
-        { id: 5, name: 'VAGA 02 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (11 kW)', status: 'Em Uso', user: 'Carlos Alberto', kwh: 3.40, cost: 4.08, timer: 540 },
-        { id: 6, name: 'VAGA ATM-01 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-        { id: 7, name: 'VAGA ATM-02 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector Type-2 (22 kW)', status: 'Em Uso', user: 'Pamela Silva', kwh: 12.4, cost: 14.6, timer: 1800 },
-        { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 }
-    ];
+async function persistirEstacaoServidor(st) {
+    localStorage.setItem('voltcore_stations_v2', JSON.stringify(stations));
+    if (supabaseClient) {
+        const { error } = await supabaseClient.from('stations').upsert([st]);
+        if (error) console.error('Erro ao atualizar estação no Supabase:', error);
+    }
 }
 
 let currentFilter = 'all';
@@ -579,9 +630,9 @@ function abrirFiltrosAvancadosComercial() {
         <div class="space-y-2 text-left text-xs">
             <label class="block font-bold text-slate-700">Filtrar por Velocidade de Carga:</label>
             <div class="space-y-1.5">
-                <button onclick="filtrarMapaComercial('DC'); closeModal();" class="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Rápida DC (50kW a 150kW)</button>
-                <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Lenta AC (22kW)</button>
-                <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos (Verde AC + Azul DC)</button>
+                <button onclick="filtrarMapaComercial('DC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Rápida DC (50kW a 150kW)</button>
+                <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Lenta AC (22kW)</button>
+                <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos (Verde AC + Azul DC)</button>
             </div>
         </div>
     `;
@@ -758,7 +809,7 @@ function renderStations() {
     const currentCondo = selectCondo ? selectCondo.value : 'Condomínio Gioviale • Torre Sul';
     
     if (stations.length === 0) {
-        inicializarEstacoesLocais();
+        carregarFallbackLocal();
     }
 
     stations.forEach(st => {
@@ -775,11 +826,11 @@ function renderStations() {
             btn = `<div class="flex gap-1.5"><button onclick="reserveSpot(${st.id})" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><i class="fa-solid fa-bookmark"></i> Reservar</button><button onclick="abrirLeitorQrCodeCamera()" class="w-1/2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 shadow-xs cursor-pointer pointer-events-auto"><i class="fa-solid fa-qrcode"></i> Ler QR</button></div>`;
         } else if (st.status === 'Reservado') {
             badge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> RESERVADO (15 MIN)</span>`;
-            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user}</strong></p></div>`;
+            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user || userData.name}</strong></p></div>`;
             btn = `<div class="flex gap-1.5"><button onclick="startCharging(${st.id})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-bolt"></i> INICIAR RECARGA</button><button onclick="cancelReservation(${st.id})" class="bg-slate-100 hover:bg-rose-50 text-slate-600 font-bold py-2 px-2 rounded-lg border border-slate-200 text-xs cursor-pointer pointer-events-auto" title="Cancelar"><i class="fa-solid fa-xmark"></i></button></div>`;
         } else {
             badge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> EM RECARGA</span>`;
-            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg space-y-1"><div class="flex justify-between items-center text-[11px]"><span class="font-bold text-slate-700">Consumo:</span> <span class="font-extrabold text-emerald-700 text-xs">${st.kwh.toFixed(2)} kWh</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-emerald-500 h-1.5 rounded-full animate-pulse" style="width: 75%"></div></div></div>`;
+            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg space-y-1"><div class="flex justify-between items-center text-[11px]"><span class="font-bold text-slate-700">Consumo:</span> <span class="font-extrabold text-emerald-700 text-xs">${(st.kwh || 0).toFixed(2)} kWh</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-emerald-500 h-1.5 rounded-full animate-pulse" style="width: 75%"></div></div></div>`;
             btn = `<button onclick="stopCharging(${st.id})" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-hand"></i> FINALIZAR RECARGA</button>`;
         }
         const card = document.createElement('article');
@@ -793,7 +844,7 @@ function renderStations() {
                 </div>
                 <div class="text-right bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg">
                     <p class="text-[7px] font-bold text-slate-400 uppercase leading-none mb-0.5">Tempo (h:m:s)</p>
-                    <p id="timer-${st.id}" class="text-[11px] font-black text-slate-800">${formatTimer(st.timer)}</p>
+                    <p id="timer-${st.id}" class="text-[11px] font-black text-slate-800">${formatTimer(st.timer || 0)}</p>
                 </div>
             </div>
             ${content}
@@ -815,38 +866,56 @@ function formatTimer(sec) {
 }
 
 function updateTimersAndLoad() {
+    let houveMudanca = false;
     stations.forEach(st => {
         if (st.status === 'Reservado') {
-            if (st.timer > 0) { st.timer--; } else { st.status = 'Disponível'; st.user = null; st.timer = 0; }
+            if (st.timer > 0) { 
+                st.timer--; 
+                houveMudanca = true;
+            } else { 
+                st.status = 'Disponível'; 
+                st.user = null; 
+                st.timer = 0; 
+                houveMudanca = true;
+                persistirEstacaoServidor(st);
+            }
         }
         if (st.status === 'Em Uso') {
-            st.timer++;
-            st.kwh += 0.0035;
+            st.timer = (st.timer || 0) + 1;
+            st.kwh = (st.kwh || 0) + 0.0035;
+            houveMudanca = true;
         }
     });
-    renderStations();
+    if (houveMudanca) {
+        renderStations();
+    }
 }
 
-function reserveSpot(id) {
+async function reserveSpot(id) {
     const st = stations.find(s => s.id === id);
+    if(!st) return;
     st.status = 'Reservado';
     st.user = userData.name;
     st.timer = 900;
+    await persistirEstacaoServidor(st);
     renderStations();
     showToast(`Vaga ${st.name} reservada por 15 minutos!`);
 }
 
 async function startCharging(id) {
     const st = stations.find(s => s.id === id);
+    if(!st) return;
     st.status = 'Em Uso';
     st.timer = 0;
     st.kwh = 1.0;
+    await persistirEstacaoServidor(st);
     renderStations();
     showToast(`Recarga iniciada na ${st.name}!`);
 }
 
 async function stopCharging(id) {
     const st = stations.find(s => s.id === id);
+    if(!st) return;
     const kWhConsumidos = st.kwh > 0 ? st.kwh : 14.2;
     const custoTotal = (kWhConsumidos * 1.18) + 2.20;
 
@@ -872,6 +941,7 @@ async function stopCharging(id) {
     st.user = null;
     st.kwh = 0;
     st.timer = 0;
+    await persistirEstacaoServidor(st);
     renderStations();
     
     showToast(`Recarga finalizada! Total R$ ${custoTotal.toFixed(2)} registrado no extrato.`);
@@ -879,9 +949,11 @@ async function stopCharging(id) {
 
 async function cancelReservation(id) {
     const st = stations.find(s => s.id === id);
+    if(!st) return;
     st.status = 'Disponível';
     st.user = null;
     st.timer = 0;
+    await persistirEstacaoServidor(st);
     renderStations();
     showToast(`Reserva cancelada.`);
 }
@@ -891,26 +963,33 @@ function abrirPainelGestao() {
     moradoresCondominio.forEach((m, idx) => {
         const isInativo = m.status === 'Inativo';
         htmlMoradores += `
-            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-1.5 text-[11px]">
-                <div class="flex justify-between items-start">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-2 text-xs">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-slate-100">
                     <div>
-                        <strong class="text-slate-900 text-xs">${m.nome}</strong> (${m.vaga} - ${m.unidade || 'Apto'})<br>
-                        <span class="text-[10px] text-slate-500"><i class="fa-solid fa-building text-lime-600"></i> ${m.condo} (${m.bloco || 'Torre'})</span><br>
-                        <span class="text-[10px] text-slate-500"><i class="fa-solid fa-location-dot text-slate-400"></i> ${m.endereco || 'Endereço não informado'}</span><br>
-                        <span class="text-[10px] font-bold text-slate-700"><i class="fa-solid fa-car text-slate-500"></i> ${m.veiculo} • Placa: ${m.placa || 'N/D'}</span>
+                        <strong class="text-slate-900 text-sm font-extrabold">${m.nome}</strong> 
+                        <span class="text-slate-500 font-medium ml-1">(${m.vaga} - ${m.unidade || 'Apto'})</span>
+                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building text-lime-600 mr-1"></i> ${m.condo} (${m.bloco || 'Torre'}) • ${m.endereco || ''}</div>
                     </div>
-                    <div class="text-right">
-                        <span class="font-extrabold text-emerald-700 text-xs">${m.valor}</span><br>
-                        <span class="text-[9px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded' : 'text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded'}">${m.status}</span>
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">${m.valor}</span>
+                        <span class="text-[10px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200' : 'text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200'}">${m.status}</span>
                     </div>
                 </div>
-                <div class="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-600 space-y-0.5 border border-slate-100">
-                    <p><strong>Última Recarga:</strong> ${m.data} • ${m.horaInicio || '12:00 PM'} às ${m.horaFim || '12:42 PM'} (${m.duracao || '42 min'})</p>
-                    <p><strong>Volume Consumido:</strong> ${m.kwh || '14.2 kWh'} | <strong>Ociosidade:</strong> <span class="text-amber-700 font-bold">${m.ociosidade || 'Não'}</span></p>
-                    <p class="text-slate-500 text-[9px] italic">Repasse transparente calculado para prestação de contas ao condomínio.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-0.5">
+                        <p class="text-slate-700"><strong>Veículo:</strong> <span class="font-medium">${m.veiculo}</span></p>
+                        <p class="text-slate-700"><strong>Placa:</strong> <span class="font-medium">${m.placa || 'N/D'}</span></p>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-0.5">
+                        <p class="text-slate-700"><strong>Última Recarga:</strong> <span class="font-medium">${m.data} • ${m.horaInicio || '12:00'} (${m.duracao || '42 min'})</span></p>
+                        <p class="text-slate-700"><strong>Volume / Ociosidade:</strong> <span class="font-medium text-emerald-700">${m.kwh || '14.2 kWh'}</span> | <span class="text-amber-700 font-bold">${m.ociosidade || 'Não'}</span></p>
+                    </div>
                 </div>
-                <div class="flex justify-end gap-1.5 pt-1">
-                    <button onclick="alternarStatusMorador(${idx})" class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer">
+
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-[10px] text-slate-400 italic">Repasse transparente calculado para prestação de contas.</span>
+                    <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
                         ${isInativo ? 'Reativar Morador' : 'Inativar Morador'}
                     </button>
                 </div>
@@ -919,31 +998,32 @@ function abrirPainelGestao() {
     });
 
     const conteudoGestao = `
-        <div class="space-y-3 text-left text-xs">
-            <div class="p-3 bg-slate-900 text-white rounded-xl shadow">
-                <h4 class="font-extrabold text-lime-400 text-xs"><i class="fa-solid fa-building-shield mr-1"></i> Área do Síndico • Relatório & Gestão</h4>
-                <p class="text-[10px] text-slate-300 mt-0.5">Gestão completa de condôminos, endereços, veículos, ociosidade e repasses financeiros detalhados.</p>
+        <div class="space-y-4 text-left text-xs">
+            <div class="p-3.5 bg-slate-900 text-white rounded-xl shadow-md space-y-1">
+                <h4 class="font-extrabold text-lime-400 text-sm flex items-center gap-1.5"><i class="fa-solid fa-building-shield"></i> Área do Síndico • Relatório & Gestão</h4>
+                <p class="text-[11px] text-slate-300">Gestão completa de condôminos, endereços, veículos, ociosidade e repasses financeiros detalhados com total transparência.</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-2">
-                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <span class="block text-[8px] font-bold text-slate-500 uppercase">Vagas Monitoradas</span>
-                    <span class="text-xs font-black text-slate-900">5 Vagas Ativas</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Vagas Monitoradas</span>
+                    <span class="text-sm font-black text-slate-900">5 Vagas Ativas na Rede SDI</span>
                 </div>
-                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <span class="block text-[8px] font-bold text-slate-500 uppercase">Ociosidade Total Mês</span>
-                    <span class="text-xs font-black text-emerald-600">R$ 112,50 <span class="text-[9px] text-slate-500 font-normal">(Repasse: J. Bronzeri R$ 62,50 | Wanderson R$ 50,00)</span></span>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Ociosidade Total Mês</span>
+                    <span class="text-xs font-black text-emerald-600">R$ 112,50 <span class="text-[10px] text-slate-500 font-normal block sm:inline">(J. Bronzeri R$ 62,50 | Wanderson R$ 50,00)</span></span>
                 </div>
             </div>
 
-            <div class="space-y-1.5">
-                <div class="flex justify-between items-center">
-                    <h5 class="text-[10px] font-bold text-slate-800 uppercase">Base de Condôminos & Extrato Consolidado</h5>
-                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-2.5 py-1 rounded-lg text-[10px] shadow-xs transition cursor-pointer">
+            <div class="space-y-2 pt-1">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1 border-b border-slate-200">
+                    <h5 class="text-xs font-bold text-slate-800 uppercase tracking-tight">Base de Condôminos & Extrato Consolidado</h5>
+                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto flex items-center gap-1">
                         <i class="fa-solid fa-user-plus"></i> Novo Condômino
                     </button>
                 </div>
-                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                
+                <div class="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
                     ${htmlMoradores}
                 </div>
             </div>
@@ -966,46 +1046,46 @@ function alternarStatusMorador(idx) {
 
 function abrirModalCadastrarMorador() {
     const htmlForm = `
-        <div class="space-y-2 text-left text-xs">
+        <div class="space-y-3 text-left text-xs">
             <div>
-                <label class="block font-bold text-slate-700 mb-0.5">Nome do Morador:</label>
-                <input type="text" id="novo-morador-nome" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <label class="block font-bold text-slate-700 mb-1">Nome do Morador:</label>
+                <input type="text" id="novo-morador-nome" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Nome do Condomínio:</label>
-                    <input type="text" id="novo-morador-condo" placeholder="Ex: Condomínio Gioviale" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Nome do Condomínio:</label>
+                    <input type="text" id="novo-morador-condo" placeholder="Ex: Condomínio Gioviale" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Bloco / Torre:</label>
-                    <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Sul" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Bloco / Torre:</label>
+                    <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Sul" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Unidade / Apto:</label>
-                    <input type="text" id="novo-morador-unidade" placeholder="Ex: Apto 101" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Unidade / Apto:</label>
+                    <input type="text" id="novo-morador-unidade" placeholder="Ex: Apto 101" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Vaga:</label>
-                    <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 04" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Vaga:</label>
+                    <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 04" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
             </div>
             <div>
-                <label class="block font-bold text-slate-700 mb-0.5">Endereço Completo:</label>
-                <input type="text" id="novo-morador-endereco" placeholder="Ex: Rua das Palmeiras, 300 - Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <label class="block font-bold text-slate-700 mb-1">Endereço Completo:</label>
+                <input type="text" id="novo-morador-endereco" placeholder="Ex: Rua das Palmeiras, 300 - Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Veículo / Modelo:</label>
-                    <input type="text" id="novo-morador-veiculo" placeholder="Ex: Volvo XC40 (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Veículo / Modelo:</label>
+                    <input type="text" id="novo-morador-veiculo" placeholder="Ex: Volvo XC40 (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-0.5">Placa:</label>
-                    <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Placa:</label>
+                    <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
             </div>
-            <button onclick="salvarNovoMorador()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO DO CONDÔMINO</button>
+            <button onclick="salvarNovoMorador()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO DO CONDÔMINO</button>
         </div>
     `;
     showCustomModal('Cadastrar Novo Morador no Condomínio', htmlForm, 'fa-user-plus', 'lime');
