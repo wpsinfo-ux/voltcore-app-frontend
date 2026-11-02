@@ -1160,3 +1160,4 @@ function showToast(msg) {
 }
 // Subscricao Realtime Supabase para evitar disparidade de vagas
 supabase.channel('public:pontos_recarga').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () = carregarVagas(); }).subscribe();
+try { supabase.channel('public:pontos_recarga').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () = if(typeof carregarVagas === 'function') carregarVagas(); }).subscribe(); } catch(e) {} 
