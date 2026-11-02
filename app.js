@@ -1158,3 +1158,5 @@ function showToast(msg) {
         }, 3000);
     }
 }
+// Subscricao Realtime Supabase para evitar disparidade de vagas
+supabase.channel('public:pontos_recarga').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () = carregarVagas(); }).subscribe();
