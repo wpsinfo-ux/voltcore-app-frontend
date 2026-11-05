@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
 <head>
@@ -15,6 +14,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -37,9 +38,9 @@
     <style>
         html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .leaflet-container { width: 100%; height: 100%; z-index: 1; }
         .leaflet-popup-content-wrapper { background: #ffffff; color: #1e293b; border-radius: 14px; padding: 8px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border: 1px solid #e2e8f0; }
         .leaflet-popup-tip { background: #ffffff; }
@@ -51,7 +52,6 @@
     <!-- ================= TELA 1: ONBOARDING / LOGIN ================= -->
     <div id="screen-auth" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-3">
         <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3 text-center">
-            <!-- Logotipo Completo Fidedigno (Ícone + Nome VOLTCORE + Soluções de Recarga) -->
             <div class="flex flex-col items-center justify-center space-y-1.5">
                 <div class="w-20 h-20 rounded-full border border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-md p-1">
                     <svg viewBox="0 0 100 100" class="w-full h-full">
@@ -103,7 +103,7 @@
 
     <!-- ================= TELA 2: APLICAÇÃO PRINCIPAL ================= -->
     <div id="screen-app" class="hidden flex flex-col h-full w-full bg-slate-50 relative overflow-hidden">
-        <!-- Header / Top Bar com Logotipo Fidedigno Integrado -->
+        <!-- Header / Top Bar -->
         <header class="bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between shrink-0 z-20 shadow-xs gap-2">
             <div class="flex items-center space-x-2.5 min-w-0">
                 <div class="w-10 h-10 rounded-full border border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-xs shrink-0 p-0.5">
@@ -123,8 +123,8 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
-                <button onclick="abrirPainelGestao()" class="bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition cursor-pointer pointer-events-auto">
-                    <i class="fa-solid fa-building-shield text-lime-400"></i> <span class="hidden sm:inline">ADM / Síndico</span>
+                <button onclick="abrirPainelGestao()" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[11px] font-extrabold flex items-center gap-1.5 shadow-xs transition cursor-pointer pointer-events-auto">
+                    <i class="fa-solid fa-building-shield text-lime-400"></i> <span>ADM / Síndico</span>
                 </button>
                 <button onclick="logoutApp()" class="w-7 h-7 rounded-full bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center hover:bg-rose-600 transition cursor-pointer pointer-events-auto" title="Sair">
                     <i class="fa-solid fa-power-off"></i>
@@ -132,7 +132,7 @@
             </div>
         </header>
 
-        <!-- Seletor de Ecossistema Compacto -->
+        <!-- Seletor de Ecossistema -->
         <div class="bg-white px-3 pt-2 border-b border-slate-200 shrink-0">
             <div class="max-w-7xl mx-auto flex gap-2 pb-2">
                 <button onclick="switchMode('condo')" id="btn-mode-condo" class="flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-900 text-white transition shadow-xs cursor-pointer pointer-events-auto">
@@ -177,7 +177,7 @@
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                             <h2 class="text-xs font-extrabold tracking-tight">Painel de Estações e Vagas</h2>
-                            <p class="text-[9px] text-slate-300">Conecte o plugue, leia o QR Code ou reserve sua vaga[cite: 16].</p>
+                            <p class="text-[9px] text-slate-300">Conecte o plugue, leia o QR Code ou reserve sua vaga.</p>
                         </div>
                         <button onclick="abrirLeitorQrCodeCamera()" class="w-full sm:w-auto bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto shrink-0">
                             <i class="fa-solid fa-qrcode"></i> Ler QR Code do Posto
@@ -186,21 +186,21 @@
 
                     <div class="grid grid-cols-3 gap-1 pt-0.5 border-t border-slate-700/60">
                         <div class="bg-slate-800/80 border border-slate-700/80 p-1 rounded text-center">
-                            <span class="block text-[11px] font-black text-emerald-400" id="stat-livre">1</span>
+                            <span class="block text-[11px] font-black text-emerald-400" id="stat-livre">0</span>
                             <span class="text-[7px] uppercase font-bold text-slate-400">Livres</span>
                         </div>
                         <div class="bg-slate-800/80 border border-slate-700/80 p-1 rounded text-center">
-                            <span class="block text-[11px] font-black text-amber-400" id="stat-reservado">1</span>
+                            <span class="block text-[11px] font-black text-amber-400" id="stat-reservado">0</span>
                             <span class="text-[7px] uppercase font-bold text-slate-400">Reserva</span>
                         </div>
                         <div class="bg-slate-800/80 border border-slate-700/80 p-1 rounded text-center">
-                            <span class="block text-[11px] font-black text-lime-400" id="stat-carregando">1</span>
+                            <span class="block text-[11px] font-black text-lime-400" id="stat-carregando">0</span>
                             <span class="text-[7px] uppercase font-bold text-slate-400">Carga</span>
                         </div>
                     </div>
 
                     <div class="pt-1.5 border-t border-slate-700/60 flex items-center gap-1.5">
-                        <button onclick="setFilter('all')" class="filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-lime-400 text-slate-900 transition text-center cursor-pointer pointer-events-auto shadow-2xs">Todas</button>
+                        <button onclick="setFilter('all')" id="tab-btn-todas" class="filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-lime-400 text-slate-900 transition text-center cursor-pointer pointer-events-auto shadow-2xs">Todas</button>
                         <button onclick="setFilter('Disponível')" class="filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-center cursor-pointer pointer-events-auto shadow-2xs">Disponíveis</button>
                         <button onclick="setFilter('Reservado')" class="filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-center cursor-pointer pointer-events-auto shadow-2xs">Reservadas</button>
                         <button onclick="setFilter('Em Uso')" class="filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-center cursor-pointer pointer-events-auto shadow-2xs">Em Carga</button>
@@ -259,7 +259,7 @@
                             <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-xs"><i class="fa-solid fa-clock"></i></div>
                             <div>
                                 <h3 class="font-bold text-amber-900 text-xs">Evite imprevistos ao carregar</h3>
-                                <p class="text-[10px] text-amber-700 mt-0.5">Conecte o plugue ao veículo antes de iniciar pelo aplicativo[cite: 16]. Após 100% de carga, retire o carro em até 15 minutos para evitar taxa de ociosidade.</p>
+                                <p class="text-[10px] text-amber-700 mt-0.5">Conecte o plugue ao veículo antes de iniciar pelo aplicativo. Após 100% de carga, retire o carro em até 15 minutos para evitar taxa de ociosidade.</p>
                             </div>
                         </div>
                     </div>
@@ -309,7 +309,7 @@
                             <i class="fa-solid fa-chevron-right text-[9px] text-slate-400"></i>
                         </button>
                         <button onclick="logoutApp()" class="w-full py-2.5 flex items-center justify-between text-left hover:bg-rose-50 px-2 rounded-lg transition text-rose-600 cursor-pointer pointer-events-auto">
-                            <span class="text-xs font-bold flex items-center gap-2"><i class="fa-solid fa-power-off text-xs w-4"></i> Sair da conta</span>
+                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-power-off text-xs w-4"></i> Sair da conta</span>
                             <i class="fa-solid fa-chevron-right text-[9px] text-rose-400"></i>
                         </button>
                     </div>
@@ -318,6 +318,33 @@
 
             <!-- MODO COMERCIAL / ELEKTROPOSTOS, RODOVIAS & CONVENIÊNCIA -->
             <div id="view-commercial" class="p-3 sm:p-4 space-y-3 max-w-7xl mx-auto hidden">
+                <!-- Painel de Gestão e Telemetria Ativa na Aba Comercial -->
+                <div id="commercial-telemetry-panel" class="bg-slate-900 rounded-2xl p-4 text-white shadow-lg space-y-3">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-2.5">
+                        <div>
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider text-lime-400 bg-lime-400/10 px-2 py-0.5 rounded border border-lime-400/20">Telemetria Ativa • Rede Rodoviária & Comercial</span>
+                            <h3 class="text-xs font-bold text-white mt-1">Gestão de Eletropostos Públicos & Privados</h3>
+                        </div>
+                        <button onclick="abrirLeitorQrCodeCamera()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow transition flex items-center gap-1.5 cursor-pointer pointer-events-auto">
+                            <i class="fa-solid fa-qrcode"></i> Ler QR Code do Posto
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase">Livres</span>
+                            <span id="comm-stat-livre" class="text-sm font-black text-emerald-400">0</span>
+                        </div>
+                        <div class="bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase">Reservados</span>
+                            <span id="comm-stat-reservado" class="text-sm font-black text-amber-400">0</span>
+                        </div>
+                        <div class="bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase">Em Carga</span>
+                            <span id="comm-stat-carregando" class="text-sm font-black text-lime-400">0</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs space-y-2">
                     <div class="flex flex-col sm:flex-row items-center gap-2">
                         <div class="relative flex-1 w-full">
@@ -404,15 +431,15 @@
     </div>
 
     <!-- CUSTOM MODAL -->
-    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3 border border-slate-100 text-center">
-            <div id="modalIconContainer" class="w-10 h-10 rounded-xl bg-lime-50 text-lime-600 text-lg flex items-center justify-center mx-auto shadow-inner">
+    <div id="customModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div id="modalContainerCard" class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 border border-slate-100 text-center max-h-[90vh] flex flex-col">
+            <div id="modalIconContainer" class="w-12 h-12 rounded-2xl bg-lime-50 text-lime-600 text-xl flex items-center justify-center mx-auto shadow-inner shrink-0">
                 <i id="modalIcon" class="fa-solid fa-bolt"></i>
             </div>
-            <h3 id="modalTitle" class="text-sm font-extrabold text-slate-900">Aviso VoltCore</h3>
-            <div id="modalDesc" class="text-xs text-slate-600 font-medium text-left space-y-2 max-h-64 overflow-y-auto">Mensagem do sistema.</div>
-            <div class="flex gap-2 pt-1" id="modalActions">
-                <button onclick="closeModal()" class="w-full py-2 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition cursor-pointer pointer-events-auto">OK, ENTENDIDO</button>
+            <h3 id="modalTitle" class="text-base font-extrabold text-slate-900 shrink-0">Aviso VoltCore</h3>
+            <div id="modalDesc" class="text-xs text-slate-600 font-medium text-left space-y-3 overflow-y-auto pr-1 flex-1">Mensagem do sistema.</div>
+            <div class="flex gap-2 pt-2 border-t border-slate-100 shrink-0" id="modalActions">
+                <button onclick="closeModal()" class="w-full py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition cursor-pointer pointer-events-auto">OK, ENTENDIDO</button>
             </div>
         </div>
     </div>
@@ -429,747 +456,4 @@
     <!-- SCRIPT -->
     <script src="app.js"></script>
 </body>
-=======
-<!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoltCore - Soluções de Recarga</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontInter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS (Mapa Real Geográfico) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        volt: {
-                            dark: '#1e2530',
-                            DEFAULT: '#2c3542',
-                            green: '#8cc63f',
-                            'green-dark': '#74a532',
-                            light: '#f4f7f6',
-                            card: '#ffffff'
-                        }
-                    },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .leaflet-popup-content-wrapper { background: #ffffff; color: #1e293b; border-radius: 20px; padding: 12px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15); border: 1px solid #e2e8f0; }
-        .leaflet-popup-tip { background: #ffffff; }
-    </style>
-</head>
-<body class="h-full flex flex-col antialiased selection:bg-lime-200 selection:text-lime-900">
-    <!-- ================= TELA 1: ONBOARDING / LOGIN ================= -->
-    <div id="screen-auth" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6 text-center">
-            <div class="w-20 h-20 rounded-full border-2 border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-xl mx-auto p-2">
-                <svg viewBox="0 0 100 100" class="w-full h-full">
-                    <path d="M30,28 L45,72 L38,72 L26,28 Z" fill="#2c3542"/>
-                    <path d="M42,28 L57,72 L50,72 L38,28 Z" fill="#334155"/>
-                    <path d="M48,28 L62,72 L55,72 L44,28 Z" fill="#334155"/>
-                    <path d="M58,22 L45,52 L60,52 L48,82 L76,44 L60,44 L70,22 Z" fill="#8cc63f"/>
-                </svg>
-            </div>
-            <div>
-                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Entre ou cadastre-se</h2>
-                <p class="text-xs text-slate-500 mt-1">Ao continuar, você concorda com nossos <a href="#" onclick="showCustomModal('Termos de Uso e Privacidade', 'Conformidade integral com a LGPD e regulamentação de dados da VoltCore.', 'fa-shield-halved', 'lime')" class="text-lime-600 font-bold underline">termos de uso e privacidade</a>.</p>
-            </div>
-            <div class="space-y-3 pt-2">
-                <button onclick="realizarLogin()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-3 text-xs border border-slate-200">
-                    <i class="fa-brands fa-google text-red-500 text-base"></i> Continuar com Google
-                </button>
-                <button onclick="alternarModoEmail()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs">
-                    <i class="fa-solid fa-envelope text-lime-400"></i> Continuar com e-mail
-                </button>
-            </div>
-            <div class="pt-2">
-                <a href="#" onclick="showCustomModal('Recuperação de Senha', 'Insira seu e-mail cadastrado para receber as instruções de redefinição de senha.', 'fa-key', 'lime')" class="text-xs font-bold text-lime-600 hover:underline">Não consegue acessar? Recuperar senha</a>
-            </div>
-            
-            <div id="auth-email-form" class="hidden space-y-3 pt-4 border-t border-slate-100 text-left">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
-                    <input type="email" id="auth-email-input" value="wanderson.silva@wpsinfo.com.br" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Senha</label>
-                    <input type="password" id="auth-pass-input" value="********" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-3 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <button onclick="realizarLogin()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 px-4 rounded-xl text-xs shadow transition">ENTRAR / CADASTRAR</button>
-            </div>
-        </div>
-    </div>
-    <!-- ================= TELA 2: APLICAÇÃO PRINCIPAL ================= -->
-    <div id="screen-app" class="hidden flex flex-col h-full w-full max-w-7xl mx-auto bg-slate-50 shadow-2xl overflow-hidden relative lg:border lg:border-slate-200 lg:my-3 lg:rounded-3xl">
-        <!-- Header / Top Bar -->
-        <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shrink-0 z-20">
-            <div class="flex items-center space-x-3">
-                <div class="w-11 h-11 rounded-full border-2 border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-sm shrink-0 p-1">
-                    <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <path d="M30,28 L45,72 L38,72 L26,28 Z" fill="#2c3542"/>
-                        <path d="M42,28 L57,72 L50,72 L38,28 Z" fill="#334155"/>
-                        <path d="M48,28 L62,72 L55,72 L44,28 Z" fill="#334155"/>
-                        <path d="M58,22 L45,52 L60,52 L48,82 L76,44 L60,44 L70,22 Z" fill="#8cc63f"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-slate-900 text-base sm:text-lg tracking-tight flex items-center gap-1.5">
-                        VOLTCORE <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-lime-100 text-lime-800">PRO</span>
-                    </h1>
-                    <p class="text-xs text-slate-500 font-medium" id="header-context-label">Soluções de Recarga • Condomínio Gioviale (Torre Sul)</p>
-                </div>
-            </div>
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                <div class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="font-medium text-slate-700">Rede OCPP Online</span>
-                </div>
-                <button onclick="logoutApp()" class="w-8 h-8 rounded-full bg-slate-800 text-white text-xs font-bold flex items-center justify-center hover:bg-rose-600 transition" title="Sair">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
-            </div>
-        </header>
-        <!-- Seletor de Ecossistema -->
-        <div class="bg-white px-4 pt-3 border-b border-slate-200 shrink-0">
-            <div class="max-w-7xl mx-auto flex gap-2 pb-3">
-                <button onclick="switchMode('condo')" id="btn-mode-condo" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-900 text-white transition shadow-sm">
-                    <i class="fa-solid fa-building text-lime-400"></i> Condomínios Residenciais
-                </button>
-                <button onclick="switchMode('commercial')" id="btn-mode-com" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                    <i class="fa-solid fa-map-location-dot text-lime-600"></i> Mapa Comercial & Rodovias (150 km)
-                </button>
-            </div>
-        </div>
-        <!-- Barra de Contexto Fixa (Condomínio / Torre) -->
-        <div class="bg-slate-100 border-b border-slate-200 px-4 py-2.5 sticky top-0 z-30 shadow-sm" id="sticky-condo-bar">
-            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div class="w-full sm:w-auto flex items-center gap-2">
-                    <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider"><i class="fa-solid fa-location-dot text-lime-600 mr-1"></i> Local:</span>
-                    <select id="select-condo" onchange="mudarCondominio()" class="bg-white border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-1.5 font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none shadow-sm">
-                        <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
-                        <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
-                        <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
-                        <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
-                    </select>
-                </div>
-                <span class="bg-emerald-50 text-emerald-700 text-[11px] font-bold px-3 py-1 rounded-xl border border-emerald-200 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> SDI Ativo (Rodízio Justo OCPP)
-                </span>
-            </div>
-        </div>
-        <!-- Main Content Viewport -->
-        <main class="flex-1 overflow-y-auto bg-slate-50 pb-24 lg:pb-6">
-            
-            <!-- ================= TAB 1: ESTAÇÕES / CONDOMÍNIO ================= -->
-            <div id="tab-stations" class="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto tab-content">
-                <!-- Hero Banner -->
-                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-5 sm:p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-                    <div>
-                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-lime-500/20 text-lime-400 text-xs font-semibold mb-2">
-                            <i class="fa-solid fa-bolt"></i> Gestão Ativa em Tempo Real
-                        </div>
-                        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Painel de Estações e Vagas</h2>
-                        <p class="text-xs sm:text-sm text-slate-300 mt-1">Gerencie reservas (15 min + tolerância) e liberação via QR Code / RFID.</p>
-                    </div>
-                    <div class="grid grid-cols-3 gap-3 w-full md:w-auto">
-                        <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl text-center">
-                            <span class="block text-xl font-bold text-emerald-400" id="stat-livre">1</span>
-                            <span class="text-[10px] uppercase font-semibold text-slate-400">Disponíveis</span>
-                        </div>
-                        <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl text-center">
-                            <span class="block text-xl font-bold text-amber-400" id="stat-reservado">1</span>
-                            <span class="text-[10px] uppercase font-semibold text-slate-400">Reservadas</span>
-                        </div>
-                        <div class="bg-slate-800/80 border border-slate-700/60 p-3 rounded-xl text-center">
-                            <span class="block text-xl font-bold text-lime-400" id="stat-carregando">1</span>
-                            <span class="text-[10px] uppercase font-semibold text-slate-400">Em Carga</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Search & Filters -->
-                <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <div class="relative w-full sm:w-80">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-                        <input type="text" id="searchInput" oninput="filterStations()" placeholder="Buscar por vaga, setor..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-500 font-medium">
-                    </div>
-                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                        <button onclick="setFilter('all')" class="filter-btn px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-900 text-white transition">Todas</button>
-                        <button onclick="setFilter('Disponível')" class="filter-btn px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Disponíveis</button>
-                        <button onclick="setFilter('Reservado')" class="filter-btn px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Reservadas</button>
-                        <button onclick="setFilter('Em Uso')" class="filter-btn px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Em Carga</button>
-                    </div>
-                </div>
-                <!-- Stations Grid -->
-                <div id="stations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-            </div>
-            <!-- ================= TAB 2: EXTRATO / CARTEIRA ================= -->
-            <div id="tab-wallet" class="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto tab-content hidden">
-                <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saldo VoltCore Pay / Carteira</p>
-                        <h2 class="text-3xl sm:text-4xl font-extrabold mt-1 text-lime-400">R$ 184,50</h2>
-                        <p class="text-xs text-slate-300 mt-2"><i class="fa-solid fa-shield-check text-lime-400"></i> Crédito transparente para prestação de contas ao condomínio</p>
-                    </div>
-                    <button onclick="showCustomModal('Depositar Créditos', 'Insira o valor para recarga via PIX ou Cartão:', 'deposit')" class="px-5 py-2.5 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold rounded-xl shadow transition text-sm">
-                        <i class="fa-solid fa-plus-circle mr-1.5"></i> Depositar PIX
-                    </button>
-                </div>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <h3 class="font-bold text-slate-900 text-base">Extrato Detalhado de Consumo & Taxa de Ociosidade</h3>
-                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">Outubro / 2026</span>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-lime-100 text-lime-700 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-bolt"></i></div>
-                                <div>
-                                    <h4 class="font-bold text-slate-900">BOX 01 / TORRE SUL (Gioviale)</h4>
-                                    <p class="text-slate-500">26/10/2026 • 12:00 às 12:42 (14.2 kWh - Type-2)</p>
-                                </div>
-                            </div>
-                            <span class="font-extrabold text-slate-900 text-sm">R$ 15,62</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ================= TAB 3: VEÍCULOS (HÍBRIDO OU ELÉTRICO) ================= -->
-            <div id="tab-vehicles" class="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto tab-content hidden">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
-                        <div>
-                            <h2 class="text-lg font-bold text-slate-900">Meus Veículos Cadastrados</h2>
-                            <p class="text-xs text-slate-500">Selecione o tipo de motorização e gerencie sua frota</p>
-                        </div>
-                        <button onclick="showCustomModal('Adicionar Veículo', 'Escolha entre Híbrido ou 100% Elétrico e informe a placa.', 'vehicle')" class="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold text-xs rounded-xl shadow transition">
-                            <i class="fa-solid fa-plus mr-1"></i> Adicionar Veículo
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-2xl border-2 border-lime-400 flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-lime-100 text-lime-700 flex items-center justify-center text-xl"><i class="fa-solid fa-car-side"></i></div>
-                                <div>
-                                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">100% Elétrico (CCS2)</span>
-                                    <h3 class="font-extrabold text-slate-900 text-sm mt-1">BYD Seal • Placa ABC-1D23</h3>
-                                    <p class="text-[11px] text-slate-500">Conector OCPP Integrado</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ================= TAB 4: DICAS ================= -->
-            <div id="tab-tips" class="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto tab-content hidden">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900">Dicas e Regras de Ociosidade</h2>
-                        <p class="text-xs text-slate-500">Recomendações essenciais para o uso harmonioso dos eletropostos.</p>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-amber-50 rounded-2xl border border-amber-200 flex gap-4 items-start">
-                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-lg"><i class="fa-solid fa-clock"></i></div>
-                            <div>
-                                <h3 class="font-bold text-amber-900 text-sm">Evite imprevistos ao carregar</h3>
-                                <p class="text-xs text-amber-700 mt-1">Conecte o plugue ao veículo antes de iniciar pelo aplicativo. Após 100% de carga, retire o carro em até 15 minutos para evitar taxa de ociosidade.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ================= TAB 5: PERFIL & ÁREA DE GESTÃO (SÍNDICOS & ADMINISTRADORAS) ================= -->
-            <div id="tab-profile" class="p-4 sm:p-6 space-y-4 max-w-4xl mx-auto tab-content hidden">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-                    <div class="flex items-center space-x-4 pb-6 border-b border-slate-100">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="Wanderson Silva" class="w-20 h-20 rounded-full object-cover border-4 border-lime-400 shadow-md">
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-900">Wanderson Silva</h2>
-                            <p class="text-sm text-slate-500 font-medium">wanderson.silva@wpsinfo.com.br</p>
-                            <span class="inline-block mt-2 px-2.5 py-0.5 rounded-md bg-lime-100 text-lime-800 text-xs font-bold">Condomínio Gioviale & Eletropostos Rodovia</span>
-                        </div>
-                    </div>
-                    <div class="divide-y divide-slate-100">
-                        <button onclick="abrirPainelGestao()" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-slate-50 px-2 rounded-xl transition">
-                            <span class="text-xs font-extrabold text-slate-900 flex items-center gap-2.5"><i class="fa-solid fa-building-shield text-lime-600 text-base w-5"></i> Área de Gestão (Síndicos & Administradoras)</span>
-                            <span class="bg-lime-100 text-lime-800 text-[10px] font-bold px-2 py-0.5 rounded">Painel /adm</span>
-                        </button>
-                        <button onclick="showCustomModal('Meus Dados', 'Nome: Wanderson Silva\nE-mail: wanderson.silva@wpsinfo.com.br\nTelefone: (11) 99999-9999', 'fa-user', 'lime')" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-slate-50 px-2 rounded-xl transition">
-                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2.5"><i class="fa-solid fa-user text-slate-400 text-sm w-5"></i> Meus dados</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-                        </button>
-                        <button onclick="switchTab('wallet')" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-slate-50 px-2 rounded-xl transition">
-                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2.5"><i class="fa-solid fa-charging-station text-slate-400 text-sm w-5"></i> Extrato de recargas</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-                        </button>
-                        <button onclick="switchTab('vehicles')" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-slate-50 px-2 rounded-xl transition">
-                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2.5"><i class="fa-solid fa-car text-slate-400 text-sm w-5"></i> Meu carro (Híbrido / Elétrico)</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-                        </button>
-                        <button onclick="window.open('https://wa.me/5511944614162?text=Olá,%20preciso%20de%20suporte%20no%20VoltCore', '_blank')" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-emerald-50 px-2 rounded-xl transition text-emerald-700">
-                            <span class="text-xs font-extrabold flex items-center gap-2.5"><i class="fa-brands fa-whatsapp text-emerald-600 text-base w-5"></i> Suporte WhatsApp: (11) 94461-4162</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-emerald-400"></i>
-                        </button>
-                        <button onclick="showCustomModal('Privacidade & LGPD', 'Seus dados estão protegidos em conformidade com a Lei Geral de Proteção de Dados.', 'fa-shield-halved', 'lime')" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-slate-50 px-2 rounded-xl transition">
-                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2.5"><i class="fa-solid fa-shield-halved text-slate-400 text-sm w-5"></i> Privacidade & LGPD</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-                        </button>
-                        <button onclick="logoutApp()" class="w-full py-3.5 flex items-center justify-between text-left hover:bg-rose-50 px-2 rounded-xl transition text-rose-600">
-                            <span class="text-xs font-bold flex items-center gap-2.5"><i class="fa-solid fa-power-off text-sm w-5"></i> Sair da conta</span>
-                            <i class="fa-solid fa-chevron-right text-xs text-rose-400"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- ================= MODO COMERCIAL / MAPA GEOGRÁFICO REAL ================= -->
-            <div id="view-commercial" class="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto hidden">
-                <div class="flex gap-3">
-                    <button onclick="showToast('Filtro aplicado: Carga Lenta (AC)')" class="flex-1 py-3 px-4 rounded-2xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-2 shadow">
-                        <i class="fa-solid fa-bolt text-lime-400"></i> Carga Lenta (AC)
-                    </button>
-                    <button onclick="showToast('Filtro aplicado: Carga Rápida (DC)')" class="flex-1 py-3 px-4 rounded-2xl bg-white text-slate-700 border border-slate-200 text-xs font-bold flex items-center justify-center gap-2 shadow-sm hover:bg-slate-50">
-                        <i class="fa-solid fa-bolt-lightning text-lime-600"></i> Carga Rápida (DC)
-                    </button>
-                </div>
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-extrabold uppercase text-slate-500 tracking-wider flex items-center gap-2">
-                            <i class="fa-solid fa-map-location-dot text-lime-600"></i> Mapa Regional • Jundiaí, Campinas, Cajamar & Rodovias
-                        </h2>
-                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> GPS Ativo
-                        </span>
-                    </div>
-                    <div id="leaflet-map" class="relative w-full h-[420px] rounded-2xl overflow-hidden border border-slate-300 shadow-inner z-10"></div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase inline-block">Ultrarrápida DC 150kW (CCS2)</span>
-                        <h3 class="font-extrabold text-slate-900 text-base">Posto Ipiranga • Av. Reynaldo Porcari</h3>
-                        <p class="text-xs text-slate-500">Medeiros, Jundiaí - SP • 1.8 km</p>
-                        <button onclick="startCommercialCharging('Posto Ipiranga Medeiros')" class="w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-slate-900 text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-qrcode"></i> Carregar Aqui (QR Code / RFID)
-                        </button>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                        <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase inline-block">Recarga Rápida AC 22kW (Type-2)</span>
-                        <h3 class="font-extrabold text-slate-900 text-base">Auto Posto Campinas • Rod. Dom Pedro</h3>
-                        <p class="text-xs text-slate-500">Campinas - SP • 28 km</p>
-                        <button onclick="startCommercialCharging('Auto Posto Campinas')" class="w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-slate-900 text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-qrcode"></i> Carregar Aqui (QR Code / RFID)
-                        </button>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                        <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase inline-block">Recarga DC 50kW (CCS2)</span>
-                        <h3 class="font-extrabold text-slate-900 text-base">Shell Posto Fazgran • Rodovia</h3>
-                        <p class="text-xs text-slate-500">Rodovia Anhanguera (Cajamar) • 8.2 km</p>
-                        <button onclick="startCommercialCharging('Shell Rodovia Anhanguera (Cajamar)')" class="w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-slate-900 text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-qrcode"></i> Carregar Aqui (QR Code / RFID)
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
-        <!-- Bottom Navigation Bar -->
-        <nav class="bg-white border-t border-slate-200 py-2.5 px-4 flex justify-around items-center shrink-0 z-30 fixed bottom-0 left-0 right-0 max-w-7xl mx-auto lg:relative lg:rounded-b-3xl">
-            <button onclick="switchTab('stations')" class="nav-btn flex flex-col items-center text-lime-600 transition" data-tab="stations">
-                <i class="fa-solid fa-charging-station text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">Estações</span>
-            </button>
-            <button onclick="switchTab('wallet')" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-700 transition" data-tab="wallet">
-                <i class="fa-solid fa-wallet text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">Extrato</span>
-            </button>
-            <button onclick="switchTab('vehicles')" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-700 transition" data-tab="vehicles">
-                <i class="fa-solid fa-car text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">Veículos</span>
-            </button>
-            <button onclick="switchTab('tips')" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-700 transition" data-tab="tips">
-                <i class="fa-solid fa-lightbulb text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">Dicas</span>
-            </button>
-            <button onclick="switchTab('profile')" class="nav-btn flex flex-col items-center text-slate-400 hover:text-slate-700 transition" data-tab="profile">
-                <i class="fa-solid fa-user-gear text-lg"></i>
-                <span class="text-[10px] font-bold mt-0.5">Perfil</span>
-            </button>
-        </nav>
-    </div>
-    <!-- CUSTOM MODAL -->
-    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100 text-center">
-            <div id="modalIconContainer" class="w-16 h-16 rounded-2xl bg-lime-50 text-lime-600 text-2xl flex items-center justify-center mx-auto shadow-inner">
-                <i id="modalIcon" class="fa-solid fa-bolt"></i>
-            </div>
-            <h3 id="modalTitle" class="text-lg font-extrabold text-slate-900">Aviso VoltCore</h3>
-            <div id="modalDesc" class="text-xs text-slate-600 font-medium text-left space-y-2 max-h-64 overflow-y-auto">Mensagem do sistema.</div>
-            <div class="flex gap-2 pt-2" id="modalActions">
-                <button onclick="closeModal()" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition">OK, ENTENDIDO</button>
-            </div>
-        </div>
-    </div>
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-16 right-4 sm:bottom-6 sm:right-6 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 border border-slate-700">
-        <i class="fa-solid fa-circle-check text-lime-400 text-lg"></i>
-        <div>
-            <h4 class="text-xs font-bold">VoltCore Notificação</h4>
-            <p id="toast-msg" class="text-xs text-slate-300">Ação realizada com sucesso.</p>
-        </div>
-    </div>
-    <!-- JAVASCRIPT LOGIC + SUPABASE INTEGRATION -->
-    <script>
-        const SUPABASE_URL = 'https://eoqfuawvljotvyfrcbj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
-        let supabaseClient = null;
-        if (window.supabase && SUPABASE_URL) {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-        
-        let stations = [];
-
-        window.onload = function() {
-            carregarEstacoesDoBanco();
-            setInterval(updateTimersAndLoad, 1000);
-        };
-
-        async function carregarEstacoesDoBanco() {
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient.from('stations').select('*');
-                    if (data && data.length > 0) {
-                        stations = data;
-                    } else {
-                        inicializarEstacoesLocais();
-                    }
-                } catch (e) {
-                    inicializarEstacoesLocais();
-                }
-            } else {
-                inicializarEstacoesLocais();
-            }
-            renderStations();
-        }
-
-        function inicializarEstacoesLocais() {
-            stations = [
-                { id: 1, name: 'BOX 01 / SUBSOLO 02', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Reservado', user: 'Wanderson Silva', kwh: 0, cost: 0, timer: 15 },
-                { id: 2, name: 'BOX 02 / SUBSOLO 01', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector CCS2 (7.4 kW)', status: 'Em Uso', user: 'Jose Bronzeri', kwh: 5.2, cost: 6.24, timer: 2538 },
-                { id: 3, name: 'BOX 03 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 4, name: 'BOX 04 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector CCS2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 5, name: 'BOX 05 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 6, name: 'BOX 101 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 7, name: 'BOX 102 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 8, name: 'BOX 103 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (11 kW)', status: 'Em Uso', user: 'Carlos Mendes', kwh: 18.5, cost: 22.20, timer: 3100 },
-                { id: 9, name: 'BOX 104 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector CCS2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 10, name: 'BOX 105 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (7.4 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 11, name: 'BOX A-01 / SUBSOLO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 12, name: 'BOX A-02 / SUBSOLO', condo: 'Complexo Atmosfera Residencial', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 13, name: 'BOX A-03 / TÉRREO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (22 kW)', status: 'Em Uso', user: 'Marcos Lima', kwh: 22.1, cost: 26.52, timer: 1890 },
-                { id: 14, name: 'BOX A-04 / TÉRREO', condo: 'Complexo Atmosfera Residencial', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 15, name: 'BOX A-05 / TÉRREO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 16, name: 'BOX B-12 / TÉRREO', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (7.4 kW)', status: 'Em Uso', user: 'Ana Souza', kwh: 12.4, cost: 14.88, timer: 1420 },
-                { id: 17, name: 'BOX B-14 / TÉRREO', condo: 'Belarte Residencial Jundiaí', type: 'Conector CCS2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 18, name: 'BOX B-15 / SUBSOLO', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 19, name: 'BOX B-16 / SUBSOLO', condo: 'Belarte Residencial Jundiaí', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
-                { id: 20, name: 'BOX B-17 / TÉRREO', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 }
-            ];
-        }
-
-        let currentFilter = 'all';
-        let mapInitialized = false;
-        let leafletMap = null;
-
-        function alternarModoEmail() {
-            const form = document.getElementById('auth-email-form');
-            form.classList.toggle('hidden');
-        }
-
-        function realizarLogin() {
-            document.getElementById('screen-auth').classList.add('hidden');
-            document.getElementById('screen-app').classList.remove('hidden');
-            showToast('Bem-vindo ao VoltCore PRO, Wanderson!');
-        }
-
-        function logoutApp() {
-            document.getElementById('screen-auth').classList.remove('hidden');
-            document.getElementById('screen-app').classList.add('hidden');
-        }
-
-        function switchMode(mode) {
-            const btnCondo = document.getElementById('btn-mode-condo');
-            const btnCom = document.getElementById('btn-mode-com');
-            const viewCondo = document.getElementById('tab-stations');
-            const viewCom = document.getElementById('view-commercial');
-            const condoBar = document.getElementById('sticky-condo-bar');
-            if (mode === 'condo') {
-                btnCondo.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-900 text-white transition shadow-sm";
-                btnCom.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
-                viewCondo.classList.remove('hidden');
-                viewCom.classList.add('hidden');
-                condoBar.classList.remove('hidden');
-            } else {
-                btnCom.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-900 text-white transition shadow-sm";
-                btnCondo.className = "flex-1 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
-                viewCom.classList.remove('hidden');
-                viewCondo.classList.add('hidden');
-                condoBar.classList.add('hidden');
-                setTimeout(() => {
-                    initLeafletMap();
-                }, 200);
-            }
-        }
-
-        function initLeafletMap() {
-            if (mapInitialized && leafletMap) {
-                leafletMap.invalidateSize();
-                return;
-            }
-            leafletMap = L.map('leaflet-map').setView([-23.1857, -46.9755], 11);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(leafletMap);
-            const postos = [
-                { name: "Posto Ipiranga • Av. Reynaldo Porcari", address: "Av. Reynaldo Porcari, 2100 - Medeiros, Jundiaí/SP", hours: "24 horas", plugs: "Ultrarrápida CCS2 (150kW)", coords: [-23.1920, -46.9680] },
-                { name: "Auto Posto Campinas • Rod. Dom Pedro", address: "Rod. Dom Pedro I, Km 134 - Campinas/SP", hours: "06h às 22h", plugs: "Rápida Type-2 (22kW)", coords: [-22.9056, -47.0608] },
-                { name: "Eletroposto Itatiba Central", address: "Praça da Bandeira, 88 - Centro, Itatiba/SP", hours: "24 horas", plugs: "Rápida CCS2 (50kW)", coords: [-23.0075, -46.8411] },
-                { name: "Shell Rodovia Anhanguera (Cajamar)", address: "Rodovia Anhanguera, Km 38 - Cajamar/SP", hours: "24 horas", plugs: "Ultrarrápida CCS2 (50kW)", coords: [-23.3550, -46.8770] }
-            ];
-            postos.forEach(p => {
-                const customIcon = L.divIcon({
-                    className: 'custom-map-pin',
-                    html: `<div style="background: #8cc63f; color: #1e293b; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 2px solid #ffffff;"><i class="fa-solid fa-bolt text-xs"></i></div>`,
-                    iconSize: [34, 34],
-                    iconAnchor: [17, 17]
-                });
-                const popupHtml = `
-                    <div style="font-family: 'Inter', sans-serif; width: 220px;">
-                        <h4 style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px;">${p.name}</h4>
-                        <p style="font-size: 11px; color: #475569; margin-bottom: 6px;"><i class="fa-solid fa-location-dot" style="color: #8cc63f;"></i> ${p.address}</p>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 2px;"><strong>Status:</strong> <span style="color: #10b981; font-weight: bold;">● Disponível</span></div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 2px;"><strong>Horários:</strong> ${p.hours}</div>
-                        <div style="font-size: 11px; color: #334155; margin-bottom: 8px;"><strong>Plugs:</strong> <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 6px; font-weight: bold; color: #475569;">${p.plugs}</span></div>
-                        <div style="display: flex; gap: 4px;">
-                            <button onclick="startCommercialCharging('${p.name}')" style="flex: 1; background: #8cc63f; color: #1e293b; border: none; padding: 6px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer;"><i class="fa-solid fa-bolt"></i> Carregar</button>
-                            <button onclick="showToast('Traçando rota para ${p.name}...');" style="flex: 1; background: #0f172a; color: #ffffff; border: none; padding: 6px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer;"><i class="fa-solid fa-route"></i> Rota</button>
-                        </div>
-                    </div>
-                `;
-                L.marker(p.coords, { icon: customIcon }).addTo(leafletMap).bindPopup(popupHtml);
-            });
-            mapInitialized = true;
-        }
-        function mudarCondominio() {
-            const select = document.getElementById('select-condo');
-            document.getElementById('header-context-label').innerText = `Soluções de Recarga • ${select.value}`;
-            renderStations();
-            showToast(`Alternado para ${select.value}`);
-        }
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById('tab-' + tabId);
-            if (target) target.classList.remove('hidden');
-            document.getElementById('view-commercial').classList.add('hidden');
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-lime-600');
-                btn.classList.add('text-slate-400');
-                if(btn.dataset.tab === tabId) {
-                    btn.classList.remove('text-slate-400');
-                    btn.classList.add('text-lime-600');
-                }
-            });
-        }
-        function setFilter(status) {
-            currentFilter = status;
-            renderStations();
-        }
-        function renderStations() {
-            const grid = document.getElementById('stations-grid');
-            if(!grid) return;
-            grid.innerHTML = '';
-            let livre = 0, reservado = 0, carregando = 0;
-            const currentCondo = document.getElementById('select-condo') ? document.getElementById('select-condo').value : 'Condomínio Gioviale • Torre Sul';
-            const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
-            stations.forEach(st => {
-                if (st.condo !== currentCondo) return;
-                if (st.status === 'Disponível') livre++;
-                if (st.status === 'Reservado') reservado++;
-                if (st.status === 'Em Uso') carregando++;
-                if (currentFilter !== 'all' && st.status !== currentFilter) return;
-                if (searchTerm && !st.name.toLowerCase().includes(searchTerm)) return;
-                let badge = '', content = '', btn = '';
-                if (st.status === 'Disponível') {
-                    badge = `<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-200 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> DISPONÍVEL</span>`;
-                    content = `<div class="my-4 bg-slate-50 border border-slate-200/80 p-3 rounded-xl text-xs text-slate-600 flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-500 text-base"></i><span>Conecte o plugue antes de iniciar. Reserve por 15 min ou inicie direto.</span></div>`;
-                    btn = `<div class="flex gap-2"><button onclick="reserveSpot(${st.id})" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-2 rounded-xl text-xs transition flex items-center justify-center gap-1"><i class="fa-solid fa-bookmark"></i> Reservar</button><button onclick="startCharging(${st.id})" class="w-1/2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-2.5 px-2 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm"><i class="fa-solid fa-bolt"></i> Carregar</button></div>`;
-                } else if (st.status === 'Reservado') {
-                    badge = `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> RESERVADO (15 MIN)</span>`;
-                    content = `<div class="my-4 bg-slate-50 border border-slate-200/80 p-3 rounded-xl text-xs text-slate-600 space-y-1"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user}</strong></p></div>`;
-                    btn = `<div class="flex gap-2"><button onclick="startCharging(${st.id})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs"><i class="fa-solid fa-bolt"></i> INICIAR RECARGA</button><button onclick="cancelReservation(${st.id})" class="bg-slate-100 hover:bg-rose-50 text-slate-600 font-bold py-3 px-3 rounded-xl border border-slate-200 text-xs" title="Cancelar Reserva"><i class="fa-solid fa-xmark"></i></button></div>`;
-                } else {
-                    badge = `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> EM RECARGA</span>`;
-                    content = `<div class="my-4 bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl space-y-2"><div class="flex justify-between items-center text-xs"><span class="font-bold text-slate-700">Consumo:</span> <span class="font-extrabold text-emerald-700 text-sm">${st.kwh.toFixed(2)} kWh</span></div><div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden"><div class="bg-emerald-500 h-2.5 rounded-full animate-pulse" style="width: 75%"></div></div></div>`;
-                    btn = `<button onclick="stopCharging(${st.id})" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs"><i class="fa-solid fa-hand"></i> FINALIZAR RECARGA</button>`;
-                }
-                const card = document.createElement('article');
-                card.className = `bg-white rounded-2xl border-2 ${st.status === 'Reservado' ? 'border-amber-300' : st.status === 'Em Uso' ? 'border-emerald-400' : 'border-slate-200'} p-5 shadow-sm relative overflow-hidden transition`;
-                card.innerHTML = `
-                    <div class="flex items-start justify-between border-b border-slate-100 pb-3">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">${badge}</div>
-                            <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">${st.name}</h3>
-                            <p class="text-xs text-slate-500">${st.type}</p>
-                        </div>
-                        <div class="text-right bg-slate-50 border border-slate-100 p-2.5 rounded-xl">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Tempo</p>
-                            <p id="timer-${st.id}" class="text-lg font-black text-slate-800">${formatTimer(st.timer)}</p>
-                        </div>
-                    </div>
-                    ${content}
-                    ${btn}
-                `;
-                grid.appendChild(card);
-            });
-            if(document.getElementById('stat-livre')) document.getElementById('stat-livre').innerText = livre;
-            if(document.getElementById('stat-reservado')) document.getElementById('stat-reservado').innerText = reservado;
-            if(document.getElementById('stat-carregando')) document.getElementById('stat-carregando').innerText = carregando;
-        }
-        function formatTimer(sec) {
-            if (sec <= 0) return "00:00";
-            const m = Math.floor(sec / 60).toString().padStart(2, '0');
-            const s = (sec % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-        function updateTimersAndLoad() {
-            stations.forEach(st => {
-                if (st.status === 'Reservado') {
-                    if (st.timer > 0) {
-                        st.timer--;
-                    } else {
-                        st.status = 'Disponível';
-                        st.user = null;
-                        st.timer = 0;
-                        showToast(`Reserva expirada (tolerância esgotada). Vaga liberada.`);
-                    }
-                }
-                if (st.status === 'Em Uso') {
-                    st.timer++;
-                    st.kwh += 0.005;
-                }
-            });
-            renderStations();
-        }
-        function reserveSpot(id) {
-            const st = stations.find(s => s.id === id);
-            st.status = 'Reservado';
-            st.user = 'Wanderson Silva';
-            st.timer = 900;
-            renderStations();
-            showToast(`Vaga ${st.name} reservada por 15 minutos!`);
-        }
-        async function startCharging(id) {
-            const st = stations.find(s => s.id === id);
-            st.status = 'Em Uso';
-            st.timer = 0;
-            st.kwh = 1.0;
-            renderStations();
-            showToast(`Recarga iniciada via protocolo OCPP na ${st.name}!`);
-            if (supabaseClient) {
-                await supabaseClient.from('stations').update({ status: 'Em Uso', kwh: 1.0, user: 'Wanderson Silva' }).eq('id', id);
-            }
-        }
-        async function stopCharging(id) {
-            const st = stations.find(s => s.id === id);
-            st.status = 'Disponível';
-            st.user = null;
-            st.kwh = 0;
-            renderStations();
-            showToast(`Sessão finalizada. Notificação enviada ao morador.`);
-            if (supabaseClient) {
-                await supabaseClient.from('stations').update({ status: 'Disponível', kwh: 0, user: null }).eq('id', id);
-            }
-        }
-        async function cancelReservation(id) {
-            const st = stations.find(s => s.id === id);
-            st.status = 'Disponível';
-            st.user = null;
-            st.timer = 0;
-            renderStations();
-            showToast(`Reserva cancelada.`);
-            if (supabaseClient) {
-                await supabaseClient.from('stations').update({ status: 'Disponível', user: null }).eq('id', id);
-            }
-        }
-        function startCommercialCharging(postoName) {
-            showCustomModal('Recarga OCPP Iniciada', `QR Code / RFID validado com sucesso no ${postoName}! Comunicação OCPP estabelecida e energia liberada.`, 'fa-bolt', 'emerald');
-        }
-        function abrirPainelGestao() {
-            const conteudoGestao = `
-                <div class="space-y-4 text-left">
-                    <div class="p-3 bg-slate-900 text-white rounded-xl">
-                        <h4 class="font-extrabold text-sm text-lime-400"><i class="fa-solid fa-building-shield mr-1.5"></i> Painel de Gestão (/adm)</h4>
-                        <p class="text-xs text-slate-300 mt-1">Síndicos, Gestores Prediais e Administradoras • Controle de ociosidade, taxas e repasses.</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[10px] font-bold text-slate-500 uppercase">Carregadores Ativos</span>
-                            <span class="text-lg font-black text-slate-900">20 Boxes (4 Condomínios)</span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[10px] font-bold text-slate-500 uppercase">Receita Ociosidade Mês</span>
-                            <span class="text-lg font-black text-emerald-600">R$ 412,50</span>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <h5 class="text-xs font-bold text-slate-800 uppercase">Alertas de Ociosidade (> 15 min após 100%)</h5>
-                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
-                            <div>
-                                <strong class="text-amber-900 block">BOX 02 / SUBSOLO 01 (Gioviale)</strong>
-                                <span class="text-amber-700">Condômino: Jose Bronzeri • 42 min ocioso</span>
-                            </div>
-                            <span class="font-extrabold text-amber-900">Taxa: R$ 10,50</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            showCustomModal('Área de Gestão • Síndicos & Administradoras', conteudoGestao, 'fa-building-shield', 'lime');
-        }
-        function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalDesc').innerHTML = htmlContent;
-            document.getElementById('customModal').classList.remove('hidden');
-        }
-        function closeModal() {
-            document.getElementById('customModal').classList.add('hidden');
-        }
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-        function filterStations() {
-            renderStations();
-        }
-    </script>
-</body>
->>>>>>> 53ae6a205c31e8586233b09664d9e0bfe456f5cb
 </html>
