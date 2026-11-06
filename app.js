@@ -1,6 +1,7 @@
 const SUPABASE_URL = 'https://eoqfuawvljvotvyfrcbj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
 let supabaseClient = null;
+
 if (window.supabase && SUPABASE_URL) {
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
@@ -148,7 +149,14 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
+<<<<<<< HEAD
             <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
+=======
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> está comprometida com a proteção da privacidade e dos dados pessoais de seus usuários em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018) e normas técnicas ABNT aplicáveis.</p>
+            <p class="text-slate-600"><strong>1. Coleta de Dados:</strong> Coletamos dados cadastrais (nome, e-mail, telefone, unidade residencial e veículos cadastrados) estritamente necessários para a gestão de recargas, controle de ociosidade e prestação de contas aos condomínios.</p>
+            <p class="text-slate-600"><strong>2. Segurança da Informação:</strong> Seus dados de transações e acesso são armazenados em ambiente seguro com criptografia avançada e protocolos de auditoria ativa (SDI).</p>
+            <p class="text-slate-600"><strong>3. Direitos do Titular:</strong> O usuário pode solicitar a qualquer momento a atualização ou exclusão de seus dados diretamente através do suporte técnico autorizado.</p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
         </div>
     `;
@@ -167,7 +175,11 @@ function abrirLeitorQrCodeCamera() {
             </div>
             <p class="text-[10px] text-slate-500">Câmera ativa para comando remoto via OCPP.</p>
             <div class="flex gap-2">
+<<<<<<< HEAD
                 <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR COMANDO OCPP</button>
+=======
+                <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR LEITURA</button>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 <button onclick="closeModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR</button>
             </div>
         </div>
@@ -190,8 +202,13 @@ function simularLeituraQrSucesso() {
     showCustomModal('Comando OCPP RemoteStartTransaction Enviado', `
         <div class="space-y-2 text-center">
             <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-lg mx-auto"><i class="fa-solid fa-bolt"></i></div>
+<<<<<<< HEAD
             <h4 class="font-bold text-slate-900 text-xs">Comando Aceito pelo Eletroposto!</h4>
             <p class="text-[10px] text-slate-600">O backend OCPP despachou o pulso de liberação para o conector. Sessão iniciada com sucesso.</p>
+=======
+            <h4 class="font-bold text-slate-900 text-xs">Dispositivo Validado com Sucesso!</h4>
+            <p class="text-[10px] text-slate-600">Comunicação estabelecida com o eletroposto. O veículo está pronto para carregar com total segurança.</p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             <button onclick="closeModal(); switchTab('stations');" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-1 cursor-pointer pointer-events-auto">VER PAINEL DE CARGA</button>
         </div>
     `, 'fa-bolt', 'emerald');
@@ -210,7 +227,11 @@ function abrirPlanejarViagem() {
                 <input type="number" id="input-autonomia-viagem" value="80" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div id="resultado-calculo-viagem" class="hidden p-3 bg-lime-50 rounded-xl border border-lime-200 space-y-1">
+<<<<<<< HEAD
                 <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada OCPP VoltCore:</p>
+=======
+                <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada VoltCore:</p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 <p id="texto-rota-calculada" class="text-[10px] text-lime-700 font-medium"></p>
             </div>
             <button onclick="executarPlanejamentoViagem()" class="w-full bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS & PARADAS</button>
@@ -349,6 +370,7 @@ function confirmarAdicionarVeiculo() {
 
 function abrirModalDeposito() {
     const htmlDep = `
+<<<<<<< HEAD
         <div class="space-y-3 text-left">
             <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para adicionar saldo à carteira VoltCore Pay:</p>
             <div>
@@ -367,6 +389,12 @@ function abrirModalDeposito() {
                     </button>
                 </div>
             </div>
+=======
+        <div class="space-y-2 text-left">
+            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para adicionar à carteira via PIX / Cartão:</p>
+            <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 0,00" value="R$ 0,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
+            <button onclick="confirmarDepositoPix()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">GERAR PIX (COPIA E COLA)</button>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
         </div>
     `;
     showCustomModal('Adicionar Saldo • Mercado Pago Produção', htmlDep, 'fa-wallet', 'lime');
@@ -448,6 +476,7 @@ function abrirModalCartaoCheckout() {
                 </div>
                 <i class="fa-solid fa-shield-halved text-lime-400 text-lg"></i>
             </div>
+<<<<<<< HEAD
             
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Número do Cartão:</label>
@@ -476,6 +505,10 @@ function abrirModalCartaoCheckout() {
             </div>
 
             <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">PROCESSAR PAGAMENTO COM CARTÃO</button>
+=======
+            <p class="text-[10px] text-slate-600">Escaneie o QR Code no seu banco ou clique no botão abaixo para confirmar o crédito imediato de R$ ${valor.toFixed(2).replace('.', ',')}.</p>
+            <button onclick="finalizarCreditoPix(${valor})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR PAGAMENTO PIX</button>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
         </div>
     `;
     showCustomModal('Checkout Transparente • Cartão', htmlCartao, 'fa-credit-card', 'lime');
@@ -599,7 +632,9 @@ function removerVeiculo(index) {
     showToast('Veículo removido com sucesso!');
 }
 
+// ----------------- INTEGRAÇÃO SÓLIDA COM SUPABASE & REALTIME -----------------
 async function carregarEstacoesDoBanco() {
+<<<<<<< HEAD
     if (supabaseClient) {
         try {
             const { data, error } = await supabaseClient.from('pontos_recarga').select('*').order('id_ponto', { ascending: true });
@@ -638,10 +673,69 @@ async function carregarEstacoesDoBanco() {
         }
     }
     carregarOuInicializarEstacoes();
+=======
+    if (!supabaseClient) {
+        carregarFallbackLocal();
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient.from('stations').select('*').order('id', { ascending: true });
+        if (error || !data || data.length === 0) {
+            carregarFallbackLocal();
+            await sincronizarEstadoInicialSupabase();
+        } else {
+            stations = data;
+            renderStations();
+            renderCommercialStations();
+        }
+    } catch (err) {
+        console.error('Erro ao conectar Supabase, usando cache local:', err);
+        carregarFallbackLocal();
+    }
+
+    // Ativar WebSocket Realtime para sincronização instantânea entre computador e celular
+    if (supabaseClient && !window.supabaseRealtimeIniciado) {
+        window.supabaseRealtimeIniciado = true;
+        supabaseClient
+            .channel('public:stations')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'stations' }, payload => {
+                console.log('🔄 Sincronização em tempo real recebida:', payload);
+                carregarEstacoesDoBanco();
+            })
+            .subscribe();
+    }
+}
+
+async function sincronizarEstadoInicialSupabase() {
+    if (!supabaseClient) return;
+    for (const st of stations) {
+        await supabaseClient.from('stations').upsert([st]);
+    }
+}
+
+function carregarFallbackLocal() {
+    const saved = localStorage.getItem('voltcore_stations_v2');
+    if (saved) {
+        try { stations = JSON.parse(saved); } catch(e){}
+    } else {
+        stations = [
+            { id: 1, name: 'VAGA 01 / 2º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 2, name: 'VAGA 02 / 1º SUBSOLO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector CCS2 (7.4 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 3, name: 'VAGA 03 / TÉRREO', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 4, name: 'VAGA 01 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector CCS2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 5, name: 'VAGA 02 / TORRE NORTE', condo: 'Condomínio Gioviale • Torre Norte', type: 'Conector Type-2 (11 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 6, name: 'VAGA ATM-01 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector CCS2 (50 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 7, name: 'VAGA ATM-02 / COMPLEXO', condo: 'Complexo Atmosfera Residencial', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 },
+            { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 0, timer: 0 }
+        ];
+    }
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     renderStations();
     renderCommercialStations();
 }
 
+<<<<<<< HEAD
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
@@ -699,6 +793,14 @@ function carregarOuInicializarEstacoes() {
 
 function salvarEstacoesLocalStorage() {
     localStorage.setItem('voltcore_stations_v5_ocpp', JSON.stringify(stations));
+=======
+async function persistirEstacaoServidor(st) {
+    localStorage.setItem('voltcore_stations_v2', JSON.stringify(stations));
+    if (supabaseClient) {
+        const { error } = await supabaseClient.from('stations').upsert([st]);
+        if (error) console.error('Erro ao atualizar estação no Supabase:', error);
+    }
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
 }
 
 let mapInitialized = false;
@@ -850,7 +952,11 @@ function abrirFiltrosAvancadosComercial() {
             <div class="space-y-1.5">
                 <button onclick="filtrarMapaComercial('DC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Rápida DC (50kW a 150kW)</button>
                 <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Lenta AC (22kW)</button>
+<<<<<<< HEAD
                 <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos OCPP</button>
+=======
+                <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos (Verde AC + Azul DC)</button>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             </div>
         </div>
     `;
@@ -1043,6 +1149,7 @@ function renderStations() {
     const selectCondo = document.getElementById('select-condo');
     const currentCondo = selectCondo ? selectCondo.value : 'Condomínio Gioviale • Torre Sul';
     
+<<<<<<< HEAD
     if (!stations || stations.length === 0) {
         carregarOuInicializarEstacoes();
     }
@@ -1056,6 +1163,10 @@ function renderStations() {
             btnTodasEl.classList.add('hidden');
             btnTodasEl.style.display = 'none';
         }
+=======
+    if (stations.length === 0) {
+        carregarFallbackLocal();
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     }
 
     stations.forEach(st => {
@@ -1072,11 +1183,19 @@ function renderStations() {
             content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600 flex items-center justify-between"><span>ID: <strong>${st.ocppId}</strong></span><span class="text-emerald-700 font-bold"><i class="fa-solid fa-microchip"></i> Conectado</span></div>`;
             btn = `<div class="flex gap-1.5"><button onclick="reserveSpot(${st.id})" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><i class="fa-solid fa-bookmark"></i> Reservar</button><button onclick="abrirLeitorQrCodeCamera()" class="w-1/2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 shadow-xs cursor-pointer pointer-events-auto"><i class="fa-solid fa-qrcode"></i> Ler QR</button></div>`;
         } else if (st.status === 'Reservado') {
+<<<<<<< HEAD
             badge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> RESERVADO (OCPP)</span>`;
             content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user || 'Morador'}</strong></p></div>`;
             btn = `<div class="flex gap-1.5"><button onclick="startCharging(${st.id})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-bolt"></i> INICIAR RECARGA</button><button onclick="cancelReservation(${st.id})" class="bg-slate-100 hover:bg-rose-50 text-slate-600 font-bold py-2 px-2 rounded-lg border border-slate-200 text-xs cursor-pointer pointer-events-auto" title="Cancelar"><i class="fa-solid fa-xmark"></i></button></div>`;
         } else {
             badge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> RECARGA OCPP ATIVA</span>`;
+=======
+            badge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> RESERVADO (15 MIN)</span>`;
+            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user || userData.name}</strong></p></div>`;
+            btn = `<div class="flex gap-1.5"><button onclick="startCharging(${st.id})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-bolt"></i> INICIAR RECARGA</button><button onclick="cancelReservation(${st.id})" class="bg-slate-100 hover:bg-rose-50 text-slate-600 font-bold py-2 px-2 rounded-lg border border-slate-200 text-xs cursor-pointer pointer-events-auto" title="Cancelar"><i class="fa-solid fa-xmark"></i></button></div>`;
+        } else {
+            badge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> EM RECARGA</span>`;
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg space-y-1"><div class="flex justify-between items-center text-[11px]"><span class="font-bold text-slate-700">Consumo:</span> <span class="font-extrabold text-emerald-700 text-xs">${(st.kwh || 0).toFixed(2)} kWh</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-emerald-500 h-1.5 rounded-full animate-pulse" style="width: 75%"></div></div></div>`;
             btn = `<button onclick="stopCharging(${st.id})" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-hand"></i> FINALIZAR RECARGA</button>`;
         }
@@ -1092,7 +1211,11 @@ function renderStations() {
                 </div>
                 <div class="text-right bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg">
                     <p class="text-[7px] font-bold text-slate-400 uppercase leading-none mb-0.5">Tempo (h:m:s)</p>
+<<<<<<< HEAD
                     <p class="text-[11px] font-black text-slate-800">${formatTimer(st, st.timer || 0)}</p>
+=======
+                    <p id="timer-${st.id}" class="text-[11px] font-black text-slate-800">${formatTimer(st.timer || 0)}</p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 </div>
             </div>
             ${content}
@@ -1130,6 +1253,7 @@ function updateTimersAndLoad() {
     let houveMudanca = false;
     stations.forEach(st => {
         if (st.status === 'Reservado') {
+<<<<<<< HEAD
             if (st.expiracao_reserva) {
                 const agora = new Date().getTime();
                 const expiracao = new Date(st.expiracao_reserva).getTime();
@@ -1184,11 +1308,33 @@ function updateTimersAndLoad() {
         if (currentMode === 'condo') {
             renderStations();
         }
+=======
+            if (st.timer > 0) { 
+                st.timer--; 
+                houveMudanca = true;
+            } else { 
+                st.status = 'Disponível'; 
+                st.user = null; 
+                st.timer = 0; 
+                houveMudanca = true;
+                persistirEstacaoServidor(st);
+            }
+        }
+        if (st.status === 'Em Uso') {
+            st.timer = (st.timer || 0) + 1;
+            st.kwh = (st.kwh || 0) + 0.0035;
+            houveMudanca = true;
+        }
+    });
+    if (houveMudanca) {
+        renderStations();
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     }
 }
 
 async function reserveSpot(id) {
     const st = stations.find(s => s.id === id);
+<<<<<<< HEAD
     if (!st || st.status !== 'Disponível') {
         showToast('Esta vaga não está mais disponível.');
         await carregarEstacoesDoBanco();
@@ -1205,6 +1351,13 @@ async function reserveSpot(id) {
     st.expiracao_reserva = expiracao.toISOString();
     
     salvarEstacoesLocalStorage();
+=======
+    if(!st) return;
+    st.status = 'Reservado';
+    st.user = userData.name;
+    st.timer = 900;
+    await persistirEstacaoServidor(st);
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     renderStations();
     showToast(`Vaga ${st.name} reservada via OCPP!`);
     await sincronizarEstacaoNoSupabase(st);
@@ -1212,16 +1365,24 @@ async function reserveSpot(id) {
 
 async function startCharging(id) {
     const st = stations.find(s => s.id === id);
+<<<<<<< HEAD
     if (!st) return;
 
+=======
+    if(!st) return;
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     st.status = 'Em Uso';
     st.user = userData.name;
     st.inicio_recarga = new Date().toISOString();
     st.timer = 0;
     st.kwh = 1.0;
+<<<<<<< HEAD
     st.expiracao_reserva = null;
     
     salvarEstacoesLocalStorage();
+=======
+    await persistirEstacaoServidor(st);
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     renderStations();
     showToast(`Transação OCPP RemoteStart enviada para ${st.name}!`);
     await sincronizarEstacaoNoSupabase(st);
@@ -1229,7 +1390,11 @@ async function startCharging(id) {
 
 async function stopCharging(id) {
     const st = stations.find(s => s.id === id);
+<<<<<<< HEAD
     if (!st) return;
+=======
+    if(!st) return;
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     const kWhConsumidos = st.kwh > 0 ? st.kwh : 14.2;
     const custoTotal = (kWhConsumidos * 1.18) + 2.20;
 
@@ -1255,9 +1420,13 @@ async function stopCharging(id) {
     st.user = null;
     st.kwh = 0;
     st.timer = 0;
+<<<<<<< HEAD
     st.inicio_recarga = null;
     st.expiracao_reserva = null;
     salvarEstacoesLocalStorage();
+=======
+    await persistirEstacaoServidor(st);
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     renderStations();
     await sincronizarEstacaoNoSupabase(st);
     
@@ -1266,6 +1435,7 @@ async function stopCharging(id) {
 
 async function cancelReservation(id) {
     const st = stations.find(s => s.id === id);
+<<<<<<< HEAD
     if (!st) return;
     st.status = 'Disponível';
     st.user = null;
@@ -1273,6 +1443,13 @@ async function cancelReservation(id) {
     st.inicio_recarga = null;
     st.expiracao_reserva = null;
     salvarEstacoesLocalStorage();
+=======
+    if(!st) return;
+    st.status = 'Disponível';
+    st.user = null;
+    st.timer = 0;
+    await persistirEstacaoServidor(st);
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
     renderStations();
     await sincronizarEstacaoNoSupabase(st);
     showToast(`Reserva OCPP cancelada.`);
@@ -1288,7 +1465,11 @@ function abrirPainelGestao() {
                     <div>
                         <strong class="text-slate-900 text-sm font-extrabold">${m.nome}</strong> 
                         <span class="text-slate-500 font-medium ml-1">(${m.vaga} - ${m.unidade || 'Apto'})</span>
+<<<<<<< HEAD
                         <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-microchip text-lime-600 mr-1"></i> ${m.condo} (${m.bloco || 'Torre'}) • ${m.endereco || ''}</div>
+=======
+                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building text-lime-600 mr-1"></i> ${m.condo} (${m.bloco || 'Torre'}) • ${m.endereco || ''}</div>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                     </div>
                     <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
                         <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">${m.valor}</span>
@@ -1302,15 +1483,25 @@ function abrirPainelGestao() {
                         <p class="text-slate-700"><strong>Placa:</strong> <span class="font-medium">${m.placa || 'N/D'}</span></p>
                     </div>
                     <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-0.5">
+<<<<<<< HEAD
                         <p class="text-slate-700"><strong>Sessão OCPP:</strong> <span class="font-medium">${m.data} • ${m.horaInicio || '12:00'} (${m.duracao || '42 min'})</span></p>
+=======
+                        <p class="text-slate-700"><strong>Última Recarga:</strong> <span class="font-medium">${m.data} • ${m.horaInicio || '12:00'} (${m.duracao || '42 min'})</span></p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                         <p class="text-slate-700"><strong>Volume / Ociosidade:</strong> <span class="font-medium text-emerald-700">${m.kwh || '14.2 kWh'}</span> | <span class="text-amber-700 font-bold">${m.ociosidade || 'Não'}</span></p>
                     </div>
                 </div>
 
                 <div class="flex justify-between items-center pt-1">
+<<<<<<< HEAD
                     <span class="text-[10px] text-slate-400 italic">Controle Central OCPP em Massa Ativo.</span>
                     <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
                         ${isInativo ? 'Reativar Condômino' : 'Inativar Condômino'}
+=======
+                    <span class="text-[10px] text-slate-400 italic">Repasse transparente calculado para prestação de contas.</span>
+                    <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
+                        ${isInativo ? 'Reativar Morador' : 'Inativar Morador'}
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                     </button>
                 </div>
             </div>
@@ -1319,6 +1510,7 @@ function abrirPainelGestao() {
 
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs">
+<<<<<<< HEAD
             <div class="flex items-center justify-between bg-slate-900 text-white p-3.5 rounded-xl shadow-md">
                 <div>
                     <h4 class="font-extrabold text-lime-400 text-sm flex items-center gap-1.5"><i class="fa-solid fa-server"></i> Central OCPP • Gestão em Massa</h4>
@@ -1327,22 +1519,40 @@ function abrirPainelGestao() {
                 <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer pointer-events-auto shrink-0" title="Fechar">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
+=======
+            <div class="p-3.5 bg-slate-900 text-white rounded-xl shadow-md space-y-1">
+                <h4 class="font-extrabold text-lime-400 text-sm flex items-center gap-1.5"><i class="fa-solid fa-building-shield"></i> Área do Síndico • Relatório & Gestão</h4>
+                <p class="text-[11px] text-slate-300">Gestão completa de condôminos, endereços, veículos, ociosidade e repasses financeiros detalhados com total transparência.</p>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+<<<<<<< HEAD
                     <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Carregadores OCPP</span>
                     <span class="text-sm font-black text-slate-900">8 Totens Online (Heartbeat OK)</span>
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
                     <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Faturamento / Ociosidade</span>
                     <span class="text-xs font-black text-emerald-600">R$ 796,50 (Mês Atual)</span>
+=======
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Vagas Monitoradas</span>
+                    <span class="text-sm font-black text-slate-900">5 Vagas Ativas na Rede SDI</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Ociosidade Total Mês</span>
+                    <span class="text-xs font-black text-emerald-600">R$ 112,50 <span class="text-[10px] text-slate-500 font-normal block sm:inline">(J. Bronzeri R$ 62,50 | Wanderson R$ 50,00)</span></span>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 </div>
             </div>
 
             <div class="space-y-2 pt-1">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1 border-b border-slate-200">
+<<<<<<< HEAD
                     <h5 class="text-xs font-bold text-slate-800 uppercase tracking-tight">Base de Usuários & Conectores</h5>
+=======
+                    <h5 class="text-xs font-bold text-slate-800 uppercase tracking-tight">Base de Condôminos & Extrato Consolidado</h5>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                     <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto flex items-center gap-1">
                         <i class="fa-solid fa-user-plus"></i> Novo Condômino
                     </button>
@@ -1385,7 +1595,11 @@ function abrirModalCadastrarMorador() {
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Bloco / Torre:</label>
+<<<<<<< HEAD
                     <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Norte" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+=======
+                    <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Sul" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1394,25 +1608,42 @@ function abrirModalCadastrarMorador() {
                     <input type="text" id="novo-morador-unidade" placeholder="Ex: Apto 101" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
+<<<<<<< HEAD
                     <label class="block font-bold text-slate-700 mb-1">Vaga / OCPP ID:</label>
                     <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 01" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+=======
+                    <label class="block font-bold text-slate-700 mb-1">Vaga:</label>
+                    <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 04" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 </div>
             </div>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Endereço Completo:</label>
+<<<<<<< HEAD
                 <input type="text" id="novo-morador-endereco" placeholder="Ex: Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+=======
+                <input type="text" id="novo-morador-endereco" placeholder="Ex: Rua das Palmeiras, 300 - Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Veículo / Modelo:</label>
+<<<<<<< HEAD
                     <input type="text" id="novo-morador-veiculo" placeholder="Ex: BYD Seal (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+=======
+                    <input type="text" id="novo-morador-veiculo" placeholder="Ex: Volvo XC40 (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Placa:</label>
                     <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
             </div>
+<<<<<<< HEAD
             <button onclick="salvarNovoMorador()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO</button>
+=======
+            <button onclick="salvarNovoMorador()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO DO CONDÔMINO</button>
+>>>>>>> 92e4c7d0a23934d8b1af3acc1c91f77e2a9415e2
         </div>
     `;
     showCustomModal('Cadastrar Novo Condômino', htmlForm, 'fa-user-plus', 'lime');
@@ -1485,3 +1716,6 @@ function showToast(msg) {
         }, 3000);
     }
 }
+// Subscricao Realtime Supabase para evitar disparidade de vagas
+supabase.channel('public:pontos_recarga').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () = carregarVagas(); }).subscribe();
+try { supabase.channel('public:pontos_recarga').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () = if(typeof carregarVagas === 'function') carregarVagas(); }).subscribe(); } catch(e) {} 
