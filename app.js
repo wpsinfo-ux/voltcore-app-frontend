@@ -429,7 +429,7 @@ async function processarPagamentoPix() {
     }
 }
 
-// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO (COM MÁSCARA AUTOMÁTICA MM/AA E PADDING INFERIOR)
+// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO (COM MÁSCARA AUTOMÁTICA ONINPUT E ESPAÇAMENTO INFERIOR BLINDADO)
 function abrirModalCartaoCheckout() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -441,7 +441,7 @@ function abrirModalCartaoCheckout() {
     }
 
     const htmlCartao = `
-        <div class="space-y-3 text-left text-xs pb-16">
+        <div class="space-y-3 text-left text-xs pb-24">
             <div class="bg-slate-900 p-3 rounded-xl text-white flex justify-between items-center">
                 <div>
                     <span class="text-[9px] font-bold text-slate-400 uppercase">Valor da Recarga</span>
@@ -458,7 +458,7 @@ function abrirModalCartaoCheckout() {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Validade (MM/AA):</label>
-                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" oninput="let v=this.value.replace(/\\D/g,'');if(v.length>4)v=v.slice(0,4);if(v.length>=3){this.value=v.slice(0,2)+'/'+v.slice(2);}else{this.value=v;}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">CVV (Segurança):</label>
@@ -476,26 +476,11 @@ function abrirModalCartaoCheckout() {
                 <input type="text" id="cc-cpf" placeholder="123.456.789-09" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-2">PROCESSAR PAGAMENTO COM CARTÃO</button>
+            <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-4">PROCESSAR PAGAMENTO COM CARTÃO</button>
         </div>
     `;
+    
     showCustomModal('Checkout Transparente • Cartão', htmlCartao, 'fa-credit-card', 'lime');
-
-    // Aplicar máscara automática MM/AA no campo de validade após renderizar no modal
-    setTimeout(() => {
-        const expiryInput = document.getElementById('cc-expiry');
-        if (expiryInput) {
-            expiryInput.addEventListener('input', (e) => {
-                let val = e.target.value.replace(/\D/g, '');
-                if (val.length > 4) val = val.slice(0, 4);
-                if (val.length >= 3) {
-                    e.target.value = val.slice(0, 2) + '/' + val.slice(2);
-                } else {
-                    e.target.value = val;
-                }
-            });
-        }
-    }, 100);
 }
 
 async function processarPagamentoCartao(valor) {
