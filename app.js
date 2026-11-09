@@ -429,7 +429,7 @@ async function processarPagamentoPix() {
     }
 }
 
-// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO (COM MÁSCARA AUTOMÁTICA ONINPUT E ESPAÇAMENTO INFERIOR BLINDADO)
+// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO (BLINDADA PARA WEB E MOBILE SEM DUPLICIDADE DE BOTÕES)
 function abrirModalCartaoCheckout() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -441,7 +441,7 @@ function abrirModalCartaoCheckout() {
     }
 
     const htmlCartao = `
-        <div class="space-y-3 text-left text-xs pb-24">
+        <div class="space-y-3 text-left text-xs pb-16">
             <div class="bg-slate-900 p-3 rounded-xl text-white flex justify-between items-center">
                 <div>
                     <span class="text-[9px] font-bold text-slate-400 uppercase">Valor da Recarga</span>
@@ -476,7 +476,7 @@ function abrirModalCartaoCheckout() {
                 <input type="text" id="cc-cpf" placeholder="123.456.789-09" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-4">PROCESSAR PAGAMENTO COM CARTÃO</button>
+            <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-3">PROCESSAR PAGAMENTO COM CARTÃO</button>
         </div>
     `;
     
