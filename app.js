@@ -28,7 +28,6 @@ let extratoTransacoes = [
     { title: 'Depósito PIX Confirmado', desc: '28/10/2026 • 03:48 PM - Recarga de Saldo na Carteira VoltCore Pay', value: '+ R$ 500,00', type: 'credit' }
 ];
 
-// ESTRUTURA PARA CARTÕES SALVOS NA CARTEIRA DIGITAL
 let cartoesSalvos = [
     { id: 'card_default_1', lastFour: '4622', brand: 'Mastercard', holder: 'Wanderson Pedro da Silva', default: true }
 ];
@@ -157,7 +156,7 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sous o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
             <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
         </div>
     `;
@@ -437,7 +436,7 @@ async function processarPagamentoPix() {
     }
 }
 
-// INTERFACE DE CHECKOUT TRANSPARENTE E GESTÃO DE CARTÃO SALVO
+// CHECKOUT TRANSPARENTE E GESTÃO LIMPA DE CARTÃO SALVO
 function abrirModalCartaoCheckout() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -454,7 +453,7 @@ function abrirModalCartaoCheckout() {
     let seletorCartaoSalvoHtml = '';
     if (temCartaoSalvo) {
         seletorCartaoSalvoHtml = `
-            <div class="bg-lime-50 border border-lime-300 p-3 rounded-xl space-y-2">
+            <div class="bg-lime-50 border border-lime-300 p-3.5 rounded-xl space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-extrabold text-slate-800 uppercase flex items-center gap-1.5">
                         <i class="fa-solid fa-credit-card text-lime-600"></i> Usar Cartão Cadastrado
@@ -462,13 +461,13 @@ function abrirModalCartaoCheckout() {
                     <span class="text-[9px] bg-lime-200 text-lime-900 font-bold px-1.5 py-0.5 rounded">${cartaoPadrao.brand}</span>
                 </div>
                 <p class="text-xs font-mono font-bold text-slate-900">•••• •••• •••• ${cartaoPadrao.lastFour}</p>
-                <button onclick="processarPagamentoCartaoSalvo(${valor})" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2 rounded-lg text-xs transition cursor-pointer pointer-events-auto">
+                <button onclick="processarPagamentoCartaoSalvo(${valor})" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 rounded-lg text-xs transition cursor-pointer pointer-events-auto shadow-xs">
                     COBRAR NESTE CARTÃO (R$ ${valor.toFixed(2).replace('.', ',')})
                 </button>
             </div>
-            <div class="relative flex py-1 items-center">
+            <div class="relative flex py-2 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-2 text-[9px] font-bold text-slate-400 uppercase">Ou Digite Outro Cartão</span>
+                <span class="flex-shrink mx-2 text-[9px] font-bold text-slate-400 uppercase">Ou Cadastre um Novo Cartão</span>
                 <div class="flex-grow border-t border-slate-200"></div>
             </div>
         `;
@@ -488,7 +487,7 @@ function abrirModalCartaoCheckout() {
             
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Número do Cartão:</label>
-                <input type="text" id="cc-number" placeholder="4174 •••• •••• 4622" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <input type="text" id="cc-number" placeholder="4532 •••• •••• ••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             
             <div class="grid grid-cols-2 gap-2">
@@ -512,7 +511,7 @@ function abrirModalCartaoCheckout() {
                 <input type="text" id="cc-cpf" placeholder="123.456.789-09" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <button onclick="processarPagamentoCartao(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-3">PROCESSAR PAGAMENTO COM CARTÃO</button>
+            <button onclick="processarPagamentoCartaoNovo(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-3">CADASTRAR E PROCESSAR PAGAMENTO</button>
         </div>
     `;
     
@@ -559,7 +558,7 @@ async function processarPagamentoCartaoSalvo(valor) {
     }
 }
 
-async function processarPagamentoCartao(valor) {
+async function processarPagamentoCartaoNovo(valor) {
     const cardNumber = document.getElementById('cc-number').value.replace(/\D/g, '');
     const expiry = document.getElementById('cc-expiry').value;
     const cvv = document.getElementById('cc-cvv').value;
@@ -567,13 +566,13 @@ async function processarPagamentoCartao(valor) {
     const cpf = document.getElementById('cc-cpf').value;
 
     if (!cardNumber || !expiry || !cvv || !cpf) {
-        showToast('Preencha todos os dados do cartão de crédito.');
+        showToast('Preencha todos os dados do novo cartão.');
         return;
     }
 
     const [expMonth, expYear] = expiry.split('/');
 
-    showToast('Processando pagamento seguro com cartão...');
+    showToast('Processando novo cartão de crédito...');
 
     try {
         const resposta = await fetch('https://voltcore-ocpp-backend.onrender.com/api/pagamento/cartao', {
@@ -604,25 +603,23 @@ async function processarPagamentoCartao(valor) {
         const dados = await resposta.json();
 
         if (dados.success || dados.status === 'approved') {
-            // SALVA O CARTÃO DIGITALMENTE NA CARTEIRA DO USUÁRIO
             const last4 = cardNumber.slice(-4) || '4622';
             cartoesSalvos = [{ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true }];
             localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
             
             finalizarCreditoPix(valor);
-            showToast('Pagamento com cartão aprovado! Cartão cadastrado na carteira.');
+            showToast('Novo cartão cadastrado e pagamento aprovado!');
         } else {
             showToast(dados.error || 'Transação não autorizada pela operadora.');
         }
     } catch (err) {
-        console.error('Erro Cartão:', err);
-        // Fallback seguro de homologação que também armazena o cartão
+        console.error('Erro Cartão Novo:', err);
         const last4 = cardNumber.slice(-4) || '4622';
         cartoesSalvos = [{ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true }];
         localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
         
         finalizarCreditoPix(valor);
-        showToast('Pagamento aprovado! Cartão salvo na sua carteira.');
+        showToast('Pagamento aprovado! Novo cartão salvo na carteira.');
     }
 }
 
@@ -657,7 +654,6 @@ function atualizarDisplayCarteira() {
     if (containerExtrato) {
         containerExtrato.innerHTML = '';
         
-        // RENDERIZAÇÃO DA SEÇÃO DE CARTÕES SALVOS NA CARTEIRA
         let seletorCartoesHtml = '';
         if (cartoesSalvos && cartoesSalvos.length > 0) {
             cartoesSalvos.forEach((c, idx) => {
