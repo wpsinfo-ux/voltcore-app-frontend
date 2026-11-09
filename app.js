@@ -429,7 +429,7 @@ async function processarPagamentoPix() {
     }
 }
 
-// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO (BLINDADA PARA WEB E MOBILE SEM DUPLICIDADE DE BOTÕES)
+// INTERFACE DE CHECKOUT TRANSPARENTE PARA CARTÃO DE CRÉDITO
 function abrirModalCartaoCheckout() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -483,8 +483,9 @@ function abrirModalCartaoCheckout() {
     showCustomModal('Checkout Transparente • Cartão', htmlCartao, 'fa-credit-card', 'lime');
 }
 
+// CORREÇÃO: Envia os dados estruturados do cartão para o backend processar via SDK do Mercado Pago
 async function processarPagamentoCartao(valor) {
-    const cardNumber = document.getElementById('cc-number').value;
+    const cardNumber = document.getElementById('cc-number').value.replace(/\D/g, '');
     const expiry = document.getElementById('cc-expiry').value;
     const cvv = document.getElementById('cc-cvv').value;
     const holderName = document.getElementById('cc-holder').value;
@@ -495,6 +496,8 @@ async function processarPagamentoCartao(valor) {
         return;
     }
 
+    const [expMonth, expYear] = expiry.split('/');
+
     showToast('Processando pagamento seguro com cartão...');
 
     try {
@@ -503,11 +506,23 @@ async function processarPagamentoCartao(valor) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 transaction_amount: valor,
-                token: 'tok_simulado_producao_' + Date.now(),
+                description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
                 payment_method_id: 'master',
                 installments: 1,
-                email: userData.email,
-                identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
+                payer: {
+                    email: userData.email,
+                    first_name: userData.name.split(' ')[0],
+                    last_name: userData.name.split(' ').slice(1).join(' ') || 'Silva',
+                    identification: {
+                        type: 'CPF',
+                        number: cpf.replace(/\D/g, '')
+                    }
+                },
+                card_number: cardNumber,
+                card_expiration_month: expMonth,
+                card_expiration_year: '20' + expYear,
+                card_cvv: cvv,
+                cardholder_name: holderName
             })
         });
 
@@ -517,7 +532,7 @@ async function processarPagamentoCartao(valor) {
             finalizarCreditoPix(valor);
             showToast('Pagamento com cartão aprovado com sucesso!');
         } else {
-            showToast('Transação não autorizada pela operadora.');
+            showToast(dados.error || 'Transação não autorizada pela operadora.');
         }
     } catch (err) {
         console.error('Erro Cartão:', err);
