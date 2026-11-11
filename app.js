@@ -156,7 +156,7 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sous o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
             <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
         </div>
     `;
@@ -358,10 +358,10 @@ function confirmarAdicionarVeiculo() {
 function abrirModalDeposito() {
     const htmlDep = `
         <div class="space-y-3 text-left">
-            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para adicionar saldo à carteira VoltCore Pay:</p>
+            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para recarregar o saldo da carteira VoltCore Pay (mínimo de R$ 1,00 para validação):</p>
             <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Valor da Recarga (R$)</label>
-                <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 0,00" value="R$ 0,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Valor da Recarga (Mínimo R$ 1,00)</label>
+                <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 1,00" value="R$ 1,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
             </div>
             
             <div class="space-y-2 pt-2 border-t border-slate-100">
@@ -393,8 +393,8 @@ async function processarPagamentoPix() {
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
     const valor = parseFloat(valorLimpo) / 100;
 
-    if (!valor || isNaN(valor) || valor <= 0) {
-        showToast('Informe um valor válido em reais.');
+    if (!valor || isNaN(valor) || valor < 1.00) {
+        showToast('O valor mínimo para recarga via Pix é de R$ 1,00.');
         return;
     }
     
@@ -442,8 +442,8 @@ function abrirModalCartaoCheckout() {
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
     const valor = parseFloat(valorLimpo) / 100;
 
-    if (!valor || isNaN(valor) || valor <= 0) {
-        showToast('Informe um valor válido em reais.');
+    if (!valor || isNaN(valor) || valor < 1.00) {
+        showToast('O valor mínimo para recarga e validação é de R$ 1,00.');
         return;
     }
 
