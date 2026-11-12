@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.6 (AUTH SUPABASE 6+ CHARS & RESET DESBLOQUEADO)
+   VOLTCORE PRO • FRONT-END ENGINE V9.8 (COMPLETO & ROBUSTO - SUPABASE & OFFLINE VAULT)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -44,13 +44,13 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = function() {
-    if (!localStorage.getItem('voltcore_version_v96')) {
+    if (!localStorage.getItem('voltcore_version_v98')) {
         localStorage.removeItem('voltcore_logged');
         localStorage.removeItem('voltcore_user_data');
         localStorage.removeItem('voltcore_vehicles');
         localStorage.removeItem('voltcore_wallet_balance');
         localStorage.removeItem('voltcore_extrato');
-        localStorage.setItem('voltcore_version_v96', 'true');
+        localStorage.setItem('voltcore_version_v98', 'true');
     }
 
     carregarTudoPersistente();
@@ -195,7 +195,6 @@ async function redefinirSenhaDireta() {
         return;
     }
 
-    // Salva no cofre local sincronizado e tenta registrar no Supabase Auth
     const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
     cofreSenhas[email] = novaSenha;
     localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
@@ -224,7 +223,7 @@ async function enviarSolicitacaoResetSenha() {
     }
 
     showToast(`Disparando SMTP Supabase para ${email}...`);
-    let msgRetorno = `Requisição enviada para <strong>${email}</strong>. Nota: O servidor SMTP gratuito do Supabase só entrega se o e-mail já existir no Auth e não for bloqueado pelo provedor (Hotmail/Gmail). Use o botão verde acima para redefinir na hora se não chegar.`;
+    let msgRetorno = `Requisição enviada para <strong>${email}</strong>. Use o botão verde acima para redefinir na hora caso o servidor esteja pausado.`;
 
     if (supabaseClient && supabaseClient.auth) {
         try {
@@ -480,19 +479,19 @@ async function realizarLogin() {
     }
 
     if (!senhaVal || senhaVal.length < 6) {
-        showToast('A senha deve ter no mínimo 6 caracteres (padrão Supabase Auth).');
+        showToast('A senha deve ter no mínimo 6 caracteres.');
         if (senhaInput) senhaInput.focus();
         return;
     }
 
-    showToast('Autenticando no Supabase Auth...');
+    showToast('Autenticando...');
 
     const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
     let authSucesso = false;
+    let usarFallbackLocal = !supabaseClient || !supabaseClient.auth;
 
-    if (supabaseClient && supabaseClient.auth) {
+    if (!usarFallbackLocal) {
         try {
-            // 1. Tenta autenticar no Supabase
             let { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: emailVal,
                 password: senhaVal
@@ -502,14 +501,14 @@ async function realizarLogin() {
                 authSucesso = true;
                 cofreSenhas[emailVal] = senhaVal;
                 localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
+            } else if (error && error.message && error.message.toLowerCase().includes('fetch')) {
+                usarFallbackLocal = true;
             } else {
-                // 2. Se já existe no cofre local com outra senha, bloqueia senha errada!
                 if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
                     showToast('Senha incorreta para este e-mail. Use "Esqueci / Redefinir senha".');
                     return;
                 }
 
-                // 3. Se não existe ainda, cria no Supabase Auth
                 let signUpRes = await supabaseClient.auth.signUp({
                     email: emailVal,
                     password: senhaVal
@@ -519,29 +518,24 @@ async function realizarLogin() {
                     authSucesso = true;
                     cofreSenhas[emailVal] = senhaVal;
                     localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
+                } else if (signUpRes.error.message && signUpRes.error.message.toLowerCase().includes('fetch')) {
+                    usarFallbackLocal = true;
+                } else if (signUpRes.error.message.toLowerCase().includes('already registered')) {
+                    showToast('E-mail já cadastrado, mas senha incorreta! Clique em "Esqueci / Redefinir senha".');
+                    return;
                 } else {
-                    // Se o Supabase retornar que o usuário já existe mas a senha não bateu
-                    if (signUpRes.error.message.toLowerCase().includes('already registered')) {
-                        showToast('E-mail já cadastrado, mas senha incorreta! Clique em "Esqueci / Redefinir senha".');
-                        return;
-                    }
-                    showToast('Erro Supabase Auth: ' + signUpRes.error.message);
+                    showToast('Erro de autenticação: ' + signUpRes.error.message);
                     return;
                 }
             }
         } catch (err) {
-            // Fallback seguro caso haja bloqueio de rede
-            if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
-                showToast('Senha incorreta!');
-                return;
-            }
-            cofreSenhas[emailVal] = senhaVal;
-            localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
-            authSucesso = true;
+            usarFallbackLocal = true;
         }
-    } else {
+    }
+
+    if (usarFallbackLocal) {
         if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
-            showToast('Senha incorreta!');
+            showToast('Senha incorreta para este e-mail! Clique em "Esqueci / Redefinir senha".');
             return;
         }
         cofreSenhas[emailVal] = senhaVal;
@@ -561,10 +555,9 @@ async function realizarLogin() {
         localStorage.setItem('voltcore_selected_condo', condoSelect.value);
     }
 
-    // ISOLAMENTO ESTRITO: Apenas contato@wpsinfo.com.br é ADM. Todos os demais são MORADOR.
     userData.role = (emailVal === 'contato@wpsinfo.com.br') ? 'ADM' : 'MORADOR';
-
     userData.lgpdAccepted = true;
+
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     localStorage.setItem('voltcore_logged', 'true');
     localStorage.setItem('voltcore_biometric_email', userData.email);
@@ -578,7 +571,7 @@ async function realizarLogin() {
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Bem-vindo ao VoltCore! Perfil: ' + userData.role);
+    showToast('Acesso liberado! Perfil: ' + userData.role);
 }
 
 function logoutApp() {
@@ -897,7 +890,6 @@ async function processarPagamentoPix() {
             showToast('Erro ao gerar Pix no servidor.');
         }
     } catch (err) {
-        console.error('Erro Pix:', err);
         showToast('Falha de comunicação com o backend de pagamentos.');
     }
 }
@@ -1014,9 +1006,9 @@ async function processarPagamentoCartaoSalvo(valor) {
         const dados = await resposta.json();
         if (dados.success || dados.status === 'approved') {
             finalizarCreditoPix(valor);
-            showToast('Pagamento com cartão cadastrado aprovado com sucesso!');
+            showToast('Pagamento aprovado com sucesso!');
         } else {
-            showToast(dados.error || 'Transação não autorizada pela operadora.');
+            showToast(dados.error || 'Transação não autorizada.');
         }
     } catch (err) {
         finalizarCreditoPix(valor);
@@ -1037,7 +1029,7 @@ async function processarPagamentoCartaoNovo(valor) {
     }
 
     const [expMonth, expYear] = expiry.split('/');
-    showToast('Processando novo cartão de crédito...');
+    showToast('Processando cartão...');
 
     try {
         const resposta = await fetch('https://voltcore-ocpp-backend.onrender.com/api/pagamento/cartao', {
@@ -1071,7 +1063,7 @@ async function processarPagamentoCartaoNovo(valor) {
             finalizarCreditoPix(valor);
             showToast('Novo cartão cadastrado e pagamento aprovado!');
         } else {
-            showToast(dados.error || 'Transação não autorizada pela operadora.');
+            showToast(dados.error || 'Transação não autorizada.');
         }
     } catch (err) {
         const last4 = cardNumber.slice(-4) || '4622';
@@ -1079,7 +1071,7 @@ async function processarPagamentoCartaoNovo(valor) {
         localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
         
         finalizarCreditoPix(valor);
-        showToast('Pagamento aprovado! Novo cartão salvo na carteira.');
+        showToast('Pagamento aprovado! Cartão salvo.');
     }
 }
 
@@ -1101,7 +1093,7 @@ function finalizarCreditoPix(valor) {
     localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
     atualizarDisplayCarteira();
     closeModal();
-    showToast(`Crédito de R$ ${valor.toFixed(2).replace('.', ',')} adicionado à carteira!`);
+    showToast(`Crédito de R$ ${valor.toFixed(2).replace('.', ',')} adicionado!`);
 }
 
 function atualizarDisplayCarteira() {
@@ -1131,7 +1123,7 @@ function atualizarDisplayCarteira() {
                                 <p class="text-[10px] text-slate-400">${c.holder}</p>
                             </div>
                         </div>
-                        <button onclick="excluirCartaoSalvo(${idx})" class="text-rose-400 hover:text-rose-300 p-2 text-xs font-bold transition cursor-pointer pointer-events-auto flex items-center gap-1" title="Excluir Cartão">
+                        <button onclick="excluirCartaoSalvo(${idx})" class="text-rose-400 hover:text-rose-300 p-2 text-xs font-bold transition cursor-pointer pointer-events-auto flex items-center gap-1" title="Excluir">
                             <i class="fa-solid fa-trash-can"></i> Excluir
                         </button>
                     </div>
@@ -1140,7 +1132,7 @@ function atualizarDisplayCarteira() {
         } else {
             seletorCartoesHtml = `
                 <div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">
-                    Nenhum cartão cadastrado. Ele será salvo automaticamente na primeira recarga.
+                    Nenhum cartão cadastrado.
                 </div>
             `;
         }
@@ -1160,7 +1152,7 @@ function atualizarDisplayCarteira() {
         `;
 
         if (extratoTransacoes.length === 0) {
-            containerExtrato.innerHTML += `<div class="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhuma transação registrada. Carteira limpa para novo usuário.</div>`;
+            containerExtrato.innerHTML += `<div class="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhuma transação registrada.</div>`;
         } else {
             extratoTransacoes.forEach(t => {
                 const isCredit = t.type === 'credit';
@@ -1187,7 +1179,7 @@ function excluirCartaoSalvo(idx) {
     cartoesSalvos.splice(idx, 1);
     localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
     atualizarDisplayCarteira();
-    showToast('Cartão removido da carteira digital com sucesso!');
+    showToast('Cartão removido com sucesso!');
 }
 
 function renderizarVeiculos() {
@@ -1196,7 +1188,7 @@ function renderizarVeiculos() {
     container.innerHTML = '';
     
     if (meusVeiculos.length === 0) {
-        container.innerHTML = `<div class="col-span-full p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhum veículo cadastrado. Adicione seu primeiro veículo elétrico ou híbrido acima.</div>`;
+        container.innerHTML = `<div class="col-span-full p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhum veículo cadastrado.</div>`;
         return;
     }
 
@@ -1453,7 +1445,7 @@ function filtrarPostosComerciaisBusca() {
 }
 
 function mostrarMaisProximasComercial() {
-    showToast('Exibindo eletropostos OCPP mais próximos da sua localização.');
+    showToast('Exibindo eletropostos OCPP mais próximos.');
     plotarMarcadoresMapa('ALL', 'jundiai');
     renderCommercialStations('jundiai');
 }
@@ -1826,7 +1818,7 @@ async function reserveSpot(id) {
     
     salvarEstacoesLocalStorage();
     renderStations();
-    showToast(`Vaga ${st.name} reservada via OCPP!`);
+    showToast(`Vaga ${st.name} reservada!`);
     await sincronizarEstacaoNoSupabase(st);
 }
 
@@ -1881,7 +1873,7 @@ async function stopCharging(id) {
     renderStations();
     await sincronizarEstacaoNoSupabase(st);
     
-    showToast(`OCPP RemoteStop efetuado! Total R$ ${custoTotal.toFixed(2)} registrado.`);
+    showToast(`Total R$ ${custoTotal.toFixed(2)} registrado.`);
 }
 
 async function cancelReservation(id) {
@@ -1895,7 +1887,7 @@ async function cancelReservation(id) {
     salvarEstacoesLocalStorage();
     renderStations();
     await sincronizarEstacaoNoSupabase(st);
-    showToast(`Reserva OCPP cancelada.`);
+    showToast(`Reserva cancelada.`);
 }
 
 function abrirPainelGestao() {
@@ -1999,7 +1991,7 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
                 </div>
                 
                 <div class="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
-                    ${htmlMoradores || '<div class="p-6 bg-slate-50 rounded-xl text-center text-slate-500">Nenhum registro encontrado para este filtro.</div>'}
+                    ${htmlMoradores || '<div class="p-6 bg-slate-50 rounded-xl text-center text-slate-500">Nenhum registro encontrado.</div>'}
                 </div>
             </div>
             
@@ -2024,7 +2016,7 @@ function filtrarGestaoMoradores(input) {
 
 function estornarOuAjustarSaldoMorador(idx) {
     const morador = moradoresCondominio[idx];
-    showToast(`Solicitação de ajuste financeira registrada para ${morador.nome}.`);
+    showToast(`Ajuste financeiro registrado para ${morador.nome}.`);
 }
 
 function alternarStatusMorador(idx) {
@@ -2123,7 +2115,7 @@ function salvarNovoMorador() {
         valor: 'R$ 0,00'
     });
     localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    showToast(`Condômino ${nome} cadastrado com sucesso!`);
+    showToast(`Condômino ${nome} cadastrado!`);
     abrirPainelGestao();
 }
 
