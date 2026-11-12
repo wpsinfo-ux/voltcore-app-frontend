@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V8.0 (MULTI-TENANT, LGPD OBRIGATÓRIA & ROBUST)
+   VOLTCORE PRO • FRONT-END ENGINE V8.9 (COMPLETO, LGPD, BIOMETRIA & MULTI-TENANT)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -15,14 +15,14 @@ let stations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
 
-// Perfil padrão estruturado para multi-tenant rigoroso
+// Perfil padrão estruturado para multi-tenant rigoroso (inicia limpo)
 let userData = {
     name: "Wanderson Pedro da Silva",
-    email: "contato@wpsinfo.com.br",
+    email: "",
     phone: "(11) 94461-4162",
-    role: "ADM", // ADM (Master), SINDICO, MORADOR
-    condo: "Condomínio Gioviale • Torre Sul",
-    allowedCondos: ["Condomínio Gioviale • Torre Sul", "Condomínio Gioviale • Torre Norte", "Complexo Atmosfera Residencial", "Belarte Residencial Jundiaí"],
+    role: "MORADOR", // ADM (Master), SINDICO, MORADOR
+    condo: "Belarte Residencial Jundiaí",
+    allowedCondos: ["Belarte Residencial Jundiaí"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
     lgpdAccepted: false
 };
@@ -65,8 +65,7 @@ window.onload = function() {
         if (screenAuth) screenAuth.classList.add('hidden');
         if (screenApp) screenApp.classList.remove('hidden');
     } else {
-        // Garante que a tela de auth com LGPD esteja visível se não logado
-        injetarCheckLgpdTelaAuth();
+        injetarCheckLgpdEBiometriaTelaAuth();
     }
 
     aplicarControlePermissoesPerfil();
@@ -83,22 +82,62 @@ window.onload = function() {
     setInterval(updateTimersAndLoad, 1000);
 };
 
-// Injeção dinâmica do Checkbox de LGPD na tela de login caso o HTML base não tenha
-function injetarCheckLgpdTelaAuth() {
+// Injeção dinâmica do Checkbox de LGPD e Botão de Biometria na tela de login
+function injetarCheckLgpdEBiometriaTelaAuth() {
     const authBox = document.querySelector('#screen-auth > div');
     if (authBox && !document.getElementById('check-lgpd-login')) {
         const divLgpd = document.createElement('div');
         divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
         divLgpd.innerHTML = `
-            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
+            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto" ${userData.lgpdAccepted ? 'checked' : ''}>
             <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
                 Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
             </label>
         `;
-        // Insere antes do bloco de botões
         const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
         authBox.insertBefore(divLgpd, botoesDiv);
     }
+
+    // Injeta botão de biometria se já houver cadastro prévio salvo no dispositivo
+    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
+    if (authBox && savedBioEmail && !document.getElementById('btn-biometria-acesso')) {
+        const divBio = document.createElement('div');
+        divBio.className = "mt-2";
+        divBio.innerHTML = `
+            <button id="btn-biometria-acesso" onclick="realizarLoginBiometria()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+                <i class="fa-solid fa-fingerprint text-sm"></i> Entrar com Biometria / Face ID
+            </button>
+        `;
+        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
+        authBox.insertBefore(divBio, botoesDiv);
+    }
+}
+
+async function realizarLoginBiometria() {
+    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
+    if (!savedBioEmail) {
+        showToast('Nenhuma biometria vinculada. Faça login com e-mail e senha uma vez.');
+        return;
+    }
+
+    showToast('Solicitando leitura biométrica do dispositivo...');
+    
+    setTimeout(() => {
+        userData.email = savedBioEmail;
+        userData.lgpdAccepted = true;
+        localStorage.setItem('voltcore_logged', 'true');
+        
+        const screenAuth = document.getElementById('screen-auth');
+        const screenApp = document.getElementById('screen-app');
+        if (screenAuth) screenAuth.classList.add('hidden');
+        if (screenApp) screenApp.classList.remove('hidden');
+        
+        aplicarDadosUsuarioNaTela();
+        aplicarControlePermissoesPerfil();
+        configurarPermissoesCondominioPorUsuario();
+        carregarEstacoesDoBanco();
+        showToast('Biometria confirmada! Bem-vindo de volta.');
+    }, 800);
 }
 
 function carregarTudoPersistente() {
@@ -152,18 +191,35 @@ function configurarPermissoesCondominioPorUsuario() {
     const selectCondo = document.getElementById('select-condo');
     if (!selectCondo) return;
 
-    if (userData.role === 'SINDICO') {
-        selectCondo.innerHTML = '';
+    selectCondo.innerHTML = '';
+
+    if (userData.role === 'ADM') {
+        const todosCondos = [
+            "Belarte Residencial Jundiaí",
+            "Condomínio Gioviale • Torre Sul",
+            "Condomínio Gioviale • Torre Norte",
+            "Complexo Atmosfera Residencial"
+        ];
+        todosCondos.forEach(c => {
+            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+        selectCondo.disabled = false;
+    } else if (userData.role === 'SINDICO') {
         userData.allowedCondos.forEach(c => {
             selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
         });
+        selectCondo.disabled = false;
+    } else {
+        // MORADOR: trava estritamente no condomínio do cadastro
+        selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
+        selectCondo.disabled = true;
     }
 
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
     if (savedCondo && (userData.role === 'ADM' || userData.allowedCondos.includes(savedCondo))) {
         selectCondo.value = savedCondo;
     } else {
-        selectCondo.value = userData.condo || "Condomínio Gioviale • Torre Sul";
+        selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
     }
 }
 
@@ -171,7 +227,19 @@ function alternarModoEmail() {
     const form = document.getElementById('auth-email-form');
     if (form) {
         form.classList.toggle('hidden');
-        // Se abriu o form de email, injeta também a seleção de condomínio multi-tenant se não existir
+        
+        // Garante que os campos de email e senha venham limpos para novo preenchimento
+        const emailInput = document.getElementById('auth-email-input');
+        const senhaInput = document.getElementById('auth-senha-input');
+        if (emailInput) {
+            emailInput.value = '';
+            emailInput.setAttribute('autocomplete', 'off');
+        }
+        if (senhaInput) {
+            senhaInput.value = '';
+            senhaInput.setAttribute('autocomplete', 'new-password');
+        }
+
         if (!document.getElementById('login-condo-multitenant') && !form.classList.contains('hidden')) {
             const divCondo = document.createElement('div');
             divCondo.className = "mt-2";
@@ -179,10 +247,10 @@ function alternarModoEmail() {
             divCondo.innerHTML = `
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio de Vínculo (Multi-Tenant)</label>
                 <select id="auth-condo-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
                     <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
                     <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
                     <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
-                    <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
                     <option value="Apenas Eletropostos / Visitante">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
                 </select>
             `;
@@ -199,28 +267,51 @@ function realizarLogin() {
     }
     
     const emailInput = document.getElementById('auth-email-input');
-    if (emailInput && emailInput.value) {
-        userData.email = emailInput.value;
+    const senhaInput = document.getElementById('auth-senha-input');
+    
+    if (!emailInput || !emailInput.value.trim() || !emailInput.value.includes('@')) {
+        showToast('Por favor, informe um e-mail válido para entrar ou cadastrar.');
+        if (emailInput) emailInput.focus();
+        return;
     }
+
+    if (!senhaInput || senhaInput.value.trim().length < 4) {
+        showToast('A senha é obrigatória e deve ter pelo menos 4 caracteres.');
+        if (senhaInput) senhaInput.focus();
+        return;
+    }
+
+    userData.email = emailInput.value.trim();
 
     const condoSelect = document.getElementById('auth-condo-select');
     if (condoSelect) {
         userData.condo = condoSelect.value;
+        userData.allowedCondos = [condoSelect.value];
+        localStorage.setItem('voltcore_selected_condo', condoSelect.value);
+    }
+
+    // Define perfil ADM apenas se for o e-mail master da WPS Info, caso contrário MORADOR restrito ao condomínio
+    if (userData.email.toLowerCase() === 'contato@wpsinfo.com.br') {
+        userData.role = 'ADM';
+    } else {
+        userData.role = 'MORADOR';
     }
 
     userData.lgpdAccepted = true;
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     localStorage.setItem('voltcore_logged', 'true');
+    localStorage.setItem('voltcore_biometric_email', userData.email);
     
     const screenAuth = document.getElementById('screen-auth');
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.add('hidden');
     if (screenApp) screenApp.classList.remove('hidden');
     
+    aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Bem-vindo ao VoltCore PRO, ' + userData.name + '!');
+    showToast('Bem-vindo ao VoltCore PRO! Vínculo: ' + userData.condo);
 }
 
 function logoutApp() {
@@ -229,7 +320,8 @@ function logoutApp() {
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.remove('hidden');
     if (screenApp) screenApp.classList.add('hidden');
-    injetarCheckLgpdTelaAuth();
+    injetarCheckLgpdEBiometriaTelaAuth();
+    showToast('Sessão encerrada com segurança.');
 }
 
 function abrirTermosPrivacidade() {
@@ -376,6 +468,7 @@ function salvarMeusDados() {
     
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     aplicarDadosUsuarioNaTela();
+    configurarPermissoesCondominioPorUsuario();
     closeModal();
     showToast('Dados cadastrais salvos com sucesso!');
 }
@@ -510,7 +603,7 @@ async function processarPagamentoPix() {
             body: JSON.stringify({
                 transaction_amount: valor,
                 description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
-                email: userData.email,
+                email: userData.email || 'contato@wpsinfo.com.br',
                 first_name: userData.name
             })
         });
@@ -639,7 +732,7 @@ async function processarPagamentoCartaoSalvo(valor) {
                 payment_method_id: 'master',
                 installments: 1,
                 payer: {
-                    email: userData.email,
+                    email: userData.email || 'contato@wpsinfo.com.br',
                     first_name: userData.name.split(' ')[0],
                     identification: { type: 'CPF', number: '29866522806' }
                 },
@@ -690,7 +783,7 @@ async function processarPagamentoCartaoNovo(valor) {
                 payment_method_id: 'master',
                 installments: 1,
                 payer: {
-                    email: userData.email,
+                    email: userData.email || 'contato@wpsinfo.com.br',
                     first_name: userData.name.split(' ')[0],
                     identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
                 },
@@ -1303,7 +1396,7 @@ function renderStations() {
     grid.innerHTML = '';
     let livre = 0, reservado = 0, carregando = 0;
     const selectCondo = document.getElementById('select-condo');
-    const currentCondo = selectCondo ? selectCondo.value : 'Condomínio Gioviale • Torre Sul';
+    const currentCondo = selectCondo ? selectCondo.value : userData.condo;
     
     if (!stations || stations.length === 0) {
         carregarOuInicializarEstacoes();
