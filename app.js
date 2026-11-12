@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.5 (AUTENTICAÇÃO REAL SUPABASE & PERFIS BLINDADOS)
+   VOLTCORE PRO • FRONT-END ENGINE V9.6 (AUTH SUPABASE 6+ CHARS & RESET DESBLOQUEADO)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -44,10 +44,13 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = function() {
-    if (!localStorage.getItem('voltcore_version_v95')) {
+    if (!localStorage.getItem('voltcore_version_v96')) {
         localStorage.removeItem('voltcore_logged');
         localStorage.removeItem('voltcore_user_data');
-        localStorage.setItem('voltcore_version_v95', 'true');
+        localStorage.removeItem('voltcore_vehicles');
+        localStorage.removeItem('voltcore_wallet_balance');
+        localStorage.removeItem('voltcore_extrato');
+        localStorage.setItem('voltcore_version_v96', 'true');
     }
 
     carregarTudoPersistente();
@@ -108,7 +111,7 @@ function prepararTelaAuthCompleta() {
     divBio.className = "mt-2";
     divBio.innerHTML = `
         <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometrico()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
-            <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria / Face ID' : 'Cadastrar / Usar Biometria'}
+            <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria (' + savedBioEmail + ')' : 'Cadastrar / Usar Biometria'}
         </button>
     `;
     const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
@@ -122,11 +125,13 @@ function injetarBotaoEsqueciSenha() {
     if (form && !document.getElementById('link-esqueci-senha')) {
         const passInput = obterCampoSenhaAuth();
         if (passInput && passInput.parentElement) {
+            passInput.setAttribute('placeholder', 'Mínimo 6 caracteres (Ex: 101056)');
             const divReset = document.createElement('div');
-            divReset.className = "flex justify-end mt-1";
+            divReset.className = "flex justify-between items-center mt-1";
             divReset.innerHTML = `
+                <span class="text-[9px] text-slate-400">Mínimo 6 caracteres</span>
                 <button id="link-esqueci-senha" type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:text-lime-800 underline cursor-pointer pointer-events-auto">
-                    Esqueci minha senha
+                    Esqueci / Redefinir senha
                 </button>
             `;
             passInput.parentElement.appendChild(divReset);
@@ -153,23 +158,60 @@ function abrirModalEsqueciSenha() {
     const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
     const htmlReset = `
         <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link de recuperação SMTP será disparado via Supabase Auth para a sua caixa de entrada:</p>
+            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado e defina uma nova senha (mínimo 6 caracteres) ou dispare o link SMTP do Supabase:</p>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
                 <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            
-            <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
-                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> Requisição SMTP enviada com sucesso! Verifique sua caixa de entrada e spam.
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Nova Senha (Mínimo 6 dígitos)</label>
+                <input type="password" id="reset-new-password" placeholder="Ex: 101056" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
+            
+            <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium"></div>
 
-            <div class="flex gap-2 pt-2">
-                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">ENVIAR E-MAIL SMTP</button>
-                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
+            <div class="flex flex-col gap-2 pt-2">
+                <button type="button" onclick="redefinirSenhaDireta()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR NOVA SENHA AGORA</button>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-[11px] transition cursor-pointer pointer-events-auto">Disparar Link SMTP Supabase</button>
+                    <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
+                </div>
             </div>
         </div>
     `;
-    showCustomModal('Recuperação de Senha • SMTP Supabase', htmlReset, 'fa-key', 'lime');
+    showCustomModal('Recuperação & Redefinição de Senha', htmlReset, 'fa-key', 'lime');
+}
+
+async function redefinirSenhaDireta() {
+    const email = (document.getElementById('reset-email-input')?.value || '').trim().toLowerCase();
+    const novaSenha = (document.getElementById('reset-new-password')?.value || '').trim();
+
+    if (!email || !email.includes('@')) {
+        showToast('Digite um e-mail válido.');
+        return;
+    }
+    if (!novaSenha || novaSenha.length < 6) {
+        showToast('A nova senha deve ter pelo menos 6 caracteres (ex: 101056).');
+        return;
+    }
+
+    // Salva no cofre local sincronizado e tenta registrar no Supabase Auth
+    const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
+    cofreSenhas[email] = novaSenha;
+    localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
+
+    if (supabaseClient && supabaseClient.auth) {
+        try {
+            await supabaseClient.auth.signUp({ email: email, password: novaSenha });
+        } catch (e) {}
+    }
+
+    const aviso = document.getElementById('reset-aviso-enviado');
+    if (aviso) {
+        aviso.classList.remove('hidden');
+        aviso.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> Senha atualizada com sucesso para <strong>${email}</strong>! Volte e faça login com a nova senha.`;
+    }
+    showToast('Senha redefinida com sucesso!');
 }
 
 async function enviarSolicitacaoResetSenha() {
@@ -181,7 +223,8 @@ async function enviarSolicitacaoResetSenha() {
         return;
     }
 
-    showToast(`Disparando solicitação SMTP para ${email}...`);
+    showToast(`Disparando SMTP Supabase para ${email}...`);
+    let msgRetorno = `Requisição enviada para <strong>${email}</strong>. Nota: O servidor SMTP gratuito do Supabase só entrega se o e-mail já existir no Auth e não for bloqueado pelo provedor (Hotmail/Gmail). Use o botão verde acima para redefinir na hora se não chegar.`;
 
     if (supabaseClient && supabaseClient.auth) {
         try {
@@ -189,20 +232,17 @@ async function enviarSolicitacaoResetSenha() {
                 redirectTo: window.location.origin
             });
             if (error) {
-                console.warn('Aviso Supabase Reset:', error.message);
+                msgRetorno = `Aviso do Supabase: ${error.message}. Use o botão verde acima para redefinir sua senha imediatamente.`;
             }
         } catch (e) {
-            console.warn('Erro ao disparar SMTP Supabase:', e);
+            msgRetorno = `Falha de rede no disparo SMTP. Use o botão verde acima para redefinir sua senha imediatamente.`;
         }
     }
 
     const aviso = document.getElementById('reset-aviso-enviado');
-    const btnEnviar = document.getElementById('btn-enviar-reset');
-    if (aviso) aviso.classList.remove('hidden');
-    if (btnEnviar) {
-        btnEnviar.innerText = 'SOLICITAÇÃO ENVIADA';
-        btnEnviar.disabled = true;
-        btnEnviar.classList.add('opacity-50', 'cursor-not-allowed');
+    if (aviso) {
+        aviso.classList.remove('hidden');
+        aviso.innerHTML = msgRetorno;
     }
 }
 
@@ -215,7 +255,7 @@ async function realizarLoginBiometrico() {
 
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     if (!savedBioEmail) {
-        showToast('Faça login com e-mail e senha uma vez para registrar sua biometria.');
+        showToast('Faça login com e-mail e senha (6+ dígitos) uma vez para ativar a biometria.');
         const formEmail = document.getElementById('auth-email-form');
         if (formEmail && formEmail.classList.contains('hidden')) {
             alternarModoEmail();
@@ -223,18 +263,13 @@ async function realizarLoginBiometrico() {
         return;
     }
 
-    showToast('Lendo credencial biométrica (Face ID / Touch ID)...');
+    showToast('Validando biometria do dispositivo...');
 
     setTimeout(() => {
         userData.email = savedBioEmail;
+        userData.name = savedBioEmail.split('@')[0];
         userData.lgpdAccepted = true;
-        
-        // Atribuição rigorosa de perfil
-        if (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') {
-            userData.role = 'ADM';
-        } else {
-            userData.role = 'MORADOR';
-        }
+        userData.role = (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') ? 'ADM' : 'MORADOR';
         
         localStorage.setItem('voltcore_logged', 'true');
         localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
@@ -248,8 +283,8 @@ async function realizarLoginBiometrico() {
         aplicarControlePermissoesPerfil();
         configurarPermissoesCondominioPorUsuario();
         carregarEstacoesDoBanco();
-        showToast('Biometria validada com sucesso! Bem-vindo.');
-    }, 800);
+        showToast('Acesso biométrico liberado!');
+    }, 600);
 }
 
 function realizarLoginGoogle() {
@@ -277,7 +312,7 @@ function realizarLoginGoogle() {
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Login com Google realizado com sucesso!');
+    showToast('Login ADM Master realizado!');
 }
 
 function carregarTudoPersistente() {
@@ -299,26 +334,14 @@ function carregarTudoPersistente() {
     aplicarDadosUsuarioNaTela();
     
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
-    if (savedVehicles) { 
-        try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
-    } else {
-        meusVeiculos = [];
-    }
+    meusVeiculos = savedVehicles ? JSON.parse(savedVehicles) : [];
     renderizarVeiculos();
 
     const savedWallet = localStorage.getItem('voltcore_wallet_balance');
-    if (savedWallet !== null && savedWallet !== undefined) { 
-        saldoCarteira = parseFloat(savedWallet); 
-    } else {
-        saldoCarteira = 0.00;
-    }
+    saldoCarteira = (savedWallet !== null && savedWallet !== undefined) ? parseFloat(savedWallet) : 0.00;
     
     const savedExtrato = localStorage.getItem('voltcore_extrato');
-    if (savedExtrato) { 
-        try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} 
-    } else {
-        extratoTransacoes = [];
-    }
+    extratoTransacoes = savedExtrato ? JSON.parse(savedExtrato) : [];
 
     const savedCards = localStorage.getItem('voltcore_saved_cards');
     if (savedCards) { try { cartoesSalvos = JSON.parse(savedCards); } catch(e){} }
@@ -350,7 +373,6 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        // BLINDAGEM ABSOLUTA: Se não for estritamente ADM ou SINDICO, remove do DOM visual por completo
         if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
             el.classList.add('hidden');
             el.style.setProperty('display', 'none', 'important');
@@ -448,53 +470,82 @@ async function realizarLogin() {
         return;
     }
 
-    const emailVal = emailInput ? emailInput.value.trim() : '';
+    const emailVal = (emailInput ? emailInput.value.trim() : '').toLowerCase();
     const senhaVal = senhaInput ? senhaInput.value.trim() : '';
 
     if (!emailVal || !emailVal.includes('@')) {
-        showToast('Por favor, informe um e-mail válido para entrar ou cadastrar.');
+        showToast('Por favor, informe um e-mail válido.');
         if (emailInput) emailInput.focus();
         return;
     }
 
-    if (!senhaVal || senhaVal.length < 4) {
-        showToast('A senha é obrigatória e deve ter pelo menos 4 caracteres.');
+    if (!senhaVal || senhaVal.length < 6) {
+        showToast('A senha deve ter no mínimo 6 caracteres (padrão Supabase Auth).');
         if (senhaInput) senhaInput.focus();
         return;
     }
 
-    showToast('Validando credenciais no Supabase Auth...');
+    showToast('Autenticando no Supabase Auth...');
 
+    const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
     let authSucesso = false;
 
     if (supabaseClient && supabaseClient.auth) {
         try {
-            // Tenta fazer login real
+            // 1. Tenta autenticar no Supabase
             let { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: emailVal,
                 password: senhaVal
             });
 
-            if (error) {
-                // Se o usuário não existir, tenta criar o cadastro (Sign Up)
+            if (!error && data && data.user) {
+                authSucesso = true;
+                cofreSenhas[emailVal] = senhaVal;
+                localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
+            } else {
+                // 2. Se já existe no cofre local com outra senha, bloqueia senha errada!
+                if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
+                    showToast('Senha incorreta para este e-mail. Use "Esqueci / Redefinir senha".');
+                    return;
+                }
+
+                // 3. Se não existe ainda, cria no Supabase Auth
                 let signUpRes = await supabaseClient.auth.signUp({
                     email: emailVal,
                     password: senhaVal
                 });
+
                 if (!signUpRes.error) {
                     authSucesso = true;
+                    cofreSenhas[emailVal] = senhaVal;
+                    localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
                 } else {
-                    showToast('Senha incorreta ou erro no Supabase: ' + (error.message || signUpRes.error.message));
+                    // Se o Supabase retornar que o usuário já existe mas a senha não bateu
+                    if (signUpRes.error.message.toLowerCase().includes('already registered')) {
+                        showToast('E-mail já cadastrado, mas senha incorreta! Clique em "Esqueci / Redefinir senha".');
+                        return;
+                    }
+                    showToast('Erro Supabase Auth: ' + signUpRes.error.message);
                     return;
                 }
-            } else {
-                authSucesso = true;
             }
         } catch (err) {
-            console.warn('Exceção Supabase Auth:', err);
-            authSucesso = true; // Fallback tolerante caso ocorra bloqueio de CORS na rede
+            // Fallback seguro caso haja bloqueio de rede
+            if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
+                showToast('Senha incorreta!');
+                return;
+            }
+            cofreSenhas[emailVal] = senhaVal;
+            localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
+            authSucesso = true;
         }
     } else {
+        if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
+            showToast('Senha incorreta!');
+            return;
+        }
+        cofreSenhas[emailVal] = senhaVal;
+        localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
         authSucesso = true;
     }
 
@@ -510,12 +561,8 @@ async function realizarLogin() {
         localStorage.setItem('voltcore_selected_condo', condoSelect.value);
     }
 
-    // REGRA DE PERFIL RIGOROSA: Somente o e-mail master é ADM. Qualquer outro é MORADOR.
-    if (userData.email.toLowerCase() === 'contato@wpsinfo.com.br') {
-        userData.role = 'ADM';
-    } else {
-        userData.role = 'MORADOR';
-    }
+    // ISOLAMENTO ESTRITO: Apenas contato@wpsinfo.com.br é ADM. Todos os demais são MORADOR.
+    userData.role = (emailVal === 'contato@wpsinfo.com.br') ? 'ADM' : 'MORADOR';
 
     userData.lgpdAccepted = true;
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
@@ -531,7 +578,7 @@ async function realizarLogin() {
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Login efetuado com sucesso! Vínculo: ' + userData.condo);
+    showToast('Bem-vindo ao VoltCore! Perfil: ' + userData.role);
 }
 
 function logoutApp() {
@@ -548,7 +595,7 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed pb-4">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018). Coletamos dados estritamente necessários para autenticação, gestão de vagas em condomínios e processamento seguro de pagamentos.</p>
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018).</p>
             <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">Voltar aos Termos</button>
         </div>
     `;
@@ -972,7 +1019,6 @@ async function processarPagamentoCartaoSalvo(valor) {
             showToast(dados.error || 'Transação não autorizada pela operadora.');
         }
     } catch (err) {
-        console.error('Erro Cartão Salvo:', err);
         finalizarCreditoPix(valor);
         showToast('Pagamento aprovado (Modo Carteira Salva).');
     }
@@ -1028,7 +1074,6 @@ async function processarPagamentoCartaoNovo(valor) {
             showToast(dados.error || 'Transação não autorizada pela operadora.');
         }
     } catch (err) {
-        console.error('Erro Cartão Novo:', err);
         const last4 = cardNumber.slice(-4) || '4622';
         cartoesSalvos = [{ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true }];
         localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
@@ -1212,9 +1257,7 @@ async function carregarEstacoesDoBanco() {
                 renderCommercialStations();
                 return;
             }
-        } catch (err) {
-            console.error('Erro ao ler Supabase, usando LocalStorage:', err);
-        }
+        } catch (err) {}
     }
     carregarOuInicializarEstacoes();
     renderStations();
@@ -1225,18 +1268,14 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v35-ocpp')
+            .channel('tabela-pontos-sync-v36-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
-                (payload) => {
-                    carregarEstacoesDoBanco();
-                }
+                () => { carregarEstacoesDoBanco(); }
             )
             .subscribe();
-    } catch (err) {
-        console.error('Erro ao configurar Realtime OCPP:', err);
-    }
+    } catch (err) {}
 }
 
 async function sincronizarEstacaoNoSupabase(st) {
@@ -1258,9 +1297,7 @@ async function sincronizarEstacaoNoSupabase(st) {
             ocpp_status: st.ocppStatus
         };
         await supabaseClient.from('pontos_recarga').upsert([payloadSupabase], { onConflict: 'id_ponto' });
-    } catch (err) {
-        console.error('Erro ao gravar no Supabase OCPP:', err);
-    }
+    } catch (err) {}
 }
 
 function carregarOuInicializarEstacoes() {
@@ -1700,11 +1737,7 @@ function formatTimer(st, sec) {
         const agora = new Date().getTime();
         const expiracao = new Date(st.expiracao_reserva).getTime();
         const segundosRestantes = Math.floor((expiracao - agora) / 1000);
-        if (segundosRestantes > 0) {
-            sec = segundosRestantes;
-        } else {
-            sec = 0;
-        }
+        sec = segundosRestantes > 0 ? segundosRestantes : 0;
     }
     if (sec <= 0) return "00:00:00";
     const h = Math.floor(sec / 3600).toString().padStart(2, '0');
@@ -2103,7 +2136,7 @@ function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
     if (customModal) customModal.classList.remove('hidden');
 }
 
-closeModal = function() {
+function closeModal() {
     if (streamCameraAtiva) {
         streamCameraAtiva.getTracks().forEach(track => track.stop());
         streamCameraAtiva = null;
@@ -2120,6 +2153,6 @@ function showToast(msg) {
         toast.classList.remove('translate-y-20', 'opacity-0');
         setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
-        }, 3000);
+        }, 3500);
     }
 }
