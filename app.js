@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V7.0 (MULTI-TENANT, LGPD & PLANEJADOR REAL)
+   VOLTCORE PRO • FRONT-END ENGINE V8.0 (MULTI-TENANT, LGPD OBRIGATÓRIA & ROBUST)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -15,11 +15,12 @@ let stations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
 
+// Perfil padrão estruturado para multi-tenant rigoroso
 let userData = {
     name: "Wanderson Pedro da Silva",
     email: "contato@wpsinfo.com.br",
     phone: "(11) 94461-4162",
-    role: "ADM", // ADM (Master), SINDICO, MORADOR ou VISITANTE
+    role: "ADM", // ADM (Master), SINDICO, MORADOR
     condo: "Condomínio Gioviale • Torre Sul",
     allowedCondos: ["Condomínio Gioviale • Torre Sul", "Condomínio Gioviale • Torre Norte", "Complexo Atmosfera Residencial", "Belarte Residencial Jundiaí"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
@@ -63,6 +64,9 @@ window.onload = function() {
         const screenApp = document.getElementById('screen-app');
         if (screenAuth) screenAuth.classList.add('hidden');
         if (screenApp) screenApp.classList.remove('hidden');
+    } else {
+        // Garante que a tela de auth com LGPD esteja visível se não logado
+        injetarCheckLgpdTelaAuth();
     }
 
     aplicarControlePermissoesPerfil();
@@ -78,6 +82,24 @@ window.onload = function() {
     configurarSupabaseRealtime();
     setInterval(updateTimersAndLoad, 1000);
 };
+
+// Injeção dinâmica do Checkbox de LGPD na tela de login caso o HTML base não tenha
+function injetarCheckLgpdTelaAuth() {
+    const authBox = document.querySelector('#screen-auth > div');
+    if (authBox && !document.getElementById('check-lgpd-login')) {
+        const divLgpd = document.createElement('div');
+        divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
+        divLgpd.innerHTML = `
+            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
+            <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
+                Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
+            </label>
+        `;
+        // Insere antes do bloco de botões
+        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
+        authBox.insertBefore(divLgpd, botoesDiv);
+    }
+}
 
 function carregarTudoPersistente() {
     const savedUser = localStorage.getItem('voltcore_user_data');
@@ -130,7 +152,6 @@ function configurarPermissoesCondominioPorUsuario() {
     const selectCondo = document.getElementById('select-condo');
     if (!selectCondo) return;
 
-    // Se for síndico, restringe o select apenas aos condomínios permitidos a ele
     if (userData.role === 'SINDICO') {
         selectCondo.innerHTML = '';
         userData.allowedCondos.forEach(c => {
@@ -148,109 +169,45 @@ function configurarPermissoesCondominioPorUsuario() {
 
 function alternarModoEmail() {
     const form = document.getElementById('auth-email-form');
-    if (form) form.classList.toggle('hidden');
-}
-
-function abrirTelaCadastroNovoUsuario() {
-    const htmlCadastro = `
-        <div class="space-y-3 text-left text-xs">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                <h4 class="font-bold text-slate-900 text-sm">Novo Cadastro • VoltCore Multi-Tenant</h4>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer pointer-events-auto"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Nome Completo:</label>
-                <input type="text" id="reg-name" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">E-mail de Validação:</label>
-                <input type="email" id="reg-email" placeholder="seu@email.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Perfil de Acesso / Vínculo:</label>
-                <select id="reg-perfil" onchange="alternarCampoCondominioCadastro(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <option value="MORADOR">Morador de Condomínio</option>
-                    <option value="VISITANTE">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
-                    <option value="SINDICO">Síndico / Administrador</option>
-                </select>
-            </div>
-            <div id="wrapper-reg-condo">
-                <label class="block font-bold text-slate-700 mb-1">Selecionar Condomínio:</label>
-                <select id="reg-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+    if (form) {
+        form.classList.toggle('hidden');
+        // Se abriu o form de email, injeta também a seleção de condomínio multi-tenant se não existir
+        if (!document.getElementById('login-condo-multitenant') && !form.classList.contains('hidden')) {
+            const divCondo = document.createElement('div');
+            divCondo.className = "mt-2";
+            divCondo.id = "login-condo-multitenant";
+            divCondo.innerHTML = `
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio de Vínculo (Multi-Tenant)</label>
+                <select id="auth-condo-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                     <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
                     <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
                     <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
                     <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
+                    <option value="Apenas Eletropostos / Visitante">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
                 </select>
-                <p class="text-[9px] text-slate-500 mt-1">O sistema validará se seu e-mail e unidade constam no pré-cadastro do condomínio.</p>
-            </div>
-            <div class="flex items-center gap-2 pt-1 bg-lime-50 p-2.5 rounded-xl border border-lime-200">
-                <input type="checkbox" id="reg-lgpd" class="rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
-                <label for="reg-lgpd" class="text-[10px] text-slate-800 font-bold">Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-700 underline">Termos de Privacidade e LGPD</a>.</label>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="salvarNovoCadastroUsuario()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto shadow-xs">VALIDAR E CADASTRAR</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Novo Cadastro • Plataforma Multi-Tenant', htmlCadastro, 'fa-user-plus', 'lime');
-}
-
-function alternarCampoCondominioCadastro(select) {
-    const wrapper = document.getElementById('wrapper-reg-condo');
-    if (!wrapper) return;
-    if (select.value === 'VISITANTE') {
-        wrapper.classList.add('hidden');
-    } else {
-        wrapper.classList.remove('hidden');
-    }
-}
-
-function salvarNovoCadastroUsuario() {
-    const nome = document.getElementById('reg-name').value;
-    const email = document.getElementById('reg-email').value;
-    const perfil = document.getElementById('reg-perfil').value;
-    const condoSelect = document.getElementById('reg-condo');
-    const condo = condoSelect ? condoSelect.value : 'Nenhum';
-    const lgpd = document.getElementById('reg-lgpd').checked;
-
-    if (!nome || !email) {
-        showToast('Preencha o nome e o e-mail de validação.');
-        return;
-    }
-    if (!lgpd) {
-        showToast('Você deve aceitar os Termos de Privacidade e LGPD obrigatórios.');
-        return;
-    }
-
-    // Validação multi-tenant simulada na base de moradores cadastrados
-    if (perfil === 'MORADOR') {
-        const existeNaBase = moradoresCondominio.some(m => m.nome.toLowerCase().includes(nome.toLowerCase().split(' ')[0]) || m.condo.toLowerCase().includes(condo.toLowerCase().split(' ')[0]));
-        if (!existeNaBase) {
-            showToast(`Atenção: O e-mail ou morador não foi localizado na base do condomínio ${condo}. Contate o síndico.`);
-            return;
+            `;
+            form.insertBefore(divCondo, form.lastElementChild);
         }
     }
-
-    userData.name = nome;
-    userData.email = email;
-    userData.role = perfil === 'VISITANTE' ? 'MORADOR' : perfil;
-    userData.condo = perfil === 'VISITANTE' ? 'Apenas Eletropostos / Visitante' : condo;
-    userData.lgpdAccepted = true;
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    
-    closeModal();
-    realizarLogin();
 }
 
 function realizarLogin() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
+        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
         return;
     }
     
+    const emailInput = document.getElementById('auth-email-input');
+    if (emailInput && emailInput.value) {
+        userData.email = emailInput.value;
+    }
+
+    const condoSelect = document.getElementById('auth-condo-select');
+    if (condoSelect) {
+        userData.condo = condoSelect.value;
+    }
+
     userData.lgpdAccepted = true;
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     localStorage.setItem('voltcore_logged', 'true');
@@ -272,6 +229,7 @@ function logoutApp() {
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.remove('hidden');
     if (screenApp) screenApp.classList.add('hidden');
+    injetarCheckLgpdTelaAuth();
 }
 
 function abrirTermosPrivacidade() {
@@ -297,7 +255,7 @@ function abrirLeitorQrCodeCamera() {
             </div>
             <div class="flex gap-2">
                 <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR COMANDO OCPP</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Fechar</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
             </div>
         </div>
     `;
@@ -369,7 +327,6 @@ function executarPlanejamentoViagem() {
         latTarget = postoEncontrado.coords[0];
         lngTarget = postoEncontrado.coords[1];
         
-        // Destaca e centraliza no mapa comercial se estiver ativo
         if (leafletMap) {
             leafletMap.setView([latTarget, lngTarget], 13);
             plotarMarcadoresMapa('ALL', postoEncontrado.city);
@@ -1176,7 +1133,6 @@ function plotarMarcadoresMapa(filtroTipo, termoBusca) {
         encontrados++;
 
         const corPin = p.type === 'AC' ? '#8cc63f' : '#3b82f6';
-        // Adicionando efeito de destaque/pulsação se houver busca ativa
         const animationClass = termoBusca ? 'animate-bounce' : '';
         const customIcon = L.divIcon({
             className: 'custom-map-pin ' + animationClass,
@@ -1365,7 +1321,6 @@ function renderStations() {
     }
 
     stations.forEach(st => {
-        // Validação estrita multi-tenant para síndicos e moradores
         if (userData.role === 'SINDICO' && !userData.allowedCondos.includes(st.condo)) return;
         if (st.condo !== currentCondo) return;
 
@@ -1599,7 +1554,6 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
     const termo = termoFiltro.toLowerCase().trim();
 
     moradoresCondominio.forEach((m, idx) => {
-        // Restrição rigorosa Multi-Tenant para Síndico
         if (userData.role === 'SINDICO' && !userData.allowedCondos.some(c => c.toLowerCase().includes(m.condo.toLowerCase()))) {
             return;
         }
