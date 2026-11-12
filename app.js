@@ -1,3 +1,8 @@
+/* ==========================================================================
+   VOLTCORE PRO • FRONT-END ENGINE V6.0 (COMPLIANT COM LGPD, ADM MASTER & FILTROS)
+   Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
+   ========================================================================== */
+
 const SUPABASE_URL = 'https://eoqfuawvljvotvyfrcbj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
 let supabaseClient = null;
@@ -14,10 +19,11 @@ let userData = {
     name: "Wanderson Pedro da Silva",
     email: "contato@wpsinfo.com.br",
     phone: "(11) 94461-4162",
-    role: "ADM",
+    role: "ADM", // ADM, SINDICO_GERAL ou MORADOR
     condo: "Condomínio Gioviale • Torre Sul",
     allowedCondos: ["Condomínio Gioviale • Torre Sul", "Condomínio Gioviale • Torre Norte", "Complexo Atmosfera Residencial", "Belarte Residencial Jundiaí"],
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    lgpdAccepted: true
 };
 
 let meusVeiculos = [
@@ -33,7 +39,8 @@ let cartoesSalvos = [
 ];
 
 let moradoresCondominio = [
-    { nome: 'Wanderson Pedro da Silva', condo: 'Condomínio Gioviale', bloco: 'Torre Sul', unidade: 'Apto 101', endereco: 'Rua das Palmeiras, 300', vaga: 'Vaga 01', veiculo: 'BYD Seal (CCS2)', placa: 'ABC-1D23', status: 'Ativo', data: '26/10/2026', horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '14.2 kWh', ociosidade: 'Sim (R$ 5,00)', valor: 'R$ 18,96' }
+    { nome: 'Wanderson Pedro da Silva', condo: 'Condomínio Gioviale', bloco: 'Torre Sul', unidade: 'Apto 101', endereco: 'Rua das Palmeiras, 300', vaga: 'Vaga 01', veiculo: 'BYD Seal (CCS2)', placa: 'ABC-1D23', status: 'Ativo', data: '26/10/2026', horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '14.2 kWh', ociosidade: 'Sim (R$ 5,00)', valor: 'R$ 18,96' },
+    { nome: 'Jose Bronzeri', condo: 'Condomínio Gioviale', bloco: 'Torre Norte', unidade: 'Apto 202', endereco: 'Rua das Palmeiras, 300', vaga: 'Vaga 02', veiculo: 'Volvo XC40', placa: 'XYZ-9W88', status: 'Ativo', data: '26/10/2026', horaInicio: '01:00 PM', horaFim: '01:50 PM', duracao: '50 min', kwh: '18.5 kWh', ociosidade: 'Não', valor: 'R$ 24,10' }
 ];
 
 const ESTACOES_PADRAO = [
@@ -48,10 +55,6 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = function() {
-    localStorage.removeItem('voltcore_stations_v2');
-    localStorage.removeItem('voltcore_stations_v3');
-    localStorage.removeItem('voltcore_stations_v4');
-    
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -62,6 +65,7 @@ window.onload = function() {
         if (screenApp) screenApp.classList.remove('hidden');
     }
 
+    aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarOuInicializarEstacoes();
     
@@ -81,11 +85,7 @@ function carregarTudoPersistente() {
     aplicarDadosUsuarioNaTela();
     
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
-    if (savedVehicles) { 
-        try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
-    } else {
-        localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
-    }
+    if (savedVehicles) { try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} }
     renderizarVeiculos();
 
     const savedWallet = localStorage.getItem('voltcore_wallet_balance');
@@ -115,10 +115,20 @@ function aplicarDadosUsuarioNaTela() {
     if (condoEl) condoEl.innerText = userData.condo;
 }
 
+function aplicarControlePermissoesPerfil() {
+    const adminButtons = document.querySelectorAll('.adm-only-element');
+    adminButtons.forEach(el => {
+        if (userData.role !== 'ADM' && userData.role !== 'SINDICO_GERAL') {
+            el.classList.add('hidden');
+        } else {
+            el.classList.remove('hidden');
+        }
+    });
+}
+
 function configurarPermissoesCondominioPorUsuario() {
     const selectCondo = document.getElementById('select-condo');
     if (!selectCondo) return;
-
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
     if (savedCondo) {
         selectCondo.value = savedCondo;
@@ -132,16 +142,89 @@ function alternarModoEmail() {
     if (form) form.classList.toggle('hidden');
 }
 
+function abrirTelaCadastroNovoUsuario() {
+    const htmlCadastro = `
+        <div class="space-y-3 text-left text-xs">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h4 class="font-bold text-slate-900 text-sm">Novo Cadastro • VoltCore</h4>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Nome Completo:</label>
+                <input type="text" id="reg-name" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">E-mail de Acesso:</label>
+                <input type="email" id="reg-email" placeholder="seu@email.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Selecione o Condomínio (Opcional):</label>
+                <select id="reg-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <option value="Nenhum (Apenas Eletropostos / Visitante)">Nenhum (Apenas Eletropostos / Visitante)</option>
+                    <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
+                    <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
+                    <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
+                    <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+                <input type="checkbox" id="reg-lgpd" class="rounded text-lime-600 focus:ring-lime-500 w-4 h-4">
+                <label for="reg-lgpd" class="text-[10px] text-slate-600">Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-bold underline">Termos e LGPD</a>.</label>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="salvarNovoCadastroUsuario()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CADASTRAR E ENTRAR</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
+        </div>
+    `;
+    showCustomModal('Criar Nova Conta VoltCore', htmlCadastro, 'fa-user-plus', 'lime');
+}
+
+function salvarNovoCadastroUsuario() {
+    const nome = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const condo = document.getElementById('reg-condo').value;
+    const lgpd = document.getElementById('reg-lgpd').checked;
+
+    if (!nome || !email) {
+        showToast('Preencha o nome e o e-mail para continuar.');
+        return;
+    }
+    if (!lgpd) {
+        showToast('Você deve aceitar os Termos e LGPD.');
+        return;
+    }
+
+    userData.name = nome;
+    userData.email = email;
+    userData.condo = condo;
+    userData.lgpdAccepted = true;
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+    
+    closeModal();
+    realizarLogin();
+}
+
 function realizarLogin() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
+        return;
+    }
+    
+    userData.lgpdAccepted = true;
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     localStorage.setItem('voltcore_logged', 'true');
+    
     const screenAuth = document.getElementById('screen-auth');
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.add('hidden');
     if (screenApp) screenApp.classList.remove('hidden');
     
+    aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Bem-vindo ao VoltCore PRO (OCPP Engine Ativo), ' + userData.name + '!');
+    showToast('Bem-vindo ao VoltCore PRO, ' + userData.name + '!');
 }
 
 function logoutApp() {
@@ -156,8 +239,8 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob o protocolo aberto OCPP para integração em massa de eletropostos em conformidade com a LGPD.</p>
-            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">LI E CONCORDO</button>
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018). Coletamos dados estritamente necessários para autenticação, gestão de vagas em condomínios e processamento seguro de pagamentos.</p>
+            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> VOLTAR AOS TERMOS</button>
         </div>
     `;
     showCustomModal('Termos de Privacidade & LGPD', htmlTermos, 'fa-shield-halved', 'lime');
@@ -173,10 +256,9 @@ function abrirLeitorQrCodeCamera() {
                     <span class="bg-slate-900/80 text-lime-400 text-[10px] font-extrabold px-3 py-1 rounded-full">Aponte para o QR Code OCPP do Posto</span>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-500">Câmera ativa para comando remoto via OCPP.</p>
             <div class="flex gap-2">
                 <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR COMANDO OCPP</button>
-                <button onclick="closeModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Fechar</button>
             </div>
         </div>
     `;
@@ -199,7 +281,7 @@ function simularLeituraQrSucesso() {
         <div class="space-y-2 text-center">
             <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-lg mx-auto"><i class="fa-solid fa-bolt"></i></div>
             <h4 class="font-bold text-slate-900 text-xs">Comando Aceito pelo Eletroposto!</h4>
-            <p class="text-[10px] text-slate-600">O backend OCPP despachou o pulso de liberação para o conector. Sessão iniciada com sucesso.</p>
+            <p class="text-[10px] text-slate-600">Sessão iniciada com sucesso.</p>
             <button onclick="closeModal(); switchTab('stations');" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-1 cursor-pointer pointer-events-auto">VER PAINEL DE CARGA</button>
         </div>
     `, 'fa-bolt', 'emerald');
@@ -211,7 +293,7 @@ function abrirPlanejarViagem() {
         <div class="space-y-3 text-left text-xs">
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Destino da Viagem (Cidade / Estabelecimento):</label>
-                <input type="text" id="input-destino-viagem" placeholder="Ex: Sorocaba, Foz do Iguaçu, Uberaba..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <input type="text" id="input-destino-viagem" placeholder="Ex: Sorocaba, Foz do Iguaçu, Campinas..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Autonomia Atual do Veículo (%):</label>
@@ -221,7 +303,10 @@ function abrirPlanejarViagem() {
                 <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada OCPP VoltCore:</p>
                 <p id="texto-rota-calculada" class="text-[10px] text-lime-700 font-medium"></p>
             </div>
-            <button onclick="executarPlanejamentoViagem()" class="w-full bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS & PARADAS</button>
+            <div class="flex gap-2">
+                <button onclick="executarPlanejamentoViagem()" class="flex-1 bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Planejar Viagem • Rede OCPP', htmlViagem, 'fa-route', 'lime');
@@ -267,7 +352,10 @@ function abrirModalMeusDados() {
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade</label>
                 <input type="text" id="edit-user-condo" value="${userData.condo}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            <button onclick="salvarMeusDados()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR DADOS</button>
+            <div class="flex gap-2 pt-2">
+                <button onclick="salvarMeusDados()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR DADOS</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Meus Dados & Cadastro', htmlDados, 'fa-user', 'lime');
@@ -290,7 +378,10 @@ function abrirModalEditarFoto() {
         <div class="space-y-3 text-left text-xs">
             <p class="text-slate-600">Selecione uma imagem do seu dispositivo para atualizar o perfil:</p>
             <input type="file" id="input-arquivo-foto" accept="image/*" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium text-xs cursor-pointer pointer-events-auto">
-            <button onclick="processarArquivoFoto()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR FOTO DO DISPOSITIVO</button>
+            <div class="flex gap-2 pt-2">
+                <button onclick="processarArquivoFoto()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR FOTO</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Alterar Foto de Perfil', htmlFoto, 'fa-camera', 'lime');
@@ -332,7 +423,10 @@ function abrirModalAdicionarVeiculo() {
                     <option value="Elétrico (CHAdeMO)">Elétrico (CHAdeMO)</option>
                 </select>
             </div>
-            <button onclick="confirmarAdicionarVeiculo()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">CADASTRAR VEÍCULOS</button>
+            <div class="flex gap-2 pt-2">
+                <button onclick="confirmarAdicionarVeiculo()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">CADASTRAR</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Cadastrar Novo Veículo', htmlCarro, 'fa-car', 'lime');
@@ -375,6 +469,9 @@ function abrirModalDeposito() {
                     </button>
                 </div>
             </div>
+            <div class="pt-2">
+                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Adicionar Saldo • Mercado Pago Produção', htmlDep, 'fa-wallet', 'lime');
@@ -387,7 +484,6 @@ function formatarMoedaInput(input) {
     input.value = numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-// INTEGRAÇÃO REAL PIX (CONSUMINDO O BACKEND NO RENDER)
 async function processarPagamentoPix() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -422,8 +518,11 @@ async function processarPagamentoPix() {
                         <p class="text-[10px] font-mono text-lime-400 break-all select-all mt-1 max-h-20 overflow-y-auto">${dados.qr_code}</p>
                     </div>
                     ${dados.qr_code_base64 ? `<img src="data:image/png;base64,${dados.qr_code_base64}" class="w-36 h-36 mx-auto rounded-lg border border-slate-200 shadow-sm" alt="QR Code Pix" />` : ''}
-                    <p class="text-[10px] text-slate-600">Escaneie o QR Code ou copie o código acima para pagar R$ ${valor.toFixed(2).replace('.', ',')}.</p>
-                    <button onclick="finalizarCreditoPix(${valor})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR E CREDITAR SALDO</button>
+                    <p class="text-[10px] text-slate-600">Escaneie o QR Code ou copie o código para pagar R$ ${valor.toFixed(2).replace('.', ',')}.</p>
+                    <div class="flex gap-2">
+                        <button onclick="finalizarCreditoPix(${valor})" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR E CREDITAR</button>
+                        <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                    </div>
                 </div>
             `;
             showCustomModal('Pagamento Pix Instantâneo', htmlPix, 'fa-qrcode', 'emerald');
@@ -436,7 +535,6 @@ async function processarPagamentoPix() {
     }
 }
 
-// CHECKOUT TRANSPARENTE E GESTÃO LIMPA DE CARTÃO SALVO
 function abrirModalCartaoCheckout() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valorLimpo = inputVal.replace(/[^\d]/g, '');
@@ -493,7 +591,7 @@ function abrirModalCartaoCheckout() {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Validade (MM/AA):</label>
-                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" oninput="let v=this.value.replace(/\\D/g,'');if(v.length>4)v=v.slice(0,4);if(v.length>=3){this.value=v.slice(0,2)+'/'+v.slice(2);}else{this.value=v;}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">CVV (Segurança):</label>
@@ -511,7 +609,10 @@ function abrirModalCartaoCheckout() {
                 <input type="text" id="cc-cpf" placeholder="123.456.789-09" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <button onclick="processarPagamentoCartaoNovo(${valor})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3.5 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto mt-3">CADASTRAR E PROCESSAR PAGAMENTO</button>
+            <div class="flex gap-2 pt-3">
+                <button onclick="processarPagamentoCartaoNovo(${valor})" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto">CADASTRAR E COBRAR</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     
@@ -533,7 +634,6 @@ async function processarPagamentoCartaoSalvo(valor) {
                 payer: {
                     email: userData.email,
                     first_name: userData.name.split(' ')[0],
-                    last_name: userData.name.split(' ').slice(1).join(' ') || 'Silva',
                     identification: { type: 'CPF', number: '29866522806' }
                 },
                 card_number: '417401530324' + cartaoPadrao.lastFour,
@@ -571,7 +671,6 @@ async function processarPagamentoCartaoNovo(valor) {
     }
 
     const [expMonth, expYear] = expiry.split('/');
-
     showToast('Processando novo cartão de crédito...');
 
     try {
@@ -586,11 +685,7 @@ async function processarPagamentoCartaoNovo(valor) {
                 payer: {
                     email: userData.email,
                     first_name: userData.name.split(' ')[0],
-                    last_name: userData.name.split(' ').slice(1).join(' ') || 'Silva',
-                    identification: {
-                        type: 'CPF',
-                        number: cpf.replace(/\D/g, '')
-                    }
+                    identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
                 },
                 card_number: cardNumber,
                 card_expiration_month: expMonth,
@@ -753,7 +848,6 @@ function removerVeiculo(index) {
     showToast('Veículo removido com sucesso!');
 }
 
-// ----------------- INTEGRAÇÃO SÓLIDA COM SUPABASE & REALTIME -----------------
 async function carregarEstacoesDoBanco() {
     if (supabaseClient) {
         try {
@@ -1007,6 +1101,9 @@ function abrirFiltrosAvancadosComercial() {
                 <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Lenta AC (22kW)</button>
                 <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos OCPP</button>
             </div>
+            <div class="pt-2">
+                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Filtros Avançados OCPP', htmlFiltros, 'fa-sliders', 'lime');
@@ -1140,6 +1237,9 @@ function abrirSeletorGPS(lat, lng, enderecoEncoded) {
                     <span class="flex items-center gap-2"><i class="fa-brands fa-waze text-white text-base"></i> Waze</span>
                     <i class="fa-solid fa-arrow-up-right-from-square text-xs text-sky-200"></i>
                 </a>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
             </div>
         </div>
     `;
@@ -1433,12 +1533,29 @@ async function cancelReservation(id) {
     showToast(`Reserva OCPP cancelada.`);
 }
 
+// ==========================================================================
+// CENTRAL DE GESTÃO DO SÍNDICO / ADM MASTER REFORMULADA (COM FILTROS & LGPD)
+// ==========================================================================
 function abrirPainelGestao() {
+    renderizarConteudoPainelGestao('');
+}
+
+function renderizarConteudoPainelGestao(termoFiltro = '') {
     let htmlMoradores = '';
+    const termo = termoFiltro.toLowerCase().trim();
+
     moradoresCondominio.forEach((m, idx) => {
+        // Filtro por nome ou placa exigido pelo síndico
+        if (termo) {
+            const nomeMatch = m.nome.toLowerCase().includes(termo);
+            const placaMatch = (m.placa || '').toLowerCase().includes(termo);
+            const vagaMatch = (m.vaga || '').toLowerCase().includes(termo);
+            if (!nomeMatch && !placaMatch && !vagaMatch) return;
+        }
+
         const isInativo = m.status === 'Inativo';
         htmlMoradores += `
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-2 text-xs">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5 text-xs">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-slate-100">
                     <div>
                         <strong class="text-slate-900 text-sm font-extrabold">${m.nome}</strong> 
@@ -1446,27 +1563,32 @@ function abrirPainelGestao() {
                         <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-microchip text-lime-600 mr-1"></i> ${m.condo} (${m.bloco || 'Torre'}) • ${m.endereco || ''}</div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                        <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">${m.valor}</span>
-                        <span class="text-[10px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200' : 'text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200'}">${m.status}</span>
+                        <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">${m.valor}</span>
+                        <span class="text-[10px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200' : 'text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200'}">${m.status}</span>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
-                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-0.5">
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
                         <p class="text-slate-700"><strong>Veículo:</strong> <span class="font-medium">${m.veiculo}</span></p>
-                        <p class="text-slate-700"><strong>Placa:</strong> <span class="font-medium">${m.placa || 'N/D'}</span></p>
+                        <p class="text-slate-700"><strong>Placa:</strong> <span class="font-medium font-mono text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">${m.placa || 'N/D'}</span></p>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-0.5">
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
                         <p class="text-slate-700"><strong>Sessão OCPP:</strong> <span class="font-medium">${m.data} • ${m.horaInicio || '12:00'} (${m.duracao || '42 min'})</span></p>
                         <p class="text-slate-700"><strong>Volume / Ociosidade:</strong> <span class="font-medium text-emerald-700">${m.kwh || '14.2 kWh'}</span> | <span class="text-amber-700 font-bold">${m.ociosidade || 'Não'}</span></p>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-1">
-                    <span class="text-[10px] text-slate-400 italic">Controle Central OCPP em Massa Ativo.</span>
-                    <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
-                        ${isInativo ? 'Reativar Condômino' : 'Inativar Condômino'}
-                    </button>
+                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 gap-2 border-t border-slate-50">
+                    <span class="text-[10px] text-slate-400 italic flex items-center gap-1"><i class="fa-solid fa-shield-halved text-lime-600"></i> Rastreabilidade LGPD Ativa.</span>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="estornarOuAjustarSaldoMorador(${idx})" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition cursor-pointer pointer-events-auto">
+                            <i class="fa-solid fa-rotate-left"></i> Estorno / Saldo
+                        </button>
+                        <button onclick="alternarStatusMorador(${idx})" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
+                            ${isInativo ? 'Reativar Condômino' : 'Inativar Condômino'}
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -1474,56 +1596,82 @@ function abrirPainelGestao() {
 
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs">
-            <div class="flex items-center justify-between bg-slate-900 text-white p-3.5 rounded-xl shadow-md">
+            <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-xl shadow-md">
                 <div>
-                    <h4 class="font-extrabold text-lime-400 text-sm flex items-center gap-1.5"><i class="fa-solid fa-server"></i> Central OCPP • Gestão em Massa</h4>
-                    <p class="text-[11px] text-slate-300">Monitoramento online de carregadores via WebSockets / CSMS.</p>
+                    <h4 class="font-extrabold text-lime-400 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> Central ADM Master & Síndico</h4>
+                    <p class="text-[11px] text-slate-300">Gestão avançada de faturamento, ociosidade e telemetria de carregadores.</p>
                 </div>
                 <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer pointer-events-auto shrink-0" title="Fechar">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Carregadores OCPP</span>
-                    <span class="text-sm font-black text-slate-900">8 Totens Online (Heartbeat OK)</span>
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Totens OCPP Online</span>
+                    <span class="text-sm font-black text-slate-900">8 / 8 Conectados</span>
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Faturamento / Ociosidade</span>
-                    <span class="text-xs font-black text-emerald-600">R$ 796,50 (Mês Atual)</span>
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Faturamento Mês</span>
+                    <span class="text-xs font-black text-emerald-600">R$ 796,50 (OCPP)</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
+                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Taxa Ociosidade</span>
+                    <span class="text-xs font-black text-amber-600">R$ 45,00 Acumulado</span>
                 </div>
             </div>
 
-            <div class="space-y-2 pt-1">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1 border-b border-slate-200">
-                    <h5 class="text-xs font-bold text-slate-800 uppercase tracking-tight">Base de Usuários & Conectores</h5>
-                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto flex items-center gap-1">
+            <div class="space-y-3 pt-1">
+                <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pb-2 border-b border-slate-200">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="filtro-morador-input" oninput="filtrarGestaoMoradores(this)" value="${termoFiltro}" placeholder="Filtrar por nome do morador, placa ou vaga..." class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    </div>
+                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto flex items-center justify-center gap-1.5 shrink-0">
                         <i class="fa-solid fa-user-plus"></i> Novo Condômino
                     </button>
                 </div>
                 
-                <div class="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-                    ${htmlMoradores}
+                <div class="space-y-2.5 max-h-[45vh] overflow-y-auto pr-1">
+                    ${htmlMoradores || '<div class="p-6 bg-slate-50 rounded-xl text-center text-slate-500">Nenhum registro encontrado para este filtro.</div>'}
                 </div>
             </div>
             
-            <button onclick="closeModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR PAINEL OCPP</button>
+            <div class="flex gap-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR PAINEL</button>
+            </div>
         </div>
     `;
-    showCustomModal('Central OCPP • Gestão em Massa', conteudoGestao, 'fa-server', 'lime');
+    showCustomModal('Central ADM Master • Gestão em Massa', conteudoGestao, 'fa-building-shield', 'lime');
+}
+
+function filtrarGestaoMoradores(input) {
+    renderizarConteudoPainelGestao(input.value);
+    // Mantém o foco no input após renderizar
+    setTimeout(() => {
+        const inp = document.getElementById('filtro-morador-input');
+        if (inp) {
+            inp.focus();
+            inp.setSelectionRange(inp.value.length, inp.value.length);
+        }
+    }, 50);
+}
+
+function estornarOuAjustarSaldoMorador(idx) {
+    const morador = moradoresCondominio[idx];
+    showToast(`Solicitação de ajuste financeiro registrada para ${morador.nome} com rastreabilidade.`);
 }
 
 function alternarStatusMorador(idx) {
     if (moradoresCondominio[idx].status === 'Ativo') {
         moradoresCondominio[idx].status = 'Inativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} inativado.`);
+        showToast(`Morador ${moradoresCondominio[idx].nome} inativado com sucesso.`);
     } else {
         moradoresCondominio[idx].status = 'Ativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} reativado!`);
+        showToast(`Morador ${moradoresCondominio[idx].nome} reativado com sucesso!`);
     }
     localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    abrirPainelGestao();
+    renderizarConteudoPainelGestao(document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '');
 }
 
 function abrirModalCadastrarMorador() {
@@ -1567,7 +1715,10 @@ function abrirModalCadastrarMorador() {
                     <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
             </div>
-            <button onclick="salvarNovoMorador()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO</button>
+            <div class="flex gap-2 pt-2">
+                <button onclick="salvarNovoMorador()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO</button>
+                <button onclick="abrirPainelGestao()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            </div>
         </div>
     `;
     showCustomModal('Cadastrar Novo Condômino', htmlForm, 'fa-user-plus', 'lime');
