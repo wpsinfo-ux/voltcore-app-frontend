@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.3 (BIOMETRIA SEGURA, SMTP & PERFIS BLINDADOS)
+   VOLTCORE PRO • FRONT-END ENGINE V9.4 (LIMPEZA FORÇADA, PERFIS & BIOMETRIA)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -44,6 +44,16 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = function() {
+    // Migração de Versão: Se estiver vindo de versões antigas com cache sujo, limpa dados de testes
+    if (!localStorage.getItem('voltcore_version_v94')) {
+        localStorage.removeItem('voltcore_logged');
+        localStorage.removeItem('voltcore_user_data');
+        localStorage.removeItem('voltcore_vehicles');
+        localStorage.removeItem('voltcore_wallet_balance');
+        localStorage.removeItem('voltcore_extrato');
+        localStorage.setItem('voltcore_version_v94', 'true');
+    }
+
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -94,19 +104,20 @@ function prepararTelaAuthCompleta() {
         }
     });
 
-    // Botão de Biometria só aparece se houver cadastro prévio no dispositivo
+    // Botão de Biometria limpo e seguro
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (savedBioEmail && !document.getElementById('btn-biometria-acesso')) {
-        const divBio = document.createElement('div');
-        divBio.className = "mt-2";
-        divBio.innerHTML = `
-            <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometria()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
-                <i class="fa-solid fa-fingerprint text-sm"></i> Entrar com Biometria / Face ID
-            </button>
-        `;
-        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
-        authBox.insertBefore(divBio, botoesDiv);
-    }
+    const btnBioExistente = document.getElementById('btn-biometria-acesso');
+    if (btnBioExistente) btnBioExistente.remove();
+
+    const divBio = document.createElement('div');
+    divBio.className = "mt-2";
+    divBio.innerHTML = `
+        <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometrico()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+            <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria / Face ID' : 'Cadastrar / Usar Biometria'}
+        </button>
+    `;
+    const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
+    authBox.insertBefore(divBio, botoesDiv);
 
     injetarBotaoEsqueciSenha();
 }
@@ -206,7 +217,11 @@ async function realizarLoginBiometrico() {
 
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     if (!savedBioEmail) {
-        showToast('Nenhuma biometria vinculada. Faça login com e-mail e senha uma vez para registrar.');
+        showToast('Faça login com e-mail e senha uma vez para registrar sua biometria.');
+        const formEmail = document.getElementById('auth-email-form');
+        if (formEmail && formEmail.classList.contains('hidden')) {
+            alternarModoEmail();
+        }
         return;
     }
 
@@ -283,19 +298,21 @@ function carregarTudoPersistente() {
     }
     aplicarDadosUsuarioNaTela();
     
+    // Garante que novos usuários iniciam com veículos totalmente zerados
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
     if (savedVehicles) { 
         try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
     } else {
-        meusVeiculos = []; // Garante veículo zerado para novo usuário
+        meusVeiculos = [];
     }
     renderizarVeiculos();
 
+    // Garante que novos usuários iniciam com carteira estritamente zerada (R$ 0,00)
     const savedWallet = localStorage.getItem('voltcore_wallet_balance');
-    if (savedWallet !== null) { 
+    if (savedWallet !== null && savedWallet !== undefined) { 
         saldoCarteira = parseFloat(savedWallet); 
     } else {
-        saldoCarteira = 0.00; // Garante carteira zerada para novo usuário
+        saldoCarteira = 0.00;
     }
     
     const savedExtrato = localStorage.getItem('voltcore_extrato');
@@ -335,13 +352,13 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        // Blindagem rigorosa: Se não for ADM ou SINDICO, esconde obrigatoriamente
+        // BLINDAGEM ABSOLUTA: Se não for estritamente ADM ou SINDICO, esconde e remove do DOM visual
         if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
             el.classList.add('hidden');
-            el.style.display = 'none';
+            el.style.setProperty('display', 'none', 'important');
         } else {
             el.classList.remove('hidden');
-            el.style.display = 'flex';
+            el.style.setProperty('display', 'flex', 'important');
         }
     });
 }
@@ -369,7 +386,6 @@ function configurarPermissoesCondominioPorUsuario() {
         });
         selectCondo.disabled = false;
     } else {
-        // Morador comum: restrito estritamente ao seu condomínio
         selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
         selectCondo.disabled = true;
     }
@@ -1172,7 +1188,7 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v33-ocpp')
+            .channel('tabela-pontos-sync-v34-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
