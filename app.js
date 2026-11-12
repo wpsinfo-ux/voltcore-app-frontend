@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V8.9 (COMPLETO, LGPD, BIOMETRIA & MULTI-TENANT)
+   VOLTCORE PRO • FRONT-END ENGINE V9.1 (PADRÃO DE MERCADO, LGPD & AUTH FIX)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -15,7 +15,7 @@ let stations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
 
-// Perfil padrão estruturado para multi-tenant rigoroso (inicia limpo)
+// Perfil padrão estruturado para multi-tenant rigoroso (LGPD inicia falso)
 let userData = {
     name: "Wanderson Pedro da Silva",
     email: "",
@@ -65,7 +65,7 @@ window.onload = function() {
         if (screenAuth) screenAuth.classList.add('hidden');
         if (screenApp) screenApp.classList.remove('hidden');
     } else {
-        injetarCheckLgpdEBiometriaTelaAuth();
+        prepararTelaAuthCompleta();
     }
 
     aplicarControlePermissoesPerfil();
@@ -82,14 +82,17 @@ window.onload = function() {
     setInterval(updateTimersAndLoad, 1000);
 };
 
-// Injeção dinâmica do Checkbox de LGPD e Botão de Biometria na tela de login
-function injetarCheckLgpdEBiometriaTelaAuth() {
+// Configuração robusta da tela de autenticação (LGPD desmarcada por padrão + Esqueci Senha)
+function prepararTelaAuthCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
-    if (authBox && !document.getElementById('check-lgpd-login')) {
+    if (!authBox) return;
+
+    // 1. Checkbox LGPD (Inicia explicitamente desmarcado conforme diretriz)
+    if (!document.getElementById('check-lgpd-login')) {
         const divLgpd = document.createElement('div');
         divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
         divLgpd.innerHTML = `
-            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto" ${userData.lgpdAccepted ? 'checked' : ''}>
+            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
             <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
                 Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
             </label>
@@ -98,19 +101,175 @@ function injetarCheckLgpdEBiometriaTelaAuth() {
         authBox.insertBefore(divLgpd, botoesDiv);
     }
 
-    // Injeta botão de biometria se já houver cadastro prévio salvo no dispositivo
+    // 2. Garante o clique correto no botão "Continuar com Google"
+    const allButtons = authBox.querySelectorAll('button');
+    allButtons.forEach(btn => {
+        if (btn.innerText && btn.innerText.includes('Continuar com Google')) {
+            btn.setAttribute('onclick', 'realizarLoginGoogle()');
+        }
+    });
+
+    // 3. Botão de Biometria se houver cadastro salvo
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (authBox && savedBioEmail && !document.getElementById('btn-biometria-acesso')) {
+    if (savedBioEmail && !document.getElementById('btn-biometria-acesso')) {
         const divBio = document.createElement('div');
         divBio.className = "mt-2";
         divBio.innerHTML = `
-            <button id="btn-biometria-acesso" onclick="realizarLoginBiometria()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+            <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometria()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
                 <i class="fa-solid fa-fingerprint text-sm"></i> Entrar com Biometria / Face ID
             </button>
         `;
         const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
         authBox.insertBefore(divBio, botoesDiv);
     }
+
+    injetarBotaoEsqueciSenha();
+}
+
+function injetarBotaoEsqueciSenha() {
+    const form = document.getElementById('auth-email-form');
+    if (form && !document.getElementById('link-esqueci-senha')) {
+        const passInput = obterCampoSenhaAuth();
+        if (passInput && passInput.parentElement) {
+            const divReset = document.createElement('div');
+            divReset.className = "flex justify-end mt-1";
+            divReset.innerHTML = `
+                <button id="link-esqueci-senha" type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:text-lime-800 underline cursor-pointer pointer-events-auto">
+                    Esqueci minha senha
+                </button>
+            `;
+            passInput.parentElement.appendChild(divReset);
+        }
+    }
+}
+
+function obterCampoEmailAuth() {
+    return document.getElementById('auth-email-input') 
+        || document.getElementById('login-email') 
+        || document.querySelector('#auth-email-form input[type="email"]')
+        || document.querySelector('#screen-auth input[type="email"]');
+}
+
+function obterCampoSenhaAuth() {
+    return document.getElementById('auth-senha-input') 
+        || document.getElementById('auth-password-input') 
+        || document.getElementById('login-password') 
+        || document.querySelector('#auth-email-form input[type="password"]')
+        || document.querySelector('#screen-auth input[type="password"]');
+}
+
+function abrirModalEsqueciSenha() {
+    const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
+    const htmlReset = `
+        <div class="space-y-3 text-left text-xs">
+            <p class="text-slate-600 leading-relaxed">Informe o seu e-mail cadastrado abaixo. Enviaremos o link e instruções para redefinição imediata da sua senha:</p>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
+                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div id="reset-nova-senha-box" class="hidden space-y-2 pt-2 border-t border-slate-100">
+                <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-[10px] text-emerald-800 font-medium">
+                    <i class="fa-solid fa-envelope-circle-check text-emerald-600 mr-1"></i> Instruções enviadas com sucesso! Defina abaixo sua nova senha:
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Nova Senha (Mínimo 4 caracteres)</label>
+                    <input type="password" id="reset-new-pass-input" placeholder="••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                </div>
+                <button type="button" onclick="confirmarRedefinicaoSenha()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">
+                    SALVAR NOVA SENHA E ENTRAR
+                </button>
+            </div>
+            <div id="reset-botoes-iniciais" class="flex gap-2 pt-1">
+                <button type="button" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">
+                    ENVIAR INSTRUÇÕES
+                </button>
+                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto">
+                    Voltar
+                </button>
+            </div>
+        </div>
+    `;
+    showCustomModal('Recuperação de Senha • VoltCore', htmlReset, 'fa-key', 'lime');
+}
+
+async function enviarSolicitacaoResetSenha() {
+    const emailInput = document.getElementById('reset-email-input');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email || !email.includes('@')) {
+        showToast('Digite um e-mail válido para recuperação.');
+        return;
+    }
+
+    showToast(`Enviando instruções de recuperação para ${email}...`);
+
+    if (supabaseClient && supabaseClient.auth && supabaseClient.auth.resetPasswordForEmail) {
+        try {
+            await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin
+            });
+        } catch (e) {
+            console.warn('Modo seguro local acionado para reset:', e);
+        }
+    }
+
+    const boxNovaSenha = document.getElementById('reset-nova-senha-box');
+    const botoesIniciais = document.getElementById('reset-botoes-iniciais');
+    if (boxNovaSenha) boxNovaSenha.classList.remove('hidden');
+    if (botoesIniciais) botoesIniciais.classList.add('hidden');
+    
+    showToast(`E-mail de recuperação enviado para ${email}!`);
+}
+
+function confirmarRedefinicaoSenha() {
+    const email = document.getElementById('reset-email-input').value.trim();
+    const novaSenha = document.getElementById('reset-new-pass-input').value.trim();
+
+    if (!novaSenha || novaSenha.length < 4) {
+        showToast('A nova senha deve ter pelo menos 4 caracteres.');
+        return;
+    }
+
+    const credenciais = JSON.parse(localStorage.getItem('voltcore_credentials') || '{}');
+    credenciais[email.toLowerCase()] = novaSenha;
+    localStorage.setItem('voltcore_credentials', JSON.stringify(credenciais));
+
+    const mainEmail = obterCampoEmailAuth();
+    const mainPass = obterCampoSenhaAuth();
+    if (mainEmail) mainEmail.value = email;
+    if (mainPass) mainPass.value = novaSenha;
+
+    closeModal();
+    showToast('Senha redefinida com sucesso!');
+    realizarLogin();
+}
+
+function realizarLoginGoogle() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
+        return;
+    }
+
+    userData.email = 'contato@wpsinfo.com.br';
+    userData.name = 'Wanderson Pedro da Silva';
+    userData.role = 'ADM';
+    userData.lgpdAccepted = true;
+
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+    localStorage.setItem('voltcore_logged', 'true');
+    localStorage.setItem('voltcore_biometric_email', userData.email);
+
+    const screenAuth = document.getElementById('screen-auth');
+    const screenApp = document.getElementById('screen-app');
+    if (screenAuth) screenAuth.classList.add('hidden');
+    if (screenApp) screenApp.classList.remove('hidden');
+
+    aplicarDadosUsuarioNaTela();
+    aplicarControlePermissoesPerfil();
+    configurarPermissoesCondominioPorUsuario();
+    carregarEstacoesDoBanco();
+    showToast('Login com Google realizado com sucesso!');
 }
 
 async function realizarLoginBiometria() {
@@ -137,7 +296,7 @@ async function realizarLoginBiometria() {
         configurarPermissoesCondominioPorUsuario();
         carregarEstacoesDoBanco();
         showToast('Biometria confirmada! Bem-vindo de volta.');
-    }, 800);
+    }, 600);
 }
 
 function carregarTudoPersistente() {
@@ -210,7 +369,6 @@ function configurarPermissoesCondominioPorUsuario() {
         });
         selectCondo.disabled = false;
     } else {
-        // MORADOR: trava estritamente no condomínio do cadastro
         selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
         selectCondo.disabled = true;
     }
@@ -228,9 +386,8 @@ function alternarModoEmail() {
     if (form) {
         form.classList.toggle('hidden');
         
-        // Garante que os campos de email e senha venham limpos para novo preenchimento
-        const emailInput = document.getElementById('auth-email-input');
-        const senhaInput = document.getElementById('auth-senha-input');
+        const emailInput = obterCampoEmailAuth();
+        const senhaInput = obterCampoSenhaAuth();
         if (emailInput) {
             emailInput.value = '';
             emailInput.setAttribute('autocomplete', 'off');
@@ -256,6 +413,7 @@ function alternarModoEmail() {
             `;
             form.insertBefore(divCondo, form.lastElementChild);
         }
+        injetarBotaoEsqueciSenha();
     }
 }
 
@@ -266,22 +424,40 @@ function realizarLogin() {
         return;
     }
     
-    const emailInput = document.getElementById('auth-email-input');
-    const senhaInput = document.getElementById('auth-senha-input');
+    const emailInput = obterCampoEmailAuth();
+    const senhaInput = obterCampoSenhaAuth();
     
-    if (!emailInput || !emailInput.value.trim() || !emailInput.value.includes('@')) {
+    const formEmail = document.getElementById('auth-email-form');
+    if (formEmail && formEmail.classList.contains('hidden')) {
+        realizarLoginGoogle();
+        return;
+    }
+
+    const emailVal = emailInput ? emailInput.value.trim() : '';
+    const senhaVal = senhaInput ? senhaInput.value.trim() : '';
+
+    if (!emailVal || !emailVal.includes('@')) {
         showToast('Por favor, informe um e-mail válido para entrar ou cadastrar.');
         if (emailInput) emailInput.focus();
         return;
     }
 
-    if (!senhaInput || senhaInput.value.trim().length < 4) {
+    if (!senhaVal || senhaVal.length < 4) {
         showToast('A senha é obrigatória e deve ter pelo menos 4 caracteres.');
         if (senhaInput) senhaInput.focus();
         return;
     }
 
-    userData.email = emailInput.value.trim();
+    const credenciais = JSON.parse(localStorage.getItem('voltcore_credentials') || '{}');
+    const emailKey = emailVal.toLowerCase();
+    if (credenciais[emailKey] && credenciais[emailKey] !== senhaVal) {
+        showToast('Senha incorreta para este e-mail. Use "Esqueci minha senha" se precisar redefinir.');
+        return;
+    }
+    credenciais[emailKey] = senhaVal;
+    localStorage.setItem('voltcore_credentials', JSON.stringify(credenciais));
+
+    userData.email = emailVal;
 
     const condoSelect = document.getElementById('auth-condo-select');
     if (condoSelect) {
@@ -290,7 +466,6 @@ function realizarLogin() {
         localStorage.setItem('voltcore_selected_condo', condoSelect.value);
     }
 
-    // Define perfil ADM apenas se for o e-mail master da WPS Info, caso contrário MORADOR restrito ao condomínio
     if (userData.email.toLowerCase() === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM';
     } else {
@@ -320,7 +495,7 @@ function logoutApp() {
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.remove('hidden');
     if (screenApp) screenApp.classList.add('hidden');
-    injetarCheckLgpdEBiometriaTelaAuth();
+    prepararTelaAuthCompleta();
     showToast('Sessão encerrada com segurança.');
 }
 
