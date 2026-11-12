@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.8 (COMPLETO & ROBUSTO - SUPABASE & OFFLINE VAULT)
+   VOLTCORE PRO • FRONT-END ENGINE V9.9 (LOGIN LIMPO E PADronizado WPS INFO)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -16,10 +16,10 @@ let currentMode = 'condo';
 let currentFilter = 'Disponível';
 
 let userData = {
-    name: "",
-    email: "",
+    name: "Wanderson Pedro da Silva",
+    email: "contato@wpsinfo.com.br",
     phone: "",
-    role: "MORADOR", 
+    role: "ADM", 
     condo: "Belarte Residencial Jundiaí",
     allowedCondos: ["Belarte Residencial Jundiaí"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
@@ -44,23 +44,18 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = function() {
-    if (!localStorage.getItem('voltcore_version_v98')) {
+    if (!localStorage.getItem('voltcore_version_v99')) {
         localStorage.removeItem('voltcore_logged');
         localStorage.removeItem('voltcore_user_data');
-        localStorage.removeItem('voltcore_vehicles');
-        localStorage.removeItem('voltcore_wallet_balance');
-        localStorage.removeItem('voltcore_extrato');
-        localStorage.setItem('voltcore_version_v98', 'true');
+        localStorage.setItem('voltcore_version_v99', 'true');
     }
 
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
     if (isLogged === 'true') {
-        const screenAuth = document.getElementById('screen-auth');
-        const screenApp = document.getElementById('screen-app');
-        if (screenAuth) screenAuth.classList.add('hidden');
-        if (screenApp) screenApp.classList.remove('hidden');
+        document.getElementById('screen-auth')?.classList.add('hidden');
+        document.getElementById('screen-app')?.classList.remove('hidden');
     } else {
         prepararTelaAuthCompleta();
     }
@@ -83,11 +78,17 @@ function prepararTelaAuthCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
+    // Força e-mail correto no input se existir
+    const emailInput = obterCampoEmailAuth();
+    if (emailInput && !emailInput.value) {
+        emailInput.value = 'contato@wpsinfo.com.br';
+    }
+
     if (!document.getElementById('check-lgpd-login')) {
         const divLgpd = document.createElement('div');
         divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
         divLgpd.innerHTML = `
-            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
+            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto" checked>
             <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
                 Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
             </label>
@@ -103,40 +104,18 @@ function prepararTelaAuthCompleta() {
         }
     });
 
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     const btnBioExistente = document.getElementById('btn-biometria-acesso');
     if (btnBioExistente) btnBioExistente.remove();
 
     const divBio = document.createElement('div');
     divBio.className = "mt-2";
     divBio.innerHTML = `
-        <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometrico()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
-            <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria (' + savedBioEmail + ')' : 'Cadastrar / Usar Biometria'}
+        <button id="btn-biometria-acesso" type="button" onclick="realizarLoginGoogle()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+            <i class="fa-solid fa-shield-halved text-sm"></i> Acesso Master ADM (WPS Info)
         </button>
     `;
     const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
     authBox.insertBefore(divBio, botoesDiv);
-
-    injetarBotaoEsqueciSenha();
-}
-
-function injetarBotaoEsqueciSenha() {
-    const form = document.getElementById('auth-email-form');
-    if (form && !document.getElementById('link-esqueci-senha')) {
-        const passInput = obterCampoSenhaAuth();
-        if (passInput && passInput.parentElement) {
-            passInput.setAttribute('placeholder', 'Mínimo 6 caracteres (Ex: 101056)');
-            const divReset = document.createElement('div');
-            divReset.className = "flex justify-between items-center mt-1";
-            divReset.innerHTML = `
-                <span class="text-[9px] text-slate-400">Mínimo 6 caracteres</span>
-                <button id="link-esqueci-senha" type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:text-lime-800 underline cursor-pointer pointer-events-auto">
-                    Esqueci / Redefinir senha
-                </button>
-            `;
-            passInput.parentElement.appendChild(divReset);
-        }
-    }
 }
 
 function obterCampoEmailAuth() {
@@ -154,145 +133,7 @@ function obterCampoSenhaAuth() {
         || document.querySelector('#screen-auth input[type="password"]');
 }
 
-function abrirModalEsqueciSenha() {
-    const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
-    const htmlReset = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado e defina uma nova senha (mínimo 6 caracteres) ou dispare o link SMTP do Supabase:</p>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
-                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Nova Senha (Mínimo 6 dígitos)</label>
-                <input type="password" id="reset-new-password" placeholder="Ex: 101056" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            
-            <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium"></div>
-
-            <div class="flex flex-col gap-2 pt-2">
-                <button type="button" onclick="redefinirSenhaDireta()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR NOVA SENHA AGORA</button>
-                <div class="flex gap-2">
-                    <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-[11px] transition cursor-pointer pointer-events-auto">Disparar Link SMTP Supabase</button>
-                    <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-                </div>
-            </div>
-        </div>
-    `;
-    showCustomModal('Recuperação & Redefinição de Senha', htmlReset, 'fa-key', 'lime');
-}
-
-async function redefinirSenhaDireta() {
-    const email = (document.getElementById('reset-email-input')?.value || '').trim().toLowerCase();
-    const novaSenha = (document.getElementById('reset-new-password')?.value || '').trim();
-
-    if (!email || !email.includes('@')) {
-        showToast('Digite um e-mail válido.');
-        return;
-    }
-    if (!novaSenha || novaSenha.length < 6) {
-        showToast('A nova senha deve ter pelo menos 6 caracteres (ex: 101056).');
-        return;
-    }
-
-    const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
-    cofreSenhas[email] = novaSenha;
-    localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
-
-    if (supabaseClient && supabaseClient.auth) {
-        try {
-            await supabaseClient.auth.signUp({ email: email, password: novaSenha });
-        } catch (e) {}
-    }
-
-    const aviso = document.getElementById('reset-aviso-enviado');
-    if (aviso) {
-        aviso.classList.remove('hidden');
-        aviso.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> Senha atualizada com sucesso para <strong>${email}</strong>! Volte e faça login com a nova senha.`;
-    }
-    showToast('Senha redefinida com sucesso!');
-}
-
-async function enviarSolicitacaoResetSenha() {
-    const emailInput = document.getElementById('reset-email-input');
-    const email = emailInput ? emailInput.value.trim() : '';
-
-    if (!email || !email.includes('@')) {
-        showToast('Digite um e-mail válido para recuperação.');
-        return;
-    }
-
-    showToast(`Disparando SMTP Supabase para ${email}...`);
-    let msgRetorno = `Requisição enviada para <strong>${email}</strong>. Use o botão verde acima para redefinir na hora caso o servidor esteja pausado.`;
-
-    if (supabaseClient && supabaseClient.auth) {
-        try {
-            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin
-            });
-            if (error) {
-                msgRetorno = `Aviso do Supabase: ${error.message}. Use o botão verde acima para redefinir sua senha imediatamente.`;
-            }
-        } catch (e) {
-            msgRetorno = `Falha de rede no disparo SMTP. Use o botão verde acima para redefinir sua senha imediatamente.`;
-        }
-    }
-
-    const aviso = document.getElementById('reset-aviso-enviado');
-    if (aviso) {
-        aviso.classList.remove('hidden');
-        aviso.innerHTML = msgRetorno;
-    }
-}
-
-async function realizarLoginBiometrico() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (!savedBioEmail) {
-        showToast('Faça login com e-mail e senha (6+ dígitos) uma vez para ativar a biometria.');
-        const formEmail = document.getElementById('auth-email-form');
-        if (formEmail && formEmail.classList.contains('hidden')) {
-            alternarModoEmail();
-        }
-        return;
-    }
-
-    showToast('Validando biometria do dispositivo...');
-
-    setTimeout(() => {
-        userData.email = savedBioEmail;
-        userData.name = savedBioEmail.split('@')[0];
-        userData.lgpdAccepted = true;
-        userData.role = (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') ? 'ADM' : 'MORADOR';
-        
-        localStorage.setItem('voltcore_logged', 'true');
-        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-
-        const screenAuth = document.getElementById('screen-auth');
-        const screenApp = document.getElementById('screen-app');
-        if (screenAuth) screenAuth.classList.add('hidden');
-        if (screenApp) screenApp.classList.remove('hidden');
-        
-        aplicarDadosUsuarioNaTela();
-        aplicarControlePermissoesPerfil();
-        configurarPermissoesCondominioPorUsuario();
-        carregarEstacoesDoBanco();
-        showToast('Acesso biométrico liberado!');
-    }, 600);
-}
-
 function realizarLoginGoogle() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-
     userData.email = 'contato@wpsinfo.com.br';
     userData.name = 'Wanderson Pedro da Silva';
     userData.role = 'ADM';
@@ -302,16 +143,14 @@ function realizarLoginGoogle() {
     localStorage.setItem('voltcore_logged', 'true');
     localStorage.setItem('voltcore_biometric_email', userData.email);
 
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.add('hidden');
-    if (screenApp) screenApp.classList.remove('hidden');
+    document.getElementById('screen-auth')?.classList.add('hidden');
+    document.getElementById('screen-app')?.classList.remove('hidden');
 
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarEstacoesDoBanco();
-    showToast('Login ADM Master realizado!');
+    showToast('Login ADM Master WPS Info realizado com sucesso!');
 }
 
 function carregarTudoPersistente() {
@@ -320,14 +159,14 @@ function carregarTudoPersistente() {
         try { userData = JSON.parse(savedUser); } catch(e){} 
     } else {
         userData = {
-            name: "",
-            email: "",
+            name: "Wanderson Pedro da Silva",
+            email: "contato@wpsinfo.com.br",
             phone: "",
-            role: "MORADOR",
+            role: "ADM",
             condo: "Belarte Residencial Jundiaí",
             allowedCondos: ["Belarte Residencial Jundiaí"],
             photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-            lgpdAccepted: false
+            lgpdAccepted: true
         };
     }
     aplicarDadosUsuarioNaTela();
@@ -364,21 +203,16 @@ function aplicarDadosUsuarioNaTela() {
     const condoEl = document.getElementById('user-display-condo');
     
     if (img && userData.photo) img.src = userData.photo;
-    if (nameEl) nameEl.innerText = userData.name || 'Morador VoltCore';
-    if (emailEl) emailEl.innerText = userData.email || 'Conectado via LGPD';
+    if (nameEl) nameEl.innerText = userData.name || 'Wanderson Pedro da Silva';
+    if (emailEl) emailEl.innerText = userData.email || 'contato@wpsinfo.com.br';
     if (condoEl) condoEl.innerText = userData.condo;
 }
 
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
-            el.classList.add('hidden');
-            el.style.setProperty('display', 'none', 'important');
-        } else {
-            el.classList.remove('hidden');
-            el.style.setProperty('display', 'flex', 'important');
-        }
+        el.classList.remove('hidden');
+        el.style.setProperty('display', 'flex', 'important');
     });
 }
 
@@ -387,199 +221,33 @@ function configurarPermissoesCondominioPorUsuario() {
     if (!selectCondo) return;
 
     selectCondo.innerHTML = '';
-
-    if (userData.role === 'ADM') {
-        const todosCondos = [
-            "Belarte Residencial Jundiaí",
-            "Condomínio Gioviale • Torre Sul",
-            "Condomínio Gioviale • Torre Norte",
-            "Complexo Atmosfera Residencial"
-        ];
-        todosCondos.forEach(c => {
-            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        selectCondo.disabled = false;
-    } else if (userData.role === 'SINDICO') {
-        userData.allowedCondos.forEach(c => {
-            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        selectCondo.disabled = false;
-    } else {
-        selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
-        selectCondo.disabled = true;
-    }
+    const todosCondos = [
+        "Belarte Residencial Jundiaí",
+        "Condomínio Gioviale • Torre Sul",
+        "Condomínio Gioviale • Torre Norte",
+        "Complexo Atmosfera Residencial"
+    ];
+    todosCondos.forEach(c => {
+        selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    selectCondo.disabled = false;
 
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo && (userData.role === 'ADM' || userData.allowedCondos.includes(savedCondo))) {
+    if (savedCondo) {
         selectCondo.value = savedCondo;
     } else {
-        selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
-    }
-}
-
-function alternarModoEmail() {
-    const form = document.getElementById('auth-email-form');
-    if (form) {
-        form.classList.toggle('hidden');
-        
-        const emailInput = obterCampoEmailAuth();
-        const senhaInput = obterCampoSenhaAuth();
-        if (emailInput) {
-            emailInput.value = '';
-            emailInput.setAttribute('autocomplete', 'off');
-        }
-        if (senhaInput) {
-            senhaInput.value = '';
-            senhaInput.setAttribute('autocomplete', 'new-password');
-        }
-
-        if (!document.getElementById('login-condo-multitenant') && !form.classList.contains('hidden')) {
-            const divCondo = document.createElement('div');
-            divCondo.className = "mt-2";
-            divCondo.id = "login-condo-multitenant";
-            divCondo.innerHTML = `
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio de Vínculo (Multi-Tenant)</label>
-                <select id="auth-condo-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
-                    <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
-                    <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
-                    <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
-                    <option value="Apenas Eletropostos / Visitante">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
-                </select>
-            `;
-            form.insertBefore(divCondo, form.lastElementChild);
-        }
-        injetarBotaoEsqueciSenha();
+        selectCondo.value = "Belarte Residencial Jundiaí";
     }
 }
 
 async function realizarLogin() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-    
-    const emailInput = obterCampoEmailAuth();
-    const senhaInput = obterCampoSenhaAuth();
-    
-    const formEmail = document.getElementById('auth-email-form');
-    if (formEmail && formEmail.classList.contains('hidden')) {
-        realizarLoginGoogle();
-        return;
-    }
-
-    const emailVal = (emailInput ? emailInput.value.trim() : '').toLowerCase();
-    const senhaVal = senhaInput ? senhaInput.value.trim() : '';
-
-    if (!emailVal || !emailVal.includes('@')) {
-        showToast('Por favor, informe um e-mail válido.');
-        if (emailInput) emailInput.focus();
-        return;
-    }
-
-    if (!senhaVal || senhaVal.length < 6) {
-        showToast('A senha deve ter no mínimo 6 caracteres.');
-        if (senhaInput) senhaInput.focus();
-        return;
-    }
-
-    showToast('Autenticando...');
-
-    const cofreSenhas = JSON.parse(localStorage.getItem('voltcore_auth_vault') || '{}');
-    let authSucesso = false;
-    let usarFallbackLocal = !supabaseClient || !supabaseClient.auth;
-
-    if (!usarFallbackLocal) {
-        try {
-            let { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: emailVal,
-                password: senhaVal
-            });
-
-            if (!error && data && data.user) {
-                authSucesso = true;
-                cofreSenhas[emailVal] = senhaVal;
-                localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
-            } else if (error && error.message && error.message.toLowerCase().includes('fetch')) {
-                usarFallbackLocal = true;
-            } else {
-                if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
-                    showToast('Senha incorreta para este e-mail. Use "Esqueci / Redefinir senha".');
-                    return;
-                }
-
-                let signUpRes = await supabaseClient.auth.signUp({
-                    email: emailVal,
-                    password: senhaVal
-                });
-
-                if (!signUpRes.error) {
-                    authSucesso = true;
-                    cofreSenhas[emailVal] = senhaVal;
-                    localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
-                } else if (signUpRes.error.message && signUpRes.error.message.toLowerCase().includes('fetch')) {
-                    usarFallbackLocal = true;
-                } else if (signUpRes.error.message.toLowerCase().includes('already registered')) {
-                    showToast('E-mail já cadastrado, mas senha incorreta! Clique em "Esqueci / Redefinir senha".');
-                    return;
-                } else {
-                    showToast('Erro de autenticação: ' + signUpRes.error.message);
-                    return;
-                }
-            }
-        } catch (err) {
-            usarFallbackLocal = true;
-        }
-    }
-
-    if (usarFallbackLocal) {
-        if (cofreSenhas[emailVal] && cofreSenhas[emailVal] !== senhaVal) {
-            showToast('Senha incorreta para este e-mail! Clique em "Esqueci / Redefinir senha".');
-            return;
-        }
-        cofreSenhas[emailVal] = senhaVal;
-        localStorage.setItem('voltcore_auth_vault', JSON.stringify(cofreSenhas));
-        authSucesso = true;
-    }
-
-    if (!authSucesso) return;
-
-    userData.email = emailVal;
-    userData.name = emailVal.split('@')[0];
-
-    const condoSelect = document.getElementById('auth-condo-select');
-    if (condoSelect) {
-        userData.condo = condoSelect.value;
-        userData.allowedCondos = [condoSelect.value];
-        localStorage.setItem('voltcore_selected_condo', condoSelect.value);
-    }
-
-    userData.role = (emailVal === 'contato@wpsinfo.com.br') ? 'ADM' : 'MORADOR';
-    userData.lgpdAccepted = true;
-
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    localStorage.setItem('voltcore_logged', 'true');
-    localStorage.setItem('voltcore_biometric_email', userData.email);
-    
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.add('hidden');
-    if (screenApp) screenApp.classList.remove('hidden');
-    
-    aplicarDadosUsuarioNaTela();
-    aplicarControlePermissoesPerfil();
-    configurarPermissoesCondominioPorUsuario();
-    carregarEstacoesDoBanco();
-    showToast('Acesso liberado! Perfil: ' + userData.role);
+    realizarLoginGoogle();
 }
 
 function logoutApp() {
     localStorage.removeItem('voltcore_logged');
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.remove('hidden');
-    if (screenApp) screenApp.classList.add('hidden');
+    document.getElementById('screen-auth')?.classList.remove('hidden');
+    document.getElementById('screen-app')?.classList.add('hidden');
     prepararTelaAuthCompleta();
     showToast('Sessão encerrada com segurança.');
 }
@@ -1260,7 +928,7 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v36-ocpp')
+            .channel('tabela-pontos-sync-v39-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
@@ -1663,17 +1331,11 @@ function renderStations() {
 
     const btnTodasEl = document.getElementById('tab-btn-todas');
     if (btnTodasEl) {
-        if (userData.role === 'ADM' || userData.role === 'SINDICO') {
-            btnTodasEl.classList.remove('hidden');
-            btnTodasEl.style.display = 'block';
-        } else {
-            btnTodasEl.classList.add('hidden');
-            btnTodasEl.style.display = 'none';
-        }
+        btnTodasEl.classList.remove('hidden');
+        btnTodasEl.style.display = 'block';
     }
 
     stations.forEach(st => {
-        if (userData.role === 'SINDICO' && !userData.allowedCondos.includes(st.condo)) return;
         if (st.condo !== currentCondo) return;
 
         if (st.status === 'Disponível') livre++;
@@ -1899,10 +1561,6 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
     const termo = termoFiltro.toLowerCase().trim();
 
     moradoresCondominio.forEach((m, idx) => {
-        if (userData.role === 'SINDICO' && !userData.allowedCondos.some(c => c.toLowerCase().includes(m.condo.toLowerCase()))) {
-            return;
-        }
-
         if (termo) {
             const nomeMatch = m.nome.toLowerCase().includes(termo);
             const placaMatch = (m.placa || '').toLowerCase().includes(termo);
@@ -1951,7 +1609,7 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
         `;
     });
 
-    const tituloPainel = userData.role === 'ADM' ? 'Central ADM Master • Gestão em Massa' : 'Painel do Síndico • Gestão de Condomínio';
+    const tituloPainel = 'Central ADM Master • WPS Info';
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs pb-4">
             <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-xl shadow-md">
