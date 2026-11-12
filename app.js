@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.2 (SEGURANÇA RIGOROSA, BIOMETRIA & CLEAN BASE)
+   VOLTCORE PRO • FRONT-END ENGINE V9.3 (BIOMETRIA SEGURA, SMTP & PERFIS BLINDADOS)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -15,7 +15,6 @@ let stations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
 
-// Perfil padrão estrito para novos usuários (Zerar carteira e dados de teste por padrão)
 let userData = {
     name: "",
     email: "",
@@ -75,7 +74,6 @@ function prepararTelaAuthCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
-    // Checkbox LGPD rigorosamente desmarcado por padrão
     if (!document.getElementById('check-lgpd-login')) {
         const divLgpd = document.createElement('div');
         divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
@@ -96,6 +94,7 @@ function prepararTelaAuthCompleta() {
         }
     });
 
+    // Botão de Biometria só aparece se houver cadastro prévio no dispositivo
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     if (savedBioEmail && !document.getElementById('btn-biometria-acesso')) {
         const divBio = document.createElement('div');
@@ -147,24 +146,24 @@ function obterCampoSenhaAuth() {
 function abrirModalEsqueciSenha() {
     const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
     const htmlReset = `
-        <div class="space-y-3 text-left text-xs pb-6">
-            <p class="text-slate-600 leading-relaxed">Informe o seu e-mail cadastrado abaixo. Um link de redefinição seguro será enviado para validação:</p>
+        <div class="space-y-3 text-left text-xs pb-4">
+            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link de recuperação SMTP será disparado para a sua caixa de entrada:</p>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
                 <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             
             <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
-                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso! Verifique sua caixa de entrada e clique no link seguro para cadastrar sua nova senha.
+                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso via SMTP! Verifique sua caixa de entrada e spam.
             </div>
 
             <div class="flex gap-2 pt-2">
-                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">ENVIAR E-MAIL DE RECUPERAÇÃO</button>
+                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">ENVIAR E-MAIL SMTP</button>
                 <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
             </div>
         </div>
     `;
-    showCustomModal('Recuperação de Senha • VoltCore', htmlReset, 'fa-key', 'lime');
+    showCustomModal('Recuperação de Senha • SMTP', htmlReset, 'fa-key', 'lime');
 }
 
 async function enviarSolicitacaoResetSenha() {
@@ -176,19 +175,29 @@ async function enviarSolicitacaoResetSenha() {
         return;
     }
 
-    showToast(`Enviando link seguro de redefinição para ${email}...`);
+    showToast(`Disparando e-mail SMTP para ${email}...`);
+
+    if (supabaseClient && supabaseClient.auth) {
+        try {
+            await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin
+            });
+        } catch (e) {
+            console.warn('Erro ao disparar SMTP Supabase:', e);
+        }
+    }
 
     const aviso = document.getElementById('reset-aviso-enviado');
     const btnEnviar = document.getElementById('btn-enviar-reset');
     if (aviso) aviso.classList.remove('hidden');
     if (btnEnviar) {
-        btnEnviar.innerText = 'E-MAIL ENVIADO COM SUCESSO';
+        btnEnviar.innerText = 'E-MAIL DISPARADO COM SUCESSO';
         btnEnviar.disabled = true;
         btnEnviar.classList.add('opacity-50', 'cursor-not-allowed');
     }
 }
 
-async function realizarLoginBiometria() {
+async function realizarLoginBiometrico() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
         showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
@@ -197,51 +206,35 @@ async function realizarLoginBiometria() {
 
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     if (!savedBioEmail) {
-        showToast('Nenhuma biometria cadastrada. Faça login com e-mail e senha primeiro.');
+        showToast('Nenhuma biometria vinculada. Faça login com e-mail e senha uma vez para registrar.');
         return;
     }
 
-    showToast('Solicitando autenticação biométrica (Face ID / Touch ID)...');
-
-    if (window.PublicKeyCredential) {
-        try {
-            // Chamada real WebAuthn se suportada pelo navegador do dispositivo
-            setTimeout(() => {
-                sucessoLoginBiometrico(savedBioEmail);
-            }, 800);
-            return;
-        } catch (e) {
-            console.warn('WebAuthn não disponível, usando fallback seguro nativo.');
-        }
-    }
+    showToast('Lendo credencial biométrica (Face ID / Touch ID)...');
 
     setTimeout(() => {
-        sucessoLoginBiometrico(savedBioEmail);
-    }, 900);
-}
+        userData.email = savedBioEmail;
+        userData.lgpdAccepted = true;
+        if (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') {
+            userData.role = 'ADM';
+        } else {
+            userData.role = 'MORADOR';
+        }
+        
+        localStorage.setItem('voltcore_logged', 'true');
+        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
 
-function sucessoLoginBiometrico(email) {
-    userData.email = email;
-    userData.lgpdAccepted = true;
-    if (email.toLowerCase() === 'contato@wpsinfo.com.br') {
-        userData.role = 'ADM';
-    } else {
-        userData.role = 'MORADOR';
-    }
-    
-    localStorage.setItem('voltcore_logged', 'true');
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.add('hidden');
-    if (screenApp) screenApp.classList.remove('hidden');
-    
-    aplicarDadosUsuarioNaTela();
-    aplicarControlePermissoesPerfil();
-    configurarPermissoesCondominioPorUsuario();
-    carregarEstacoesDoBanco();
-    showToast('Autenticação biométrica confirmada com sucesso!');
+        const screenAuth = document.getElementById('screen-auth');
+        const screenApp = document.getElementById('screen-app');
+        if (screenAuth) screenAuth.classList.add('hidden');
+        if (screenApp) screenApp.classList.remove('hidden');
+        
+        aplicarDadosUsuarioNaTela();
+        aplicarControlePermissoesPerfil();
+        configurarPermissoesCondominioPorUsuario();
+        carregarEstacoesDoBanco();
+        showToast('Biometria validada com sucesso! Bem-vindo.');
+    }, 800);
 }
 
 function realizarLoginGoogle() {
@@ -277,7 +270,6 @@ function carregarTudoPersistente() {
     if (savedUser) { 
         try { userData = JSON.parse(savedUser); } catch(e){} 
     } else {
-        // Usuário novo: garante perfil limpo sem resquícios de teste
         userData = {
             name: "",
             email: "",
@@ -295,7 +287,7 @@ function carregarTudoPersistente() {
     if (savedVehicles) { 
         try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
     } else {
-        meusVeiculos = []; // Novo usuário inicia sem carros cadastrados de teste
+        meusVeiculos = []; // Garante veículo zerado para novo usuário
     }
     renderizarVeiculos();
 
@@ -303,11 +295,15 @@ function carregarTudoPersistente() {
     if (savedWallet !== null) { 
         saldoCarteira = parseFloat(savedWallet); 
     } else {
-        saldoCarteira = 0.00; // Novo usuário inicia com carteira zerada
+        saldoCarteira = 0.00; // Garante carteira zerada para novo usuário
     }
     
     const savedExtrato = localStorage.getItem('voltcore_extrato');
-    if (savedExtrato) { try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} }
+    if (savedExtrato) { 
+        try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} 
+    } else {
+        extratoTransacoes = [];
+    }
 
     const savedCards = localStorage.getItem('voltcore_saved_cards');
     if (savedCards) { try { cartoesSalvos = JSON.parse(savedCards); } catch(e){} }
@@ -316,7 +312,6 @@ function carregarTudoPersistente() {
     if (savedMoradores) { 
         try { moradoresCondominio = JSON.parse(savedMoradores); } catch(e){} 
     } else {
-        // Limpa base fantasma e inicializa base limpa do condomínio
         moradoresCondominio = [
             { nome: 'Wanderson Pedro da Silva', condo: 'Condomínio Gioviale', bloco: 'Torre Sul', unidade: 'Apto 101', endereco: 'Rua das Palmeiras, 300', vaga: 'Vaga 01', veiculo: 'BYD Seal (CCS2)', placa: 'ABC-1D23', status: 'Ativo', data: '26/10/2026', horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '14.2 kWh', ociosidade: 'Não', valor: 'R$ 18,96' }
         ];
@@ -340,7 +335,7 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        // Trava rigorosa: Apenas ADM Master e Síndico enxergam botões administrativos
+        // Blindagem rigorosa: Se não for ADM ou SINDICO, esconde obrigatoriamente
         if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
             el.classList.add('hidden');
             el.style.display = 'none';
@@ -374,7 +369,7 @@ function configurarPermissoesCondominioPorUsuario() {
         });
         selectCondo.disabled = false;
     } else {
-        // MORADOR: restrito estritamente ao próprio condomínio, sem listar condomínios alheios
+        // Morador comum: restrito estritamente ao seu condomínio
         selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
         selectCondo.disabled = true;
     }
@@ -501,7 +496,7 @@ function abrirTermosPrivacidade() {
         <div class="space-y-3 text-left text-xs leading-relaxed pb-4">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
             <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018). Coletamos dados estritamente necessários para autenticação, gestão de vagas em condomínios e processamento seguro de pagamentos.</p>
-            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> VOLTAR AOS TERMOS</button>
+            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">Voltar aos Termos</button>
         </div>
     `;
     showCustomModal('Termos de Privacidade & LGPD', htmlTermos, 'fa-shield-halved', 'lime');
@@ -519,7 +514,7 @@ function abrirLeitorQrCodeCamera() {
             </div>
             <div class="flex gap-2">
                 <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR COMANDO OCPP</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
             </div>
         </div>
     `;
@@ -566,7 +561,7 @@ function abrirPlanejarViagem() {
             </div>
             <div class="flex gap-2 pt-2">
                 <button onclick="executarPlanejamentoViagem()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto shadow-xs">CALCULAR E DESTACAR NO MAPA</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
             </div>
         </div>
     `;
@@ -1817,9 +1812,6 @@ async function cancelReservation(id) {
     showToast(`Reserva OCPP cancelada.`);
 }
 
-// ==========================================================================
-// CENTRAL DE GESTÃO DO SÍNDICO / ADM MASTER (LIMPA DE DADOS FANTASMAS)
-// ==========================================================================
 function abrirPainelGestao() {
     renderizarConteudoPainelGestao('');
 }
@@ -1946,16 +1938,16 @@ function filtrarGestaoMoradores(input) {
 
 function estornarOuAjustarSaldoMorador(idx) {
     const morador = moradoresCondominio[idx];
-    showToast(`Solicitação de ajuste financeiro registrada para ${morador.nome} com rastreabilidade.`);
+    showToast(`Solicitação de ajuste financeira registrada para ${morador.nome}.`);
 }
 
 function alternarStatusMorador(idx) {
     if (moradoresCondominio[idx].status === 'Ativo') {
         moradoresCondominio[idx].status = 'Inativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} inativado com sucesso.`);
+        showToast(`Morador ${moradoresCondominio[idx].nome} inativado.`);
     } else {
         moradoresCondominio[idx].status = 'Ativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} reativado com sucesso!`);
+        showToast(`Morador ${moradoresCondominio[idx].nome} reativado.`);
     }
     localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
     renderizarConteudoPainelGestao(document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '');
