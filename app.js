@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V6.0 (COMPLIANT COM LGPD, ADM MASTER & FILTROS)
+   VOLTCORE PRO • FRONT-END ENGINE V7.0 (MULTI-TENANT, LGPD & PLANEJADOR REAL)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -19,11 +19,11 @@ let userData = {
     name: "Wanderson Pedro da Silva",
     email: "contato@wpsinfo.com.br",
     phone: "(11) 94461-4162",
-    role: "ADM", // ADM, SINDICO_GERAL ou MORADOR
+    role: "ADM", // ADM (Master), SINDICO, MORADOR ou VISITANTE
     condo: "Condomínio Gioviale • Torre Sul",
     allowedCondos: ["Condomínio Gioviale • Torre Sul", "Condomínio Gioviale • Torre Norte", "Complexo Atmosfera Residencial", "Belarte Residencial Jundiaí"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-    lgpdAccepted: true
+    lgpdAccepted: false
 };
 
 let meusVeiculos = [
@@ -118,7 +118,7 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        if (userData.role !== 'ADM' && userData.role !== 'SINDICO_GERAL') {
+        if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
             el.classList.add('hidden');
         } else {
             el.classList.remove('hidden');
@@ -129,8 +129,17 @@ function aplicarControlePermissoesPerfil() {
 function configurarPermissoesCondominioPorUsuario() {
     const selectCondo = document.getElementById('select-condo');
     if (!selectCondo) return;
+
+    // Se for síndico, restringe o select apenas aos condomínios permitidos a ele
+    if (userData.role === 'SINDICO') {
+        selectCondo.innerHTML = '';
+        userData.allowedCondos.forEach(c => {
+            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo) {
+    if (savedCondo && (userData.role === 'ADM' || userData.allowedCondos.includes(savedCondo))) {
         selectCondo.value = savedCondo;
     } else {
         selectCondo.value = userData.condo || "Condomínio Gioviale • Torre Sul";
@@ -146,58 +155,88 @@ function abrirTelaCadastroNovoUsuario() {
     const htmlCadastro = `
         <div class="space-y-3 text-left text-xs">
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                <h4 class="font-bold text-slate-900 text-sm">Novo Cadastro • VoltCore</h4>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold"><i class="fa-solid fa-xmark"></i></button>
+                <h4 class="font-bold text-slate-900 text-sm">Novo Cadastro • VoltCore Multi-Tenant</h4>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold cursor-pointer pointer-events-auto"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Nome Completo:</label>
                 <input type="text" id="reg-name" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div>
-                <label class="block font-bold text-slate-700 mb-1">E-mail de Acesso:</label>
+                <label class="block font-bold text-slate-700 mb-1">E-mail de Validação:</label>
                 <input type="email" id="reg-email" placeholder="seu@email.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div>
-                <label class="block font-bold text-slate-700 mb-1">Selecione o Condomínio (Opcional):</label>
+                <label class="block font-bold text-slate-700 mb-1">Perfil de Acesso / Vínculo:</label>
+                <select id="reg-perfil" onchange="alternarCampoCondominioCadastro(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <option value="MORADOR">Morador de Condomínio</option>
+                    <option value="VISITANTE">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
+                    <option value="SINDICO">Síndico / Administrador</option>
+                </select>
+            </div>
+            <div id="wrapper-reg-condo">
+                <label class="block font-bold text-slate-700 mb-1">Selecionar Condomínio:</label>
                 <select id="reg-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <option value="Nenhum (Apenas Eletropostos / Visitante)">Nenhum (Apenas Eletropostos / Visitante)</option>
                     <option value="Condomínio Gioviale • Torre Sul">Condomínio Gioviale • Torre Sul</option>
                     <option value="Condomínio Gioviale • Torre Norte">Condomínio Gioviale • Torre Norte</option>
                     <option value="Complexo Atmosfera Residencial">Complexo Atmosfera Residencial</option>
                     <option value="Belarte Residencial Jundiaí">Belarte Residencial Jundiaí</option>
                 </select>
+                <p class="text-[9px] text-slate-500 mt-1">O sistema validará se seu e-mail e unidade constam no pré-cadastro do condomínio.</p>
             </div>
-            <div class="flex items-center gap-2 pt-1">
-                <input type="checkbox" id="reg-lgpd" class="rounded text-lime-600 focus:ring-lime-500 w-4 h-4">
-                <label for="reg-lgpd" class="text-[10px] text-slate-600">Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-bold underline">Termos e LGPD</a>.</label>
+            <div class="flex items-center gap-2 pt-1 bg-lime-50 p-2.5 rounded-xl border border-lime-200">
+                <input type="checkbox" id="reg-lgpd" class="rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
+                <label for="reg-lgpd" class="text-[10px] text-slate-800 font-bold">Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-700 underline">Termos de Privacidade e LGPD</a>.</label>
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="salvarNovoCadastroUsuario()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CADASTRAR E ENTRAR</button>
+                <button onclick="salvarNovoCadastroUsuario()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto shadow-xs">VALIDAR E CADASTRAR</button>
                 <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
             </div>
         </div>
     `;
-    showCustomModal('Criar Nova Conta VoltCore', htmlCadastro, 'fa-user-plus', 'lime');
+    showCustomModal('Novo Cadastro • Plataforma Multi-Tenant', htmlCadastro, 'fa-user-plus', 'lime');
+}
+
+function alternarCampoCondominioCadastro(select) {
+    const wrapper = document.getElementById('wrapper-reg-condo');
+    if (!wrapper) return;
+    if (select.value === 'VISITANTE') {
+        wrapper.classList.add('hidden');
+    } else {
+        wrapper.classList.remove('hidden');
+    }
 }
 
 function salvarNovoCadastroUsuario() {
     const nome = document.getElementById('reg-name').value;
     const email = document.getElementById('reg-email').value;
-    const condo = document.getElementById('reg-condo').value;
+    const perfil = document.getElementById('reg-perfil').value;
+    const condoSelect = document.getElementById('reg-condo');
+    const condo = condoSelect ? condoSelect.value : 'Nenhum';
     const lgpd = document.getElementById('reg-lgpd').checked;
 
     if (!nome || !email) {
-        showToast('Preencha o nome e o e-mail para continuar.');
+        showToast('Preencha o nome e o e-mail de validação.');
         return;
     }
     if (!lgpd) {
-        showToast('Você deve aceitar os Termos e LGPD.');
+        showToast('Você deve aceitar os Termos de Privacidade e LGPD obrigatórios.');
         return;
+    }
+
+    // Validação multi-tenant simulada na base de moradores cadastrados
+    if (perfil === 'MORADOR') {
+        const existeNaBase = moradoresCondominio.some(m => m.nome.toLowerCase().includes(nome.toLowerCase().split(' ')[0]) || m.condo.toLowerCase().includes(condo.toLowerCase().split(' ')[0]));
+        if (!existeNaBase) {
+            showToast(`Atenção: O e-mail ou morador não foi localizado na base do condomínio ${condo}. Contate o síndico.`);
+            return;
+        }
     }
 
     userData.name = nome;
     userData.email = email;
-    userData.condo = condo;
+    userData.role = perfil === 'VISITANTE' ? 'MORADOR' : perfil;
+    userData.condo = perfil === 'VISITANTE' ? 'Apenas Eletropostos / Visitante' : condo;
     userData.lgpdAccepted = true;
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     
@@ -303,8 +342,8 @@ function abrirPlanejarViagem() {
                 <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada OCPP VoltCore:</p>
                 <p id="texto-rota-calculada" class="text-[10px] text-lime-700 font-medium"></p>
             </div>
-            <div class="flex gap-2">
-                <button onclick="executarPlanejamentoViagem()" class="flex-1 bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CALCULAR ROTAS</button>
+            <div class="flex gap-2 pt-2">
+                <button onclick="executarPlanejamentoViagem()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto shadow-xs">CALCULAR E DESTACAR NO MAPA</button>
                 <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
             </div>
         </div>
@@ -313,7 +352,7 @@ function abrirPlanejarViagem() {
 }
 
 function executarPlanejamentoViagem() {
-    const destinoInput = document.getElementById('input-destino-viagem').value || 'Destino';
+    const destinoInput = document.getElementById('input-destino-viagem').value || 'Sorocaba';
     const autonomia = document.getElementById('input-autonomia-viagem').value || '80';
     const resultadoDiv = document.getElementById('resultado-calculo-viagem');
     const textoRota = document.getElementById('texto-rota-calculada');
@@ -322,8 +361,19 @@ function executarPlanejamentoViagem() {
     const postoEncontrado = postosRodoviaComercial.find(p => p.city.toLowerCase() === destNorm || p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(destNorm));
 
     let recomendacao = "Parada recomendada no Eletroposto Rodovia Anhanguera (Cajamar) com recarga rápida CCS2 (150kW).";
+    let latTarget = -23.3550;
+    let lngTarget = -46.8770;
+
     if (postoEncontrado) {
         recomendacao = `Parada otimizada em <strong>${postoEncontrado.name}</strong> (${postoEncontrado.address}). Equipado com ${postoEncontrado.plugs} (${postoEncontrado.hours}).`;
+        latTarget = postoEncontrado.coords[0];
+        lngTarget = postoEncontrado.coords[1];
+        
+        // Destaca e centraliza no mapa comercial se estiver ativo
+        if (leafletMap) {
+            leafletMap.setView([latTarget, lngTarget], 13);
+            plotarMarcadoresMapa('ALL', postoEncontrado.city);
+        }
     }
 
     if (resultadoDiv && textoRota) {
@@ -900,7 +950,6 @@ function configurarSupabaseRealtime() {
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
                 (payload) => {
-                    console.log('Realtime OCPP Supabase detectado:', payload);
                     carregarEstacoesDoBanco();
                 }
             )
@@ -1097,9 +1146,9 @@ function abrirFiltrosAvancadosComercial() {
         <div class="space-y-2 text-left text-xs">
             <label class="block font-bold text-slate-700">Filtrar por Velocidade OCPP:</label>
             <div class="space-y-1.5">
-                <button onclick="filtrarMapaComercial('DC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Rápida DC (50kW a 150kW)</button>
-                <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">⚡ Carga Lenta AC (22kW)</button>
-                <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800">🌐 Mostrar Todos OCPP</button>
+                <button onclick="filtrarMapaComercial('DC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800 cursor-pointer pointer-events-auto">⚡ Carga Rápida DC (50kW a 150kW)</button>
+                <button onclick="filtrarMapaComercial('AC'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800 cursor-pointer pointer-events-auto">⚡ Carga Lenta AC (22kW)</button>
+                <button onclick="filtrarMapaComercial('ALL'); closeModal();" class="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg font-bold text-slate-800 cursor-pointer pointer-events-auto">🌐 Mostrar Todos OCPP</button>
             </div>
             <div class="pt-2">
                 <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
@@ -1127,11 +1176,13 @@ function plotarMarcadoresMapa(filtroTipo, termoBusca) {
         encontrados++;
 
         const corPin = p.type === 'AC' ? '#8cc63f' : '#3b82f6';
+        // Adicionando efeito de destaque/pulsação se houver busca ativa
+        const animationClass = termoBusca ? 'animate-bounce' : '';
         const customIcon = L.divIcon({
-            className: 'custom-map-pin',
-            html: `<div style="background: ${corPin}; color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid #ffffff;"><i class="fa-solid fa-bolt text-[9px]"></i></div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
+            className: 'custom-map-pin ' + animationClass,
+            html: `<div style="background: ${corPin}; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 12px rgba(140,198,63,0.8); border: 2px solid #ffffff;"><i class="fa-solid fa-bolt text-[10px]"></i></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
         });
 
         const lat = p.coords[0];
@@ -1304,7 +1355,7 @@ function renderStations() {
 
     const btnTodasEl = document.getElementById('tab-btn-todas');
     if (btnTodasEl) {
-        if (userData.role === 'ADM' || userData.role === 'SINDICO_GERAL') {
+        if (userData.role === 'ADM' || userData.role === 'SINDICO') {
             btnTodasEl.classList.remove('hidden');
             btnTodasEl.style.display = 'block';
         } else {
@@ -1314,7 +1365,10 @@ function renderStations() {
     }
 
     stations.forEach(st => {
+        // Validação estrita multi-tenant para síndicos e moradores
+        if (userData.role === 'SINDICO' && !userData.allowedCondos.includes(st.condo)) return;
         if (st.condo !== currentCondo) return;
+
         if (st.status === 'Disponível') livre++;
         if (st.status === 'Reservado') reservado++;
         if (st.status === 'Em Uso') carregando++;
@@ -1545,7 +1599,11 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
     const termo = termoFiltro.toLowerCase().trim();
 
     moradoresCondominio.forEach((m, idx) => {
-        // Filtro por nome ou placa exigido pelo síndico
+        // Restrição rigorosa Multi-Tenant para Síndico
+        if (userData.role === 'SINDICO' && !userData.allowedCondos.some(c => c.toLowerCase().includes(m.condo.toLowerCase()))) {
+            return;
+        }
+
         if (termo) {
             const nomeMatch = m.nome.toLowerCase().includes(termo);
             const placaMatch = (m.placa || '').toLowerCase().includes(termo);
@@ -1594,11 +1652,12 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
         `;
     });
 
+    const tituloPainel = userData.role === 'ADM' ? 'Central ADM Master • Gestão em Massa' : 'Painel do Síndico • Gestão de Condomínio';
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs">
             <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-xl shadow-md">
                 <div>
-                    <h4 class="font-extrabold text-lime-400 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> Central ADM Master & Síndico</h4>
+                    <h4 class="font-extrabold text-lime-400 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> ${tituloPainel}</h4>
                     <p class="text-[11px] text-slate-300">Gestão avançada de faturamento, ociosidade e telemetria de carregadores.</p>
                 </div>
                 <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer pointer-events-auto shrink-0" title="Fechar">
@@ -1642,12 +1701,11 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
             </div>
         </div>
     `;
-    showCustomModal('Central ADM Master • Gestão em Massa', conteudoGestao, 'fa-building-shield', 'lime');
+    showCustomModal(tituloPainel, conteudoGestao, 'fa-building-shield', 'lime');
 }
 
 function filtrarGestaoMoradores(input) {
     renderizarConteudoPainelGestao(input.value);
-    // Mantém o foco no input após renderizar
     setTimeout(() => {
         const inp = document.getElementById('filtro-morador-input');
         if (inp) {
