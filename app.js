@@ -3,7 +3,7 @@
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
-const SUPABASE_URL = 'https://eoqfuawvljvotvyfrcbj.supabase.co';
+const SUPABASE_URL = 'https://eoqfuawvljotvyfrcbj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
 const BACKEND_URL = 'https://voltcore-ocpp-backend.onrender.com';
 let supabaseClient = null;
@@ -1028,7 +1028,7 @@ function abrirModalCartaoCheckout() {
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Validade (MM/AA):</label>
-                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" oninput="formatarValidadeCartao(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">CVV (Segurança):</label>
@@ -1042,8 +1042,8 @@ function abrirModalCartaoCheckout() {
             </div>
 
             <div>
-                <label class="block font-bold text-slate-700 mb-1">CPF do Titular:</label>
-                <input type="text" id="cc-cpf" placeholder="123.456.789-09" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <label class="block font-bold text-slate-700 mb-1">CPF do Titular (Apenas Números):</label>
+                <input type="text" id="cc-cpf" placeholder="12345678909" maxlength="11" oninput="formatarCpfInput(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
             <div class="flex gap-2 pt-3">
@@ -1054,6 +1054,19 @@ function abrirModalCartaoCheckout() {
     `;
     
     showCustomModal('Checkout Transparente • Cartão', htmlCartao, 'fa-credit-card', 'lime');
+}
+
+function formatarValidadeCartao(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length >= 2) {
+        input.value = v.substring(0, 2) + '/' + v.substring(2, 4);
+    } else {
+        input.value = v;
+    }
+}
+
+function formatarCpfInput(input) {
+    input.value = input.value.replace(/\D/g, '').slice(0, 11);
 }
 
 async function processarPagamentoCartaoSalvo(valor) {
@@ -1100,14 +1113,22 @@ async function processarPagamentoCartaoNovo(valor) {
     const expiry = document.getElementById('cc-expiry').value;
     const cvv = document.getElementById('cc-cvv').value;
     const holderName = document.getElementById('cc-holder').value;
-    const cpf = document.getElementById('cc-cpf').value;
+    const cpf = document.getElementById('cc-cpf').value.replace(/\D/g, '');
 
     if (!cardNumber || !expiry || !cvv || !cpf) {
-        showToast('Preencha todos os dados do novo cartão.');
+        showToast('Preencha todos os dados do novo cartão e o CPF.');
         return;
     }
 
-    const [expMonth, expYear] = expiry.split('/');
+    const partesValidade = expiry.split('/');
+    if (partesValidade.length !== 2 || partesValidade[0].length !== 2 || partesValidade[1].length !== 2) {
+        showToast('Informe a validade no formato MM/AA correto.');
+        return;
+    }
+
+    const expMonth = partesValidade[0];
+    const expYear = '20' + partesValidade[1];
+    
     showToast('Processando novo cartão de crédito...');
 
     try {
@@ -1122,11 +1143,11 @@ async function processarPagamentoCartaoNovo(valor) {
                 payer: {
                     email: userData.email || 'contato@wpsinfo.com.br',
                     first_name: (userData.name || 'Cliente').split(' ')[0],
-                    identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
+                    identification: { type: 'CPF', number: cpf }
                 },
                 card_number: cardNumber,
                 card_expiration_month: expMonth,
-                card_expiration_year: '20' + expYear,
+                card_expiration_year: expYear,
                 card_cvv: cvv,
                 cardholder_name: holderName
             })
