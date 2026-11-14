@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.7 (PERSISTÊNCIA NUVEM SUPABASE + MULTI-TENANT)
+   VOLTCORE PRO • FRONT-END ENGINE V9.19 (COMPLETO & PRODUÇÃO ESTRITA)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -45,8 +45,8 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = async function() {
-    if (!localStorage.getItem('voltcore_version_v97')) {
-        localStorage.setItem('voltcore_version_v97', 'true');
+    if (!localStorage.getItem('voltcore_version_v919')) {
+        localStorage.setItem('voltcore_version_v919', 'true');
     }
 
     carregarTudoPersistente();
@@ -75,6 +75,34 @@ window.onload = async function() {
     configurarSupabaseRealtime();
     setInterval(updateTimersAndLoad, 1000);
 };
+
+// ==========================================================================
+// HIERARQUIA E TRAVA ESTRITA DE PERFIL POR E-MAIL (MULTITENANT)
+// ==========================================================================
+function avaliarPermissaoPorEmail(email) {
+    const emailLimpo = (email || '').trim().toLowerCase();
+    
+    if (emailLimpo === 'contato@wpsinfo.com.br') {
+        userData.role = 'ADM_MASTER';
+        userData.name = 'Wanderson Pedro da Silva (ADM Master)';
+        userData.allowedCondos = [
+            "Belarte Residencial Jundiaí",
+            "Condomínio Gioviale • Torre Sul",
+            "Condomínio Gioviale • Torre Norte",
+            "Complexo Atmosfera Residencial"
+        ];
+    } else {
+        userData.role = 'MORADOR';
+        userData.allowedCondos = [];
+        if (emailLimpo === 'wandersonp_s@hotmail.com') {
+            userData.name = 'Wanderson Pedro da Silva';
+        } else if (emailLimpo === 'wand3rson.s@gmail.com') {
+            userData.name = 'Wanderson (Google)';
+        } else {
+            userData.name = emailLimpo.split('@')[0] || 'Condômino';
+        }
+    }
+}
 
 async function sincronizarDadosNuvemUsuario() {
     if (!supabaseClient || !userData.email) return;
@@ -147,8 +175,10 @@ function injetarBotaoEsqueciSenha() {
 function obterCampoEmailAuth() {
     return document.getElementById('auth-email-input') 
         || document.getElementById('login-email') 
+        || document.getElementById('email')
         || document.querySelector('#auth-email-form input[type="email"]')
-        || document.querySelector('#screen-auth input[type="email"]');
+        || document.querySelector('#screen-auth input[type="email"]')
+        || document.querySelector('input[type="email"]');
 }
 
 function obterCampoSenhaAuth() {
@@ -156,8 +186,10 @@ function obterCampoSenhaAuth() {
         || document.getElementById('auth-senha-input') 
         || document.getElementById('auth-password-input') 
         || document.getElementById('login-password') 
+        || document.getElementById('password')
         || document.querySelector('#auth-email-form input[type="password"]')
-        || document.querySelector('#screen-auth input[type="password"]');
+        || document.querySelector('#screen-auth input[type="password"]')
+        || document.querySelector('input[type="password"]');
 }
 
 function abrirModalEsqueciSenha() {
@@ -236,12 +268,7 @@ async function realizarLoginBiometrico() {
     setTimeout(async () => {
         userData.email = savedBioEmail;
         userData.lgpdAccepted = true;
-        if (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') {
-            userData.role = 'ADM';
-            userData.name = userData.name || 'Wanderson Pedro da Silva';
-        } else {
-            userData.role = 'MORADOR';
-        }
+        avaliarPermissaoPorEmail(savedBioEmail);
         
         localStorage.setItem('voltcore_logged', 'true');
         localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
@@ -267,9 +294,8 @@ async function realizarLoginGoogle() {
         return;
     }
 
-    userData.email = 'contato@wpsinfo.com.br';
-    userData.name = 'Wanderson Pedro da Silva';
-    userData.role = 'ADM';
+    userData.email = 'wand3rson.s@gmail.com';
+    avaliarPermissaoPorEmail(userData.email);
     userData.lgpdAccepted = true;
 
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
@@ -286,7 +312,7 @@ async function realizarLoginGoogle() {
     configurarPermissoesCondominioPorUsuario();
     await sincronizarDadosNuvemUsuario();
     await carregarEstacoesDoBanco();
-    showToast('Login com Google realizado com sucesso!');
+    showToast('Login com Google realizado (Morador Comum)');
 }
 
 function carregarTudoPersistente() {
@@ -305,6 +331,11 @@ function carregarTudoPersistente() {
             lgpdAccepted: false
         };
     }
+    
+    if (userData.email) {
+        avaliarPermissaoPorEmail(userData.email);
+    }
+
     aplicarDadosUsuarioNaTela();
     
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
@@ -359,7 +390,7 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
+        if (userData.role !== 'ADM_MASTER') {
             el.classList.add('hidden');
             el.style.setProperty('display', 'none', 'important');
         } else {
@@ -375,7 +406,7 @@ function configurarPermissoesCondominioPorUsuario() {
 
     selectCondo.innerHTML = '';
 
-    if (userData.role === 'ADM') {
+    if (userData.role === 'ADM_MASTER') {
         const todosCondos = [
             "Belarte Residencial Jundiaí",
             "Condomínio Gioviale • Torre Sul",
@@ -386,18 +417,13 @@ function configurarPermissoesCondominioPorUsuario() {
             selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
         });
         selectCondo.disabled = false;
-    } else if (userData.role === 'SINDICO') {
-        userData.allowedCondos.forEach(c => {
-            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        selectCondo.disabled = false;
     } else {
         selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
         selectCondo.disabled = true;
     }
 
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo && (userData.role === 'ADM' || userData.allowedCondos.includes(savedCondo))) {
+    if (savedCondo && (userData.role === 'ADM_MASTER' || userData.allowedCondos.includes(savedCondo))) {
         selectCondo.value = savedCondo;
     } else {
         selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
@@ -471,21 +497,24 @@ async function realizarLogin() {
         return;
     }
 
+    // Validação específica para o morador comum solicitada
+    if (emailVal.toLowerCase() === 'wandersonp_s@hotmail.com' && senhaVal !== '101056') {
+        showToast('Senha incorreta para o morador. Utilize a senha 101056.');
+        if (senhaInput) senhaInput.focus();
+        return;
+    }
+
     userData.email = emailVal;
+    avaliarPermissaoPorEmail(emailVal);
 
     const condoSelect = document.getElementById('auth-condo-select');
-    if (condoSelect) {
+    if (condoSelect && userData.role === 'ADM_MASTER') {
         userData.condo = condoSelect.value;
         userData.allowedCondos = [condoSelect.value];
         localStorage.setItem('voltcore_selected_condo', condoSelect.value);
-    }
-
-    if (userData.email.toLowerCase() === 'contato@wpsinfo.com.br') {
-        userData.role = 'ADM';
-        userData.name = userData.name || 'Wanderson Pedro da Silva';
-    } else {
-        userData.role = 'MORADOR';
-        userData.name = userData.name || emailVal.split('@')[0];
+    } else if (userData.role === 'MORADOR') {
+        userData.condo = condoSelect ? condoSelect.value : "Belarte Residencial Jundiaí";
+        userData.allowedCondos = [userData.condo];
     }
 
     userData.lgpdAccepted = true;
@@ -508,6 +537,7 @@ async function realizarLogin() {
 
 function logoutApp() {
     localStorage.removeItem('voltcore_logged');
+    localStorage.removeItem('voltcore_user_data');
     const screenAuth = document.getElementById('screen-auth');
     const screenApp = document.getElementById('screen-app');
     if (screenAuth) screenAuth.classList.remove('hidden');
@@ -1379,7 +1409,7 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v97-ocpp')
+            .channel('tabela-pontos-sync-v919-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
@@ -1788,7 +1818,7 @@ function renderStations() {
 
     const btnTodasEl = document.getElementById('tab-btn-todas');
     if (btnTodasEl) {
-        if (userData.role === 'ADM' || userData.role === 'SINDICO') {
+        if (userData.role === 'ADM_MASTER') {
             btnTodasEl.classList.remove('hidden');
             btnTodasEl.style.display = 'block';
         } else {
@@ -1798,8 +1828,8 @@ function renderStations() {
     }
 
     stations.forEach(st => {
-        if (userData.role === 'SINDICO' && !userData.allowedCondos.includes(st.condo)) return;
-        if (st.condo !== currentCondo) return;
+        if (userData.role !== 'ADM_MASTER' && st.condo !== currentCondo) return;
+        if (st.condo !== currentCondo && userData.role === 'MORADOR') return;
 
         if (st.status === 'Disponível') livre++;
         if (st.status === 'Reservado') reservado++;
@@ -2091,10 +2121,6 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
     const termo = termoFiltro.toLowerCase().trim();
 
     moradoresCondominio.forEach((m, idx) => {
-        if (userData.role === 'SINDICO' && !userData.allowedCondos.some(c => c.toLowerCase().includes(m.condo.toLowerCase()))) {
-            return;
-        }
-
         if (termo) {
             const nomeMatch = m.nome.toLowerCase().includes(termo);
             const placaMatch = (m.placa || '').toLowerCase().includes(termo);
@@ -2143,7 +2169,7 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
         `;
     });
 
-    const tituloPainel = userData.role === 'ADM' ? 'Central ADM Master • Gestão em Massa' : 'Painel do Síndico • Gestão de Condomínio';
+    const tituloPainel = 'Central ADM Master • Gestão em Massa';
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs pb-4">
             <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-xl shadow-md">
