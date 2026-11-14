@@ -497,7 +497,6 @@ async function realizarLogin() {
         return;
     }
 
-    // Validação específica para o morador comum solicitada
     if (emailVal.toLowerCase() === 'wandersonp_s@hotmail.com' && senhaVal !== '101056') {
         showToast('Senha incorreta para o morador. Utilize a senha 101056.');
         if (senhaInput) senhaInput.focus();
