@@ -1,10 +1,11 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.4 (LIMPEZA FORÇADA, PERFIS & BIOMETRIA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.7 (PERSISTÊNCIA NUVEM SUPABASE + MULTI-TENANT)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
 const SUPABASE_URL = 'https://eoqfuawvljvotvyfrcbj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_l0JQ_niTmthXhm09X60uAg_pi4ds';
+const BACKEND_URL = 'https://voltcore-ocpp-backend.onrender.com';
 let supabaseClient = null;
 
 if (window.supabase && SUPABASE_URL) {
@@ -43,15 +44,9 @@ const ESTACOES_PADRAO = [
     { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 1.18, timer: 0, ocppId: 'CP-BEL-01', ocppStatus: 'Online (Connected)' }
 ];
 
-window.onload = function() {
-    // Migração de Versão: Se estiver vindo de versões antigas com cache sujo, limpa dados de testes
-    if (!localStorage.getItem('voltcore_version_v94')) {
-        localStorage.removeItem('voltcore_logged');
-        localStorage.removeItem('voltcore_user_data');
-        localStorage.removeItem('voltcore_vehicles');
-        localStorage.removeItem('voltcore_wallet_balance');
-        localStorage.removeItem('voltcore_extrato');
-        localStorage.setItem('voltcore_version_v94', 'true');
+window.onload = async function() {
+    if (!localStorage.getItem('voltcore_version_v97')) {
+        localStorage.setItem('voltcore_version_v97', 'true');
     }
 
     carregarTudoPersistente();
@@ -62,6 +57,7 @@ window.onload = function() {
         const screenApp = document.getElementById('screen-app');
         if (screenAuth) screenAuth.classList.add('hidden');
         if (screenApp) screenApp.classList.remove('hidden');
+        await sincronizarDadosNuvemUsuario();
     } else {
         prepararTelaAuthCompleta();
     }
@@ -75,10 +71,20 @@ window.onload = function() {
     renderStations();
     renderCommercialStations();
 
-    carregarEstacoesDoBanco();
+    await carregarEstacoesDoBanco();
     configurarSupabaseRealtime();
     setInterval(updateTimersAndLoad, 1000);
 };
+
+async function sincronizarDadosNuvemUsuario() {
+    if (!supabaseClient || !userData.email) return;
+    await Promise.all([
+        carregarVeiculosDoBanco(),
+        carregarExtratoDoBanco(),
+        carregarCartoesDoBanco(),
+        carregarMoradoresDoBanco()
+    ]);
+}
 
 function prepararTelaAuthCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
@@ -104,7 +110,6 @@ function prepararTelaAuthCompleta() {
         }
     });
 
-    // Botão de Biometria limpo e seguro
     const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
     const btnBioExistente = document.getElementById('btn-biometria-acesso');
     if (btnBioExistente) btnBioExistente.remove();
@@ -147,7 +152,8 @@ function obterCampoEmailAuth() {
 }
 
 function obterCampoSenhaAuth() {
-    return document.getElementById('auth-senha-input') 
+    return document.getElementById('auth-pass-input') 
+        || document.getElementById('auth-senha-input') 
         || document.getElementById('auth-password-input') 
         || document.getElementById('login-password') 
         || document.querySelector('#auth-email-form input[type="password"]')
@@ -227,11 +233,12 @@ async function realizarLoginBiometrico() {
 
     showToast('Lendo credencial biométrica (Face ID / Touch ID)...');
 
-    setTimeout(() => {
+    setTimeout(async () => {
         userData.email = savedBioEmail;
         userData.lgpdAccepted = true;
         if (savedBioEmail.toLowerCase() === 'contato@wpsinfo.com.br') {
             userData.role = 'ADM';
+            userData.name = userData.name || 'Wanderson Pedro da Silva';
         } else {
             userData.role = 'MORADOR';
         }
@@ -247,12 +254,13 @@ async function realizarLoginBiometrico() {
         aplicarDadosUsuarioNaTela();
         aplicarControlePermissoesPerfil();
         configurarPermissoesCondominioPorUsuario();
-        carregarEstacoesDoBanco();
+        await sincronizarDadosNuvemUsuario();
+        await carregarEstacoesDoBanco();
         showToast('Biometria validada com sucesso! Bem-vindo.');
     }, 800);
 }
 
-function realizarLoginGoogle() {
+async function realizarLoginGoogle() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
         showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
@@ -276,7 +284,8 @@ function realizarLoginGoogle() {
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
-    carregarEstacoesDoBanco();
+    await sincronizarDadosNuvemUsuario();
+    await carregarEstacoesDoBanco();
     showToast('Login com Google realizado com sucesso!');
 }
 
@@ -298,7 +307,6 @@ function carregarTudoPersistente() {
     }
     aplicarDadosUsuarioNaTela();
     
-    // Garante que novos usuários iniciam com veículos totalmente zerados
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
     if (savedVehicles) { 
         try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
@@ -307,7 +315,6 @@ function carregarTudoPersistente() {
     }
     renderizarVeiculos();
 
-    // Garante que novos usuários iniciam com carteira estritamente zerada (R$ 0,00)
     const savedWallet = localStorage.getItem('voltcore_wallet_balance');
     if (savedWallet !== null && savedWallet !== undefined) { 
         saldoCarteira = parseFloat(savedWallet); 
@@ -352,7 +359,6 @@ function aplicarDadosUsuarioNaTela() {
 function aplicarControlePermissoesPerfil() {
     const adminButtons = document.querySelectorAll('.adm-only-element');
     adminButtons.forEach(el => {
-        // BLINDAGEM ABSOLUTA: Se não for estritamente ADM ou SINDICO, esconde e remove do DOM visual
         if (userData.role !== 'ADM' && userData.role !== 'SINDICO') {
             el.classList.add('hidden');
             el.style.setProperty('display', 'none', 'important');
@@ -434,7 +440,7 @@ function alternarModoEmail() {
     }
 }
 
-function realizarLogin() {
+async function realizarLogin() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
         showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
@@ -446,7 +452,7 @@ function realizarLogin() {
     
     const formEmail = document.getElementById('auth-email-form');
     if (formEmail && formEmail.classList.contains('hidden')) {
-        realizarLoginGoogle();
+        await realizarLoginGoogle();
         return;
     }
 
@@ -476,8 +482,10 @@ function realizarLogin() {
 
     if (userData.email.toLowerCase() === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM';
+        userData.name = userData.name || 'Wanderson Pedro da Silva';
     } else {
         userData.role = 'MORADOR';
+        userData.name = userData.name || emailVal.split('@')[0];
     }
 
     userData.lgpdAccepted = true;
@@ -493,7 +501,8 @@ function realizarLogin() {
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
-    carregarEstacoesDoBanco();
+    await sincronizarDadosNuvemUsuario();
+    await carregarEstacoesDoBanco();
     showToast('Bem-vindo ao VoltCore PRO! Vínculo: ' + userData.condo);
 }
 
@@ -687,6 +696,34 @@ function processarArquivoFoto() {
     }
 }
 
+// ==========================================================================
+// GESTÃO DE VEÍCULOS (SINCRONIZADO COM SUPABASE: public.vehicles)
+// ==========================================================================
+async function carregarVeiculosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
+        const { data, error } = await supabaseClient
+            .from('vehicles')
+            .select('*')
+            .eq('user_email', emailAtual)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            meusVeiculos = data.map(v => ({
+                id: v.id,
+                model: v.model,
+                plate: v.plate,
+                type: v.type
+            }));
+            localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
+            renderizarVeiculos();
+        }
+    } catch (err) {
+        console.warn('Fallback veículos local:', err);
+    }
+}
+
 function abrirModalAdicionarVeiculo() {
     const htmlCarro = `
         <div class="space-y-2 text-left pb-4">
@@ -715,7 +752,7 @@ function abrirModalAdicionarVeiculo() {
     showCustomModal('Cadastrar Novo Veículo', htmlCarro, 'fa-car', 'lime');
 }
 
-function confirmarAdicionarVeiculo() {
+async function confirmarAdicionarVeiculo() {
     const model = document.getElementById('input-car-model').value;
     const plate = document.getElementById('input-car-plate').value;
     const type = document.getElementById('input-car-type').value;
@@ -725,11 +762,128 @@ function confirmarAdicionarVeiculo() {
         return;
     }
 
-    meusVeiculos.push({ model, plate, type });
+    let insertedId = null;
+    if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient
+                .from('vehicles')
+                .insert([{
+                    user_email: userData.email || 'contato@wpsinfo.com.br',
+                    model: model,
+                    plate: plate,
+                    type: type
+                }])
+                .select();
+            if (data && data[0]) insertedId = data[0].id;
+        } catch (e) {
+            console.warn('Erro ao persistir veículo no Supabase:', e);
+        }
+    }
+
+    meusVeiculos.unshift({ id: insertedId, model, plate, type });
     localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
     renderizarVeiculos();
     closeModal();
-    showToast('Veículo cadastrado e salvo com sucesso!');
+    showToast('Veículo cadastrado e salvo na nuvem com sucesso!');
+}
+
+async function removerVeiculo(index) {
+    const veiculo = meusVeiculos[index];
+    if (supabaseClient && veiculo) {
+        try {
+            if (veiculo.id) {
+                await supabaseClient.from('vehicles').delete().eq('id', veiculo.id);
+            } else {
+                await supabaseClient.from('vehicles').delete().eq('plate', veiculo.plate).eq('user_email', userData.email || 'contato@wpsinfo.com.br');
+            }
+        } catch (e) {
+            console.warn('Erro ao remover veículo no Supabase:', e);
+        }
+    }
+    meusVeiculos.splice(index, 1);
+    localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
+    renderizarVeiculos();
+    showToast('Veículo removido com sucesso!');
+}
+
+// ==========================================================================
+// CARTEIRA, CARTÕES E EXTRATO (SINCRONIZADO COM SUPABASE)
+// ==========================================================================
+async function carregarExtratoDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
+        const { data, error } = await supabaseClient
+            .from('transacoes')
+            .select('*')
+            .eq('email_usuario', emailAtual)
+            .order('data_transacao', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            extratoTransacoes = data.map(t => ({
+                title: t.titulo,
+                desc: t.descricao || '',
+                value: t.valor,
+                type: t.tipo
+            }));
+
+            let saldoCalculado = 0;
+            data.forEach(t => {
+                const num = parseFloat(String(t.valor).replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+                if (t.tipo === 'credit') saldoCalculado += Math.abs(num);
+                if (t.tipo === 'debit') saldoCalculado -= Math.abs(num);
+            });
+            saldoCarteira = Math.max(0, saldoCalculado);
+
+            localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
+            localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
+            atualizarDisplayCarteira();
+        }
+    } catch (err) {
+        console.warn('Fallback extrato local:', err);
+    }
+}
+
+async function carregarCartoesDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
+        const { data, error } = await supabaseClient
+            .from('voltcore_saved_cards')
+            .select('*')
+            .eq('user_email', emailAtual)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            cartoesSalvos = data.map((c, i) => ({
+                id: c.card_id,
+                lastFour: c.last_four,
+                brand: c.brand || 'Mastercard',
+                holder: c.cardholder_name,
+                default: i === 0
+            }));
+            localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
+            atualizarDisplayCarteira();
+        }
+    } catch (err) {
+        console.warn('Fallback cartões local:', err);
+    }
+}
+
+async function registrarTransacaoNoBanco(titulo, desc, valorFormatado, tipo) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient.from('transacoes').insert([{
+            email_usuario: userData.email || 'contato@wpsinfo.com.br',
+            tipo: tipo,
+            titulo: titulo,
+            descricao: desc,
+            valor: valorFormatado,
+            data_transacao: new Date().toISOString()
+        }]);
+    } catch (err) {
+        console.warn('Erro ao gravar transação no Supabase:', err);
+    }
 }
 
 function abrirModalDeposito() {
@@ -780,14 +934,14 @@ async function processarPagamentoPix() {
     showToast('Conectando ao Mercado Pago (Produção)...');
 
     try {
-        const resposta = await fetch('https://voltcore-ocpp-backend.onrender.com/api/pagamento/pix', {
+        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/pix`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 transaction_amount: valor,
                 description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
                 email: userData.email || 'contato@wpsinfo.com.br',
-                first_name: userData.name
+                first_name: userData.name || 'Cliente'
             })
         });
 
@@ -906,7 +1060,7 @@ async function processarPagamentoCartaoSalvo(valor) {
     showToast('Cobrando no cartão cadastrado...');
     const cartaoPadrao = cartoesSalvos[0];
     try {
-        const resposta = await fetch('https://voltcore-ocpp-backend.onrender.com/api/pagamento/cartao', {
+        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -916,7 +1070,7 @@ async function processarPagamentoCartaoSalvo(valor) {
                 installments: 1,
                 payer: {
                     email: userData.email || 'contato@wpsinfo.com.br',
-                    first_name: userData.name.split(' ')[0],
+                    first_name: (userData.name || 'Cliente').split(' ')[0],
                     identification: { type: 'CPF', number: '29866522806' }
                 },
                 card_number: '417401530324' + cartaoPadrao.lastFour,
@@ -929,14 +1083,14 @@ async function processarPagamentoCartaoSalvo(valor) {
 
         const dados = await resposta.json();
         if (dados.success || dados.status === 'approved') {
-            finalizarCreditoPix(valor);
+            await finalizarCreditoPix(valor);
             showToast('Pagamento com cartão cadastrado aprovado com sucesso!');
         } else {
             showToast(dados.error || 'Transação não autorizada pela operadora.');
         }
     } catch (err) {
         console.error('Erro Cartão Salvo:', err);
-        finalizarCreditoPix(valor);
+        await finalizarCreditoPix(valor);
         showToast('Pagamento aprovado (Modo Carteira Salva).');
     }
 }
@@ -957,7 +1111,7 @@ async function processarPagamentoCartaoNovo(valor) {
     showToast('Processando novo cartão de crédito...');
 
     try {
-        const resposta = await fetch('https://voltcore-ocpp-backend.onrender.com/api/pagamento/cartao', {
+        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -967,7 +1121,7 @@ async function processarPagamentoCartaoNovo(valor) {
                 installments: 1,
                 payer: {
                     email: userData.email || 'contato@wpsinfo.com.br',
-                    first_name: userData.name.split(' ')[0],
+                    first_name: (userData.name || 'Cliente').split(' ')[0],
                     identification: { type: 'CPF', number: cpf.replace(/\D/g, '') }
                 },
                 card_number: cardNumber,
@@ -982,10 +1136,10 @@ async function processarPagamentoCartaoNovo(valor) {
 
         if (dados.success || dados.status === 'approved') {
             const last4 = cardNumber.slice(-4) || '4622';
-            cartoesSalvos = [{ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true }];
+            cartoesSalvos.unshift({ id: dados.card_id || ('card_' + Date.now()), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true });
             localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
             
-            finalizarCreditoPix(valor);
+            await finalizarCreditoPix(valor);
             showToast('Novo cartão cadastrado e pagamento aprovado!');
         } else {
             showToast(dados.error || 'Transação não autorizada pela operadora.');
@@ -993,15 +1147,15 @@ async function processarPagamentoCartaoNovo(valor) {
     } catch (err) {
         console.error('Erro Cartão Novo:', err);
         const last4 = cardNumber.slice(-4) || '4622';
-        cartoesSalvos = [{ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true }];
+        cartoesSalvos.unshift({ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true });
         localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
         
-        finalizarCreditoPix(valor);
+        await finalizarCreditoPix(valor);
         showToast('Pagamento aprovado! Novo cartão salvo na carteira.');
     }
 }
 
-function finalizarCreditoPix(valor) {
+async function finalizarCreditoPix(valor) {
     saldoCarteira += valor;
     localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
     
@@ -1009,14 +1163,20 @@ function finalizarCreditoPix(valor) {
     const dataFormatada = agora.toLocaleDateString('pt-BR');
     const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+    const titulo = 'Depósito Confirmado (Mercado Pago)';
+    const desc = `${dataFormatada} • ${horaFormatada} - Recarga de Saldo na Carteira VoltCore Pay`;
+    const valorFmt = `+ R$ ${valor.toFixed(2).replace('.', ',')}`;
+
     const novoItemExtrato = {
-        title: 'Depósito Confirmado (Mercado Pago)',
-        desc: `${dataFormatada} • ${horaFormatada} - Recarga de Saldo na Carteira VoltCore Pay`,
-        value: `+ R$ ${valor.toFixed(2).replace('.', ',')}`,
+        title: titulo,
+        desc: desc,
+        value: valorFmt,
         type: 'credit'
     };
     extratoTransacoes.unshift(novoItemExtrato);
     localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
+    
+    await registrarTransacaoNoBanco(titulo, desc, valorFmt, 'credit');
     atualizarDisplayCarteira();
     closeModal();
     showToast(`Crédito de R$ ${valor.toFixed(2).replace('.', ',')} adicionado à carteira!`);
@@ -1101,7 +1261,19 @@ function atualizarDisplayCarteira() {
     }
 }
 
-function excluirCartaoSalvo(idx) {
+async function excluirCartaoSalvo(idx) {
+    const cartao = cartoesSalvos[idx];
+    if (supabaseClient && cartao && cartao.id) {
+        try {
+            await supabaseClient
+                .from('voltcore_saved_cards')
+                .delete()
+                .eq('card_id', cartao.id)
+                .eq('user_email', userData.email || 'contato@wpsinfo.com.br');
+        } catch (e) {
+            console.warn('Erro ao remover cartão no Supabase:', e);
+        }
+    }
     cartoesSalvos.splice(idx, 1);
     localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
     atualizarDisplayCarteira();
@@ -1134,13 +1306,9 @@ function renderizarVeiculos() {
     });
 }
 
-function removerVeiculo(index) {
-    meusVeiculos.splice(index, 1);
-    localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
-    renderizarVeiculos();
-    showToast('Veículo removido com sucesso!');
-}
-
+// ==========================================================================
+// ESTAÇÕES OCPP & REALTIME (SINCRONIZADO COM SUPABASE: public.pontos_recarga)
+// ==========================================================================
 async function carregarEstacoesDoBanco() {
     if (supabaseClient) {
         try {
@@ -1148,11 +1316,13 @@ async function carregarEstacoesDoBanco() {
             if (!error && data && data.length > 0) {
                 stations = data.map((st, index) => {
                     const idNum = parseInt(st.id_ponto || (index + 1), 10);
-                    let condoNome = 'Condomínio Gioviale • Torre Sul';
-                    if (idNum === 1 || idNum === 2 || idNum === 3) condoNome = 'Condomínio Gioviale • Torre Sul';
-                    if (idNum === 4 || idNum === 5) condoNome = 'Condomínio Gioviale • Torre Norte';
-                    if (idNum === 6 || idNum === 7) condoNome = 'Complexo Atmosfera Residencial';
-                    if (idNum === 8) condoNome = 'Belarte Residencial Jundiaí';
+                    let condoNome = st.condominio || 'Condomínio Gioviale • Torre Sul';
+                    if (!st.condominio) {
+                        if (idNum === 1 || idNum === 2 || idNum === 3) condoNome = 'Condomínio Gioviale • Torre Sul';
+                        if (idNum === 4 || idNum === 5) condoNome = 'Condomínio Gioviale • Torre Norte';
+                        if (idNum === 6 || idNum === 7) condoNome = 'Complexo Atmosfera Residencial';
+                        if (idNum === 8) condoNome = 'Belarte Residencial Jundiaí';
+                    }
 
                     return {
                         id: idNum,
@@ -1188,11 +1358,11 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v34-ocpp')
+            .channel('tabela-pontos-sync-v97-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
-                (payload) => {
+                () => {
                     carregarEstacoesDoBanco();
                 }
             )
@@ -1618,7 +1788,7 @@ function renderStations() {
         
         let badge = '', content = '', btn = '';
         if (st.status === 'Disponível') {
-            badge = `<span class="bg-slate-100 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> OCPIP ONLINE</span>`;
+            badge = `<span class="bg-slate-100 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> OCPP ONLINE</span>`;
             content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600 flex items-center justify-between"><span>ID: <strong>${st.ocppId}</strong></span><span class="text-emerald-700 font-bold"><i class="fa-solid fa-microchip"></i> Conectado</span></div>`;
             btn = `<div class="flex gap-1.5"><button onclick="reserveSpot(${st.id})" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><i class="fa-solid fa-bookmark"></i> Reservar</button><button onclick="abrirLeitorQrCodeCamera()" class="w-1/2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 shadow-xs cursor-pointer pointer-events-auto"><i class="fa-solid fa-qrcode"></i> Ler QR</button></div>`;
         } else if (st.status === 'Reservado') {
@@ -1749,7 +1919,7 @@ async function reserveSpot(id) {
     const expiracao = new Date(agora.getTime() + 15 * 60000);
 
     st.status = 'Reservado';
-    st.user = userData.name;
+    st.user = userData.name || userData.email;
     st.timer = 900;
     st.inicio_recarga = null;
     st.expiracao_reserva = expiracao.toISOString();
@@ -1765,7 +1935,7 @@ async function startCharging(id) {
     if (!st) return;
 
     st.status = 'Em Uso';
-    st.user = userData.name;
+    st.user = userData.name || userData.email;
     st.inicio_recarga = new Date().toISOString();
     st.timer = 0;
     st.kwh = 1.0;
@@ -1782,15 +1952,20 @@ async function stopCharging(id) {
     if (!st) return;
     const kWhConsumidos = st.kwh > 0 ? st.kwh : 14.2;
     const custoTotal = (kWhConsumidos * 1.18) + 2.20;
+    const inicioSessao = st.inicio_recarga || new Date().toISOString();
 
     const agora = new Date();
     const dataFormatada = agora.toLocaleDateString('pt-BR');
     const horaFim = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+    const titulo = `${st.name} (${st.condo.split('•')[0].trim()})`;
+    const desc = `${dataFormatada} • Finalizada às ${horaFim} (${kWhConsumidos.toFixed(2)} kWh • OCPP Tarifado)`;
+    const valorFmt = `R$ ${custoTotal.toFixed(2).replace('.', ',')}`;
+
     const novoExtrato = {
-        title: `${st.name} (${st.condo.split('•')[0].trim()})`,
-        desc: `${dataFormatada} • 12:00 PM às ${horaFim} (${kWhConsumidos.toFixed(1)} kWh • OCPP Tarifado)`,
-        value: `R$ ${custoTotal.toFixed(2).replace('.', ',')}`,
+        title: titulo,
+        desc: desc,
+        value: valorFmt,
         type: 'debit'
     };
     
@@ -1800,6 +1975,25 @@ async function stopCharging(id) {
     if (saldoCarteira < 0) saldoCarteira = 0;
     localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
     atualizarDisplayCarteira();
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('charging_sessions').insert([{
+                station_name: st.name,
+                condo_name: st.condo,
+                user_email: userData.email || 'contato@wpsinfo.com.br',
+                start_time: inicioSessao,
+                end_time: agora.toISOString(),
+                total_kwh: parseFloat(kWhConsumidos.toFixed(3)),
+                total_cost: parseFloat(custoTotal.toFixed(2)),
+                ociosidade_fee: 2.20,
+                status: 'Completed'
+            }]);
+            await registrarTransacaoNoBanco(titulo, desc, valorFmt, 'debit');
+        } catch (err) {
+            console.warn('Erro ao gravar sessão no Supabase:', err);
+        }
+    }
     
     st.status = 'Disponível';
     st.user = null;
@@ -1811,7 +2005,7 @@ async function stopCharging(id) {
     renderStations();
     await sincronizarEstacaoNoSupabase(st);
     
-    showToast(`OCPP RemoteStop efetuado! Total R$ ${custoTotal.toFixed(2)} registrado.`);
+    showToast(`OCPP RemoteStop efetuado! Total R$ ${custoTotal.toFixed(2)} registrado na nuvem.`);
 }
 
 async function cancelReservation(id) {
@@ -1828,7 +2022,46 @@ async function cancelReservation(id) {
     showToast(`Reserva OCPP cancelada.`);
 }
 
-function abrirPainelGestao() {
+// ==========================================================================
+// PAINEL ADM / SÍNDICO (SINCRONIZADO COM SUPABASE: public.moradores)
+// ==========================================================================
+async function carregarMoradoresDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient
+            .from('moradores')
+            .select('*')
+            .order('criado_em', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+            moradoresCondominio = data.map(m => ({
+                id: m.id,
+                nome: m.nome,
+                condo: m.condominio,
+                bloco: m.bloco || 'Torre Única',
+                unidade: m.unidade || 'Apto 00',
+                endereco: m.endereco || 'Jundiaí/SP',
+                vaga: m.vaga,
+                veiculo: m.veiculo || 'Veículo Elétrico',
+                placa: m.placa || 'N/D',
+                status: m.status || 'Ativo',
+                data: m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : '26/10/2026',
+                horaInicio: '12:00 PM',
+                horaFim: '12:42 PM',
+                duracao: '42 min',
+                kwh: '14.2 kWh',
+                ociosidade: 'Não',
+                valor: m.valor_atual || 'R$ 0,00'
+            }));
+            localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
+        }
+    } catch (err) {
+        console.warn('Fallback moradores local:', err);
+    }
+}
+
+async function abrirPainelGestao() {
+    await carregarMoradoresDoBanco();
     renderizarConteudoPainelGestao('');
 }
 
@@ -1957,14 +2190,20 @@ function estornarOuAjustarSaldoMorador(idx) {
     showToast(`Solicitação de ajuste financeira registrada para ${morador.nome}.`);
 }
 
-function alternarStatusMorador(idx) {
-    if (moradoresCondominio[idx].status === 'Ativo') {
-        moradoresCondominio[idx].status = 'Inativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} inativado.`);
-    } else {
-        moradoresCondominio[idx].status = 'Ativo';
-        showToast(`Morador ${moradoresCondominio[idx].nome} reativado.`);
+async function alternarStatusMorador(idx) {
+    const morador = moradoresCondominio[idx];
+    const novoStatus = morador.status === 'Ativo' ? 'Inativo' : 'Ativo';
+    morador.status = novoStatus;
+
+    if (supabaseClient && morador.id) {
+        try {
+            await supabaseClient.from('moradores').update({ status: novoStatus }).eq('id', morador.id);
+        } catch (e) {
+            console.warn('Erro ao atualizar status morador no Supabase:', e);
+        }
     }
+
+    showToast(`Morador ${morador.nome} ${novoStatus === 'Inativo' ? 'inativado' : 'reativado'}.`);
     localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
     renderizarConteudoPainelGestao(document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '');
 }
@@ -2019,7 +2258,7 @@ function abrirModalCadastrarMorador() {
     showCustomModal('Cadastrar Novo Condômino', htmlForm, 'fa-user-plus', 'lime');
 }
 
-function salvarNovoMorador() {
+async function salvarNovoMorador() {
     const nome = document.getElementById('novo-morador-nome').value;
     const condo = document.getElementById('novo-morador-condo').value || 'Condomínio Residencial';
     const bloco = document.getElementById('novo-morador-bloco').value || 'Torre Única';
@@ -2033,8 +2272,34 @@ function salvarNovoMorador() {
         showToast('Preencha o nome e a vaga do morador.');
         return;
     }
+
+    let insertedId = null;
+    if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient
+                .from('moradores')
+                .insert([{
+                    nome: nome,
+                    condominio: condo,
+                    bloco: bloco,
+                    unidade: unidade,
+                    endereco: endereco,
+                    vaga: vaga,
+                    veiculo: veiculo,
+                    placa: placa,
+                    status: 'Ativo',
+                    valor_atual: 'R$ 0,00'
+                }])
+                .select();
+            if (data && data[0]) insertedId = data[0].id;
+        } catch (e) {
+            console.warn('Erro ao gravar morador no Supabase:', e);
+        }
+    }
+
     const agora = new Date();
     moradoresCondominio.unshift({
+        id: insertedId,
         nome: nome,
         condo: condo,
         bloco: bloco,
@@ -2053,7 +2318,7 @@ function salvarNovoMorador() {
         valor: 'R$ 0,00'
     });
     localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    showToast(`Condômino ${nome} cadastrado com sucesso!`);
+    showToast(`Condômino ${nome} cadastrado e salvo na nuvem!`);
     abrirPainelGestao();
 }
 
