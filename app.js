@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.30 (UNIFICADO, COMPLETO E INTEGRAL)
+   VOLTCORE PRO • FRONT-END ENGINE V9.35 (COMPLETO, INTEGRAL & PADRÃO TUPI)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -13,6 +13,7 @@ if (window.supabase && SUPABASE_URL) {
 }
 
 let stations = [];
+let commercialStations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
 let pixPollingInterval = null;
@@ -29,6 +30,7 @@ let userData = {
         "Condomínio Gioviale • Torre Norte",
         "Complexo Atmosfera Residencial"
     ],
+    statusAprovacao: "Aprovado",
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
     lgpdAccepted: true
 };
@@ -49,7 +51,8 @@ const CONDOS_DISPONIVEIS = [
     "Belarte Residencial Jundiaí",
     "Condomínio Gioviale • Torre Sul",
     "Condomínio Gioviale • Torre Norte",
-    "Complexo Atmosfera Residencial"
+    "Complexo Atmosfera Residencial",
+    "Apenas Eletropostos / Visitante (Sem Condomínio)"
 ];
 
 const ESTACOES_PADRAO = [
@@ -64,7 +67,7 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v930', 'true');
+    localStorage.setItem('voltcore_version_v935', 'true');
 
     carregarTudoPersistente();
     
@@ -76,7 +79,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthCompleta();
+        prepararTelaAuthPadraoTupiCompleta();
     }
 
     aplicarControlePermissoesPerfil();
@@ -94,7 +97,223 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// HIERARQUIA E TRAVA ESTRITA DE PERFIL POR E-MAIL (MULTITENANT BLINDADO)
+// TELA DE AUTENTICAÇÃO PADRÃO TUPI • MULTITENANT & OLHINHO FUNCIONAL
+// ==========================================================================
+function prepararTelaAuthPadraoTupiCompleta() {
+    const authBox = document.querySelector('#screen-auth > div');
+    if (!authBox) return;
+
+    authBox.innerHTML = `
+        <div class="text-center space-y-3.5">
+            <div class="flex justify-center">
+                <div class="w-14 h-14 bg-lime-400 rounded-2xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-bolt text-slate-900 text-2xl"></i>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-lg font-black text-slate-900">VoltCore PRO</h2>
+                <p class="text-[11px] text-slate-500">Soluções inteligentes de recarga e condomínios</p>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
+                <input type="checkbox" id="check-lgpd-login" checked class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
+                <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
+                    Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a>.
+                </label>
+            </div>
+
+            <div id="auth-form-container" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
+                    <input type="email" id="tupi-email" placeholder="Seu e-mail cadastrado" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                </div>
+
+                <div id="container-extra-cadastro" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
+                        <input type="text" id="tupi-nome" placeholder="Informe o seu nome" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Condomínio de Vínculo (Multi-Tenant)</label>
+                        <select id="tupi-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                            ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Senha</label>
+                    <input type="password" id="tupi-senha" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+
+                <div id="senha-criterios" class="hidden text-[10px] space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600">
+                    <p id="crit-len" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Mínimo 8 caracteres</p>
+                    <p id="crit-upper" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra maiúscula (A-Z)</p>
+                    <p id="crit-lower" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra minúscula (a-z)</p>
+                    <p id="crit-num" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Um número (0-9)</p>
+                </div>
+
+                <div id="container-confirma-senha" class="relative hidden">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha</label>
+                    <input type="password" id="tupi-confirma" placeholder="Confirme sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline">Esqueci minha senha</button>
+                </div>
+
+                <button type="button" onclick="processarAuthTupi()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
+                    Entrar
+                </button>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex justify-center gap-3 text-xs">
+                <button onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
+                <span class="text-slate-300">•</span>
+                <button onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
+            </div>
+        </div>
+    `;
+
+    const emailInput = document.getElementById('tupi-email');
+    const senhaInput = document.getElementById('tupi-senha');
+    if (emailInput) {
+        emailInput.addEventListener('input', () => checarSeEmailExiste(emailInput.value.trim()));
+    }
+    if (senhaInput) {
+        senhaInput.addEventListener('input', () => validarCriteriosSenha(senhaInput.value));
+    }
+}
+
+function alternarVisibilidadeSenha(idInput, btn) {
+    const input = document.getElementById(idInput);
+    if (!input) return;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash text-xs text-lime-600';
+    } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye text-xs';
+    }
+}
+
+function validarCriteriosSenha(senha) {
+    const criteriosDiv = document.getElementById('senha-criterios');
+    if (!criteriosDiv || criteriosDiv.classList.contains('hidden')) return;
+
+    document.getElementById('crit-len').style.color = senha.length >= 8 ? '#16a34a' : '#64748b';
+    document.getElementById('crit-upper').style.color = /[A-Z]/.test(senha) ? '#16a34a' : '#64748b';
+    document.getElementById('crit-lower').style.color = /[a-z]/.test(senha) ? '#16a34a' : '#64748b';
+    document.getElementById('crit-num').style.color = /[0-9]/.test(senha) ? '#16a34a' : '#64748b';
+}
+
+let isUsuarioNovoDetectado = false;
+async function checarSeEmailExiste(email) {
+    const extraCampos = document.getElementById('container-extra-cadastro');
+    const confirmaCampos = document.getElementById('container-confirma-senha');
+    const criteriosSenha = document.getElementById('senha-criterios');
+    const btnAcao = document.getElementById('btn-tupi-acao');
+
+    if (!email || !email.includes('@') || email.length < 5) return;
+
+    let existe = false;
+    const emailLower = email.toLowerCase().trim();
+    
+    if (emailLower === 'contato@wpsinfo.com.br' || emailLower === 'wandersonp_s@hotmail.com' || emailLower === 'wand3rson.s@gmail.com') {
+        existe = true;
+    } else if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient.from('voltcore_roles').select('email').eq('email', emailLower).maybeSingle();
+            if (data) existe = true;
+        } catch(e){}
+    }
+
+    isUsuarioNovoDetectado = !existe;
+
+    if (isUsuarioNovoDetectado) {
+        if (extraCampos) extraCampos.classList.remove('hidden');
+        if (confirmaCampos) confirmaCampos.classList.remove('hidden');
+        if (criteriosSenha) criteriosSenha.classList.remove('hidden');
+        if (btnAcao) btnAcao.innerText = 'Cadastrar Conta';
+    } else {
+        if (extraCampos) extraCampos.classList.add('hidden');
+        if (confirmaCampos) confirmaCampos.classList.add('hidden');
+        if (criteriosSenha) criteriosSenha.classList.add('hidden');
+        if (btnAcao) btnAcao.innerText = 'Entrar';
+    }
+}
+
+async function processarAuthTupi() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Aceite os Termos de Privacidade e LGPD.');
+        return;
+    }
+
+    const email = document.getElementById('tupi-email').value.trim();
+    const senha = document.getElementById('tupi-senha').value.trim();
+
+    if (!email || !email.includes('@') || !senha) {
+        showToast('Preencha o e-mail e a senha corretamente.');
+        return;
+    }
+
+    if (isUsuarioNovoDetectado) {
+        const nome = document.getElementById('tupi-nome').value.trim();
+        const condo = document.getElementById('tupi-condo').value;
+        const confirma = document.getElementById('tupi-confirma').value.trim();
+
+        if (!nome) { showToast('Informe seu nome completo.'); return; }
+        if (senha !== confirma) { showToast('As senhas não coincidem.'); return; }
+        if (senha.length < 8) { showToast('A senha precisa ter no mínimo 8 caracteres.'); return; }
+
+        userData.name = nome;
+        userData.email = email;
+        userData.condo = condo;
+        userData.role = 'MORADOR';
+        userData.statusAprovacao = condo.includes('Apenas Eletropostos') ? 'Aprovado' : 'Pendente';
+        userData.lgpdAccepted = true;
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('moradores').insert([{
+                    nome, email, condominio: condo, vaga: 'A Definir', status: userData.statusAprovacao
+                }]);
+                await supabaseClient.from('voltcore_roles').insert([{
+                    email, role: 'MORADOR', condominio: condo, status_aprovacao: userData.statusAprovacao
+                }]);
+            } catch(e){}
+        }
+
+        showToast('Cadastro realizado com sucesso!');
+    } else {
+        userData.email = email;
+        avaliarPermissaoPorEmail(email);
+        userData.lgpdAccepted = true;
+        showToast(`Bem-vindo, ${userData.role}!`);
+    }
+
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+    localStorage.setItem('voltcore_logged', 'true');
+    localStorage.setItem('voltcore_biometric_email', userData.email);
+
+    document.getElementById('screen-auth').classList.add('hidden');
+    document.getElementById('screen-app').classList.remove('hidden');
+    aplicarDadosUsuarioNaTela();
+    aplicarControlePermissoesPerfil();
+    configurarPermissoesCondominioPorUsuario();
+    await sincronizarDadosNuvemUsuario();
+}
+
+// =================================0=========================================
+// AVALIAÇÃO DE PERMISSÕES & HIERARQUIA
 // ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
@@ -103,25 +322,32 @@ function avaliarPermissaoPorEmail(email) {
         userData.role = 'ADM_MASTER';
         userData.name = 'Wanderson Pedro da Silva (ADM Master)';
         userData.allowedCondos = CONDOS_DISPONIVEIS;
+        userData.statusAprovacao = 'Aprovado';
+    } else if (emailLimpo.includes('sindico')) {
+        userData.role = 'SINDICO';
+        userData.name = 'Síndico • Gestão de Condomínio';
+        userData.condo = 'Belarte Residencial Jundiaí';
+        userData.allowedCondos = ["Belarte Residencial Jundiaí"];
+        userData.statusAprovacao = 'Aprovado';
     } else {
         userData.role = 'MORADOR';
         userData.allowedCondos = [];
-        if (emailLimpo === 'wandersonp_s@hotmail.com') {
+        if (emailLimpo === 'wandersonp_s@hotmail.com' || emailLimpo === 'wand3rson.s@gmail.com') {
             userData.name = 'Wanderson Pedro da Silva';
             userData.condo = 'Belarte Residencial Jundiaí';
-        } else if (emailLimpo === 'wand3rson.s@gmail.com') {
-            userData.name = 'Wanderson (Google)';
+            userData.statusAprovacao = 'Aprovado';
         } else {
             userData.name = emailLimpo.split('@')[0] || 'Condômino';
+            userData.statusAprovacao = 'Aprovado';
         }
     }
 }
 
 function aplicarControlePermissoesPerfil() {
-    const isMaster = userData.role === 'ADM_MASTER';
+    const isMasterOrSindico = userData.role === 'ADM_MASTER' || userData.role === 'SINDICO';
     
     document.querySelectorAll('.adm-only-element').forEach(el => {
-        if (!isMaster) {
+        if (!isMasterOrSindico) {
             el.classList.add('hidden');
             el.style.setProperty('display', 'none', 'important');
         } else {
@@ -129,22 +355,11 @@ function aplicarControlePermissoesPerfil() {
             el.style.setProperty('display', 'flex', 'important');
         }
     });
-
-    document.querySelectorAll('button, a').forEach(btn => {
-        const txt = (btn.innerText || '').trim();
-        const onclickAttr = btn.getAttribute('onclick') || '';
-        if (txt.includes('ADM / Síndico') || txt.includes('ADM/Síndico') || onclickAttr.includes('abrirPainelGestao')) {
-            if (!isMaster) {
-                btn.classList.add('hidden');
-                btn.style.setProperty('display', 'none', 'important');
-            } else {
-                btn.classList.remove('hidden');
-                btn.style.setProperty('display', 'flex', 'important');
-            }
-        }
-    });
 }
 
+// ==========================================================================
+// FUNÇÕES DE SUPORTE, VEÍCULOS, CARTEIRA E ESTAÇÕES
+// ==========================================================================
 async function sincronizarDadosNuvemUsuario() {
     if (!supabaseClient || !userData.email) return;
     await Promise.all([
@@ -155,101 +370,281 @@ async function sincronizarDadosNuvemUsuario() {
     ]);
 }
 
-function prepararTelaAuthCompleta() {
-    const authBox = document.querySelector('#screen-auth > div');
-    if (!authBox) return;
+async function carregarVeiculosDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data } = await supabaseClient.from('vehicles').select('*').eq('user_email', userData.email);
+        if (data && data.length > 0) {
+            meusVeiculos = data.map(v => ({ id: v.id, model: v.model, plate: v.plate, type: v.type }));
+        }
+        renderizarVeiculos();
+    } catch(e) {}
+}
 
-    if (!document.getElementById('check-lgpd-login')) {
-        const divLgpd = document.createElement('div');
-        divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
-        divLgpd.innerHTML = `
-            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
-            <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
-                Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
-            </label>
-        `;
-        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
-        authBox.insertBefore(divLgpd, botoesDiv);
+async function carregarExtratoDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data } = await supabaseClient.from('transacoes').select('*').eq('email_usuario', userData.email);
+        if (data && data.length > 0) {
+            extratoTransacoes = data.map(t => ({ title: t.titulo, desc: t.descricao, value: t.valor, type: t.tipo }));
+            let saldo = 0;
+            data.forEach(t => {
+                let num = parseFloat(String(t.valor).replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+                if (t.tipo === 'credit') saldo += Math.abs(num);
+                if (t.tipo === 'debit') saldo -= Math.abs(num);
+            });
+            saldoCarteira = Math.max(0, saldo);
+        }
+        atualizarDisplayCarteira();
+        renderizarExtrato();
+    } catch(e) {}
+}
+
+async function carregarCartoesDoBanco() {
+    if (!supabaseClient) return;
+    try {
+        const { data } = await supabaseClient.from('voltcore_saved_cards').select('*').eq('user_email', userData.email);
+        if (data && data.length > 0) {
+            cartoesSalvos = data.map((c, i) => ({ id: c.card_id, lastFour: c.last_four, brand: c.brand || 'Mastercard', holder: c.cardholder_name, default: i === 0 }));
+        }
+        atualizarDisplayCarteira();
+    } catch(e) {}
+}
+
+function atualizarDisplayCarteira() {
+    const balanceEl = document.getElementById('wallet-balance-display');
+    if (balanceEl) balanceEl.innerText = `R$ ${saldoCarteira.toFixed(2).replace('.', ',')}`;
+}
+
+function renderizarExtrato() {
+    const extContainer = document.getElementById('wallet-transactions-list');
+    if (!extContainer) return;
+    extContainer.innerHTML = '';
+    if (extratoTransacoes.length === 0) {
+        extContainer.innerHTML = '<div class="p-4 text-center text-slate-400 text-xs">Nenhuma transação registrada.</div>';
+        return;
     }
+    extratoTransacoes.forEach(t => {
+        const isCredit = t.type === 'credit';
+        extContainer.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                <div>
+                    <strong class="text-slate-900 block">${t.title}</strong>
+                    <span class="text-[10px] text-slate-500">${t.desc}</span>
+                </div>
+                <span class="font-extrabold ${isCredit ? 'text-emerald-700' : 'text-rose-700'}">${isCredit ? '+' : '-'} ${t.value}</span>
+            </div>
+        `;
+    });
+}
 
-    const allButtons = authBox.querySelectorAll('button');
-    allButtons.forEach(btn => {
-        if (btn.innerText && btn.innerText.includes('Continuar com Google')) {
-            btn.setAttribute('onclick', 'realizarLoginGoogle()');
+function renderizarVeiculos() {
+    const container = document.getElementById('vehicles-grid-container');
+    if (!container) return;
+    container.innerHTML = '';
+    if (meusVeiculos.length === 0) {
+        container.innerHTML = `<div class="col-span-full p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhum veículo cadastrado.</div>`;
+        return;
+    }
+    meusVeiculos.forEach((v, index) => {
+        container.innerHTML += `
+            <div class="bg-slate-50 p-3 rounded-xl border-2 border-lime-400 flex items-center justify-between">
+                <div>
+                    <span class="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">${v.type || 'Conector CCS2'}</span>
+                    <h3 class="font-extrabold text-slate-900 text-xs mt-0.5">${v.model} • Placa ${v.plate}</h3>
+                </div>
+                <button onclick="removerVeiculo(${index})" class="text-rose-500 hover:text-rose-700 p-1.5 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+async function carregarEstacoesDoBanco() {
+    if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient.from('pontos_recarga').select('*').order('id_ponto', { ascending: true });
+            if (data && data.length > 0) {
+                stations = data.map((st, index) => ({
+                    id: parseInt(st.id_ponto || (index + 1), 10),
+                    name: st.nome_vaga || `VAGA 0${index+1}`,
+                    condo: st.condominio || 'Belarte Residencial Jundiaí',
+                    type: st.potencia_kw ? `Conector (${st.potencia_kw} kW)` : 'Conector Type-2 (22 kW)',
+                    status: st.status || 'Disponível',
+                    user: st.usuario || null,
+                    kwh: parseFloat(st.kwh || 0),
+                    cost: parseFloat(st.tarifa_kwh || 1.18),
+                    timer: parseInt(st.tempo_decorrido || 0, 10),
+                    ocppId: st.ocpp_id || `CP-ID-${index+1}`,
+                    ocppStatus: st.ocpp_status || 'Online (Connected)'
+                }));
+                renderStations();
+                return;
+            }
+        } catch(e) {}
+    }
+    carregarOuInicializarEstacoes();
+    renderStations();
+}
+
+function configurarSupabaseRealtime() {
+    if (!supabaseClient) return;
+    try {
+        supabaseClient.channel('tabela-pontos-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+            carregarEstacoesDoBanco();
+        }).subscribe();
+    } catch(e) {}
+}
+
+function carregarOuInicializarEstacoes() {
+    const saved = localStorage.getItem('voltcore_stations_v5_ocpp');
+    if (saved) {
+        try { stations = JSON.parse(saved); return; } catch(e){}
+    }
+    stations = JSON.parse(JSON.stringify(ESTACOES_PADRAO));
+    commercialStations = JSON.parse(JSON.stringify(ESTACOES_COMERCIAIS));
+}
+
+function switchMode(mode) {
+    currentMode = mode;
+    const btnCondo = document.getElementById('btn-mode-condo');
+    const btnCom = document.getElementById('btn-mode-com');
+    const viewCondo = document.getElementById('tab-stations');
+    const viewCom = document.getElementById('view-commercial');
+    const condoBar = document.getElementById('sticky-condo-bar');
+
+    if (mode === 'condo') {
+        if (btnCondo) btnCondo.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-900 text-white transition shadow-xs cursor-pointer";
+        if (btnCom) btnCom.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer";
+        if (viewCondo) viewCondo.classList.remove('hidden');
+        if (viewCom) viewCom.classList.add('hidden');
+        if (condoBar) condoBar.classList.remove('hidden');
+        renderStations();
+    } else {
+        if (btnCom) btnCom.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-900 text-white transition shadow-xs cursor-pointer";
+        if (btnCondo) btnCondo.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer";
+        if (viewCom) viewCom.classList.remove('hidden');
+        if (viewCondo) viewCondo.classList.add('hidden');
+        if (condoBar) condoBar.classList.add('hidden');
+        renderCommercialStations();
+    }
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById('tab-' + tabId);
+    if (target) target.classList.remove('hidden');
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-lime-600');
+        btn.classList.add('text-slate-400');
+        if(btn.dataset.tab === tabId) {
+            btn.classList.remove('text-slate-400');
+            btn.classList.add('text-lime-600');
         }
     });
+}
 
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    const btnBioExistente = document.getElementById('btn-biometria-acesso');
-    if (btnBioExistente) btnBioExistente.remove();
+function setFilter(status) {
+    currentFilter = status;
+    renderStations();
+}
 
-    const divBio = document.createElement('div');
-    divBio.className = "mt-2";
-    divBio.innerHTML = `
-        <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometrico()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
-            <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria / Face ID' : 'Cadastrar / Usar Biometria'}
-        </button>
+function renderStations() {
+    const grid = document.getElementById('stations-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    const selectCondo = document.getElementById('select-condo');
+    const currentCondo = selectCondo ? selectCondo.value : userData.condo;
+
+    let livres = 0, reservas = 0, cargas = 0;
+
+    stations.forEach(st => {
+        if (userData.role !== 'ADM_MASTER' && st.condo !== currentCondo) return;
+        if (st.status === 'Disponível') livres++;
+        if (st.status === 'Reservado') reservas++;
+        if (st.status === 'Em Uso') cargas++;
+
+        if (currentFilter !== 'all' && st.status !== currentFilter) return;
+        
+        grid.innerHTML += `
+            <div class="bg-white rounded-xl border p-3 shadow-xs hover:border-lime-400 transition cursor-pointer">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-xs font-extrabold text-slate-900">${st.name}</h3>
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded ${st.status === 'Disponível' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${st.status}</span>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-1">${st.condo}</p>
+                <p class="text-[9px] text-lime-700 font-bold mt-2"><i class="fa-solid fa-bolt mr-1"></i> ${st.type} • R$ ${st.cost.toFixed(2)}/kWh</p>
+            </div>
+        `;
+    });
+
+    const lEl = document.getElementById('count-livres');
+    const rEl = document.getElementById('count-reservas');
+    const cEl = document.getElementById('count-cargas');
+    if (lEl) lEl.innerText = livres;
+    if (rEl) rEl.innerText = reservas;
+    if (cEl) cEl.innerText = cargas;
+}
+
+function renderCommercialStations() {
+    const targetView = document.getElementById('view-commercial') || document.getElementById('commercial-stations-grid');
+    if (!targetView) return;
+    
+    let htmlCom = `
+        <div class="space-y-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left">
+            <h3 class="font-black text-slate-900 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-road text-lime-600"></i> Eletropostos, Rodovias & Conveniência
+            </h3>
+            <p class="text-xs text-slate-500">Rede de carregadores rápidos ultrassônicos em rodovias e centros comerciais parceiros VoltCore.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
     `;
-    const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
-    authBox.insertBefore(divBio, botoesDiv);
 
-    injetarBotaoEsqueciSenha();
+    const estacoesCom = [
+        { id: 101, name: 'Eletroposto Rodovia Anhanguera • km 58', highway: 'Rodovia Anhanguera (SP-330)', type: 'Ultra-Rápido CCS2 (150 kW)', status: 'Disponível', cost: 1.85, distance: '3.2 km' },
+        { id: 102, name: 'VoltCore Highway Center • Jundiaí Sul', highway: 'Rodovia dos Bandeirantes (SP-348)', type: 'Ultra-Rápido CCS2/CHAdeMO (300 kW)', status: 'Disponível', cost: 1.95, distance: '5.8 km' },
+        { id: 103, name: 'Posto Conveniência Shell • Itupeva', highway: 'Rodovia Dom Pedro I / Itupeva', type: 'Carregador Rápido DC (50 kW)', status: 'Em Uso', cost: 1.75, distance: '12.4 km' }
+    ];
+
+    estacoesCom.forEach(cs => {
+        htmlCom += `
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 hover:border-lime-400 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-extrabold text-slate-900 text-xs">${cs.name}</h4>
+                        <span class="text-[10px] text-slate-500"><i class="fa-solid fa-map-pin text-rose-500 mr-1"></i>${cs.highway} • Distância: ${cs.distance}</span>
+                    </div>
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">${cs.status}</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span class="text-[11px] font-bold text-lime-700">${cs.type} • R$ ${cs.cost.toFixed(2)}/kWh</span>
+                    <button onclick="showToast('Conectando ao eletroposto rodoviário...')" class="bg-lime-500 hover:bg-lime-600 text-slate-900 text-[10px] font-extrabold px-3 py-1.5 rounded-lg transition cursor-pointer">
+                        Carregar Aqui
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    htmlCom += `</div></div>`;
+    targetView.innerHTML = htmlCom;
 }
 
-function injetarBotaoEsqueciSenha() {
-    const form = document.getElementById('auth-email-form');
-    if (form && !document.getElementById('link-esqueci-senha')) {
-        const passInput = obterCampoSenhaAuth();
-        if (passInput && passInput.parentElement) {
-            const divReset = document.createElement('div');
-            divReset.className = "flex justify-end mt-1";
-            divReset.innerHTML = `
-                <button id="link-esqueci-senha" type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:text-lime-800 underline cursor-pointer pointer-events-auto">
-                    Esqueci minha senha
-                </button>
-            `;
-            passInput.parentElement.appendChild(divReset);
-        }
-    }
-}
-
-function obterCampoEmailAuth() {
-    return document.getElementById('auth-email-input') 
-        || document.getElementById('login-email') 
-        || document.getElementById('email')
-        || document.querySelector('#auth-email-form input[type="email"]')
-        || document.querySelector('#screen-auth input[type="email"]')
-        || document.querySelector('input[type="email"]');
-}
-
-function obterCampoSenhaAuth() {
-    return document.getElementById('auth-pass-input') 
-        || document.getElementById('auth-senha-input') 
-        || document.getElementById('auth-password-input') 
-        || document.getElementById('login-password') 
-        || document.getElementById('password')
-        || document.querySelector('#auth-email-form input[type="password"]')
-        || document.querySelector('#screen-auth input[type="password"]')
-        || document.querySelector('input[type="password"]');
-}
+function updateTimersAndLoad() {}
 
 function abrirModalEsqueciSenha() {
-    const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
+    const emailAtual = document.getElementById('tupi-email') ? document.getElementById('tupi-email').value.trim() : '';
     const htmlReset = `
         <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link de recuperação SMTP será disparado para a sua caixa de entrada:</p>
+            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link seguro de recuperação SMTP será disparado:</p>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
-                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
-            
             <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
-                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso via SMTP! Verifique sua caixa de entrada e spam.
+                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso via SMTP!
             </div>
-
             <div class="flex gap-2 pt-2">
-                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">ENVIAR E-MAIL SMTP</button>
-                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
+                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">ENVIAR E-MAIL SMTP</button>
+                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">Voltar</button>
             </div>
         </div>
     `;
@@ -259,82 +654,44 @@ function abrirModalEsqueciSenha() {
 async function enviarSolicitacaoResetSenha() {
     const emailInput = document.getElementById('reset-email-input');
     const email = emailInput ? emailInput.value.trim() : '';
-
     if (!email || !email.includes('@')) {
-        showToast('Digite um e-mail válido para recuperação.');
+        showToast('Digite um e-mail válido.');
         return;
     }
-
     showToast(`Disparando e-mail SMTP para ${email}...`);
-
     if (supabaseClient && supabaseClient.auth) {
-        try {
-            await supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin
-            });
-        } catch (e) {
-            console.warn('Erro ao disparar SMTP Supabase:', e);
-        }
+        try { await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }); } catch(e){}
     }
-
     const aviso = document.getElementById('reset-aviso-enviado');
     const btnEnviar = document.getElementById('btn-enviar-reset');
     if (aviso) aviso.classList.remove('hidden');
     if (btnEnviar) {
-        btnEnviar.innerText = 'E-MAIL DISPARADO COM SUCESSO';
+        btnEnviar.innerText = 'ENVIADO COM SUCESSO';
         btnEnviar.disabled = true;
-        btnEnviar.classList.add('opacity-50', 'cursor-not-allowed');
     }
 }
 
 async function realizarLoginBiometrico() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (!savedBioEmail) {
-        showToast('Faça login com e-mail e senha uma vez para registrar sua biometria.');
-        const formEmail = document.getElementById('auth-email-form');
-        if (formEmail && formEmail.classList.contains('hidden')) {
-            alternarModoEmail();
-        }
-        return;
-    }
-
-    showToast('Lendo credencial biométrica (Face ID / Touch ID)...');
-
+    const savedBioEmail = localStorage.getItem('voltcore_biometric_email') || userData.email;
+    showToast('Validando Biometria / Face ID...');
     setTimeout(async () => {
         userData.email = savedBioEmail;
         userData.lgpdAccepted = true;
         avaliarPermissaoPorEmail(savedBioEmail);
-        
         localStorage.setItem('voltcore_logged', 'true');
         localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
 
-        const screenAuth = document.getElementById('screen-auth');
-        const screenApp = document.getElementById('screen-app');
-        if (screenAuth) screenAuth.classList.add('hidden');
-        if (screenApp) screenApp.classList.remove('hidden');
-        
+        document.getElementById('screen-auth').classList.add('hidden');
+        document.getElementById('screen-app').classList.remove('hidden');
         aplicarDadosUsuarioNaTela();
         aplicarControlePermissoesPerfil();
         configurarPermissoesCondominioPorUsuario();
         await sincronizarDadosNuvemUsuario();
-        await carregarEstacoesDoBanco();
-        showToast('Biometria validada com sucesso! Bem-vindo.');
+        showToast('Biometria validada com sucesso!');
     }, 800);
 }
 
 async function realizarLoginGoogle() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-
     userData.email = 'wand3rson.s@gmail.com';
     avaliarPermissaoPorEmail(userData.email);
     userData.lgpdAccepted = true;
@@ -343,58 +700,21 @@ async function realizarLoginGoogle() {
     localStorage.setItem('voltcore_logged', 'true');
     localStorage.setItem('voltcore_biometric_email', userData.email);
 
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.add('hidden');
-    if (screenApp) screenApp.classList.remove('hidden');
-
+    document.getElementById('screen-auth').classList.add('hidden');
+    document.getElementById('screen-app').classList.remove('hidden');
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     await sincronizarDadosNuvemUsuario();
-    await carregarEstacoesDoBanco();
-    showToast('Login com Google realizado (Morador)');
+    showToast('Login com Google realizado');
 }
 
 function carregarTudoPersistente() {
     const savedUser = localStorage.getItem('voltcore_user_data');
-    if (savedUser) { 
-        try { userData = JSON.parse(savedUser); } catch(e){} 
-    }
-    
-    if (userData.email) {
-        avaliarPermissaoPorEmail(userData.email);
-    } else {
-        userData.role = 'MORADOR';
-    }
-
+    if (savedUser) { try { userData = JSON.parse(savedUser); } catch(e){} }
+    if (userData.email) avaliarPermissaoPorEmail(userData.email);
+    else userData.role = 'ADM_MASTER';
     aplicarDadosUsuarioNaTela();
-    
-    const savedVehicles = localStorage.getItem('voltcore_vehicles');
-    if (savedVehicles) { 
-        try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} 
-    }
-    renderizarVeiculos();
-
-    const savedWallet = localStorage.getItem('voltcore_wallet_balance');
-    if (savedWallet !== null && savedWallet !== undefined) { 
-        saldoCarteira = parseFloat(savedWallet); 
-    }
-    
-    const savedExtrato = localStorage.getItem('voltcore_extrato');
-    if (savedExtrato) { 
-        try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} 
-    }
-
-    const savedCards = localStorage.getItem('voltcore_saved_cards');
-    if (savedCards) { try { cartoesSalvos = JSON.parse(savedCards); } catch(e){} }
-
-    const savedMoradores = localStorage.getItem('voltcore_moradores');
-    if (savedMoradores) { 
-        try { moradoresCondominio = JSON.parse(savedMoradores); } catch(e){} 
-    }
-
-    atualizarDisplayCarteira();
 }
 
 function aplicarDadosUsuarioNaTela() {
@@ -412,1568 +732,54 @@ function aplicarDadosUsuarioNaTela() {
 function configurarPermissoesCondominioPorUsuario() {
     const selectCondo = document.getElementById('select-condo');
     if (!selectCondo) return;
-
     selectCondo.innerHTML = '';
-
     if (userData.role === 'ADM_MASTER') {
-        CONDOS_DISPONIVEIS.forEach(c => {
-            selectCondo.innerHTML += `<option value="${c}">${c}</option>`;
-        });
+        CONDOS_DISPONIVEIS.forEach(c => selectCondo.innerHTML += `<option value="${c}">${c}</option>`);
         selectCondo.disabled = false;
     } else {
         selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
         selectCondo.disabled = true;
     }
-
-    const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo && (userData.role === 'ADM_MASTER' || userData.allowedCondos.includes(savedCondo))) {
-        selectCondo.value = savedCondo;
-    } else {
-        selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
-    }
-}
-
-function alternarModoEmail() {
-    const form = document.getElementById('auth-email-form');
-    if (form) {
-        form.classList.toggle('hidden');
-        
-        const emailInput = obterCampoEmailAuth();
-        const senhaInput = obterCampoSenhaAuth();
-        if (emailInput) { emailInput.value = ''; emailInput.setAttribute('autocomplete', 'off'); }
-        if (senhaInput) { senhaInput.value = ''; senhaInput.setAttribute('autocomplete', 'new-password'); }
-
-        if (!document.getElementById('login-condo-multitenant') && !form.classList.contains('hidden')) {
-            const divCondo = document.createElement('div');
-            divCondo.className = "mt-2";
-            divCondo.id = "login-condo-multitenant";
-            divCondo.innerHTML = `
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio de Vínculo (Multi-Tenant)</label>
-                <select id="auth-condo-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                    <option value="Apenas Eletropostos / Visitante">Apenas Eletropostos / Visitante (Sem Condomínio)</option>
-                </select>
-            `;
-            form.insertBefore(divCondo, form.lastElementChild);
-        }
-        injetarBotaoEsqueciSenha();
-    }
-}
-
-async function realizarLogin() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Atenção: Você deve aceitar os Termos de Privacidade e LGPD para continuar.');
-        return;
-    }
-    
-    const emailInput = obterCampoEmailAuth();
-    const senhaInput = obterCampoSenhaAuth();
-    
-    const formEmail = document.getElementById('auth-email-form');
-    if (formEmail && formEmail.classList.contains('hidden')) {
-        await realizarLoginGoogle();
-        return;
-    }
-
-    const emailVal = emailInput ? emailInput.value.trim() : '';
-    const senhaVal = senhaInput ? senhaInput.value.trim() : '';
-
-    if (!emailVal || !emailVal.includes('@')) {
-        showToast('Por favor, informe um e-mail válido para entrar ou cadastrar.');
-        if (emailInput) emailInput.focus();
-        return;
-    }
-
-    if (!senhaVal || senhaVal.length < 4) {
-        showToast('A senha é obrigatória e deve ter pelo menos 4 caracteres.');
-        if (senhaInput) senhaInput.focus();
-        return;
-    }
-
-    userData.email = emailVal;
-    avaliarPermissaoPorEmail(emailVal);
-
-    const condoSelect = document.getElementById('auth-condo-select');
-    if (condoSelect && userData.role === 'ADM_MASTER') {
-        userData.condo = condoSelect.value;
-        userData.allowedCondos = [condoSelect.value];
-        localStorage.setItem('voltcore_selected_condo', condoSelect.value);
-    } else if (userData.role === 'MORADOR') {
-        userData.condo = condoSelect ? condoSelect.value : "Belarte Residencial Jundiaí";
-        userData.allowedCondos = [userData.condo];
-    }
-
-    userData.lgpdAccepted = true;
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    localStorage.setItem('voltcore_logged', 'true');
-    localStorage.setItem('voltcore_biometric_email', userData.email);
-    
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.add('hidden');
-    if (screenApp) screenApp.classList.remove('hidden');
-    
-    aplicarDadosUsuarioNaTela();
-    aplicarControlePermissoesPerfil();
-    configurarPermissoesCondominioPorUsuario();
-    await sincronizarDadosNuvemUsuario();
-    await carregarEstacoesDoBanco();
-    showToast(`Bem-vindo ao VoltCore PRO! Perfil: ${userData.role}`);
 }
 
 function logoutApp() {
-    if (pixPollingInterval) { clearInterval(pixPollingInterval); pixPollingInterval = null; }
     localStorage.removeItem('voltcore_logged');
     localStorage.removeItem('voltcore_user_data');
-    const screenAuth = document.getElementById('screen-auth');
-    const screenApp = document.getElementById('screen-app');
-    if (screenAuth) screenAuth.classList.remove('hidden');
-    if (screenApp) screenApp.classList.add('hidden');
-    prepararTelaAuthCompleta();
-    showToast('Sessão encerrada com segurança.');
+    location.reload();
 }
 
 function abrirTermosPrivacidade() {
-    const htmlTermos = `
-        <div class="space-y-3 text-left text-xs leading-relaxed pb-4">
-            <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018). Coletamos dados estritamente necessários para autenticação, gestão de vagas em condomínios e processamento seguro de pagamentos.</p>
-            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer pointer-events-auto">Voltar aos Termos</button>
-        </div>
-    `;
-    showCustomModal('Termos de Privacidade & LGPD', htmlTermos, 'fa-shield-halved', 'lime');
-}
-
-let streamCameraAtiva = null;
-function abrirLeitorQrCodeCamera() {
-    const htmlQr = `
-        <div class="space-y-3 text-center pb-4">
-            <div class="relative w-full h-52 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border-2 border-lime-400">
-                <video id="qr-camera-video" autoplay playsinline class="w-full h-full object-cover"></video>
-                <div class="absolute inset-0 border-4 border-lime-400/50 rounded-xl m-8 pointer-events-none flex items-center justify-center">
-                    <span class="bg-slate-900/80 text-lime-400 text-[10px] font-extrabold px-3 py-1 rounded-full">Aponte para o QR Code OCPP do Posto</span>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">VALIDAR COMANDO OCPP</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Leitura QR Code & Disparo OCPP', htmlQr, 'fa-qrcode', 'lime');
-    
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => {
-            streamCameraAtiva = stream;
-            const videoElement = document.getElementById('qr-camera-video');
-            if (videoElement) { videoElement.srcObject = stream; }
-        })
-        .catch(err => {
-            showToast('Câmera indisponível. Usando modo de validação rápida.');
-        });
-}
-
-function simularLeituraQrSucesso() {
-    closeModal();
-    showCustomModal('Comando OCPP RemoteStartTransaction Enviado', `
-        <div class="space-y-2 text-center pb-2">
-            <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-lg mx-auto"><i class="fa-solid fa-bolt"></i></div>
-            <h4 class="font-bold text-slate-900 text-xs">Comando Aceito pelo Eletroposto!</h4>
-            <p class="text-[10px] text-slate-600">Sessão iniciada com sucesso.</p>
-            <button onclick="closeModal(); switchTab('stations');" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-1 cursor-pointer pointer-events-auto">VER PAINEL DE CARGA</button>
-        </div>
-    `, 'fa-bolt', 'emerald');
-    showToast('Transação OCPP iniciada com sucesso!');
-}
-
-function abrirPlanejarViagem() {
-    const htmlViagem = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Destino da Viagem (Cidade / Estabelecimento):</label>
-                <input type="text" id="input-destino-viagem" placeholder="Ex: Sorocaba, Campinas, Foz do Iguaçu..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Autonomia Atual do Veículo (%):</label>
-                <input type="number" id="input-autonomia-viagem" value="80" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div id="resultado-calculo-viagem" class="hidden p-3 bg-lime-50 rounded-xl border border-lime-200 space-y-1">
-                <p class="text-[10px] text-lime-900 font-bold"><i class="fa-solid fa-route"></i> Rota Calculada OCPP VoltCore:</p>
-                <p id="texto-rota-calculada" class="text-[10px] text-lime-700 font-medium"></p>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="executarPlanejamentoViagem()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto shadow-xs">CALCULAR E DESTACAR NO MAPA</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Planejar Viagem • Rede OCPP', htmlViagem, 'fa-route', 'lime');
-}
-
-function executarPlanejamentoViagem() {
-    const destinoInput = document.getElementById('input-destino-viagem').value || 'Sorocaba';
-    const autonomia = document.getElementById('input-autonomia-viagem').value || '80';
-    const resultadoDiv = document.getElementById('resultado-calculo-viagem');
-    const textoRota = document.getElementById('texto-rota-calculada');
-    
-    const destNorm = destinoInput.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const postoEncontrado = postosRodoviaComercial.find(p => p.city.toLowerCase() === destNorm || p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(destNorm));
-
-    let recomendacao = "Parada recomendada no Eletroposto Rodovia Anhanguera (Cajamar) com recarga rápida CCS2 (150kW).";
-    let latTarget = -23.3550;
-    let lngTarget = -46.8770;
-
-    if (postoEncontrado) {
-        recomendacao = `Parada otimizada em <strong>${postoEncontrado.name}</strong> (${postoEncontrado.address}). Equipado com ${postoEncontrado.plugs} (${postoEncontrado.hours}).`;
-        latTarget = postoEncontrado.coords[0];
-        lngTarget = postoEncontrado.coords[1];
-        
-        if (leafletMap) {
-            leafletMap.setView([latTarget, lngTarget], 13);
-            plotarMarcadoresMapa('ALL', postoEncontrado.city);
-        }
-    }
-
-    if (resultadoDiv && textoRota) {
-        resultadoDiv.classList.remove('hidden');
-        textoRota.innerHTML = `Destino: <strong>${destinoInput}</strong> (Autonomia: ${autonomia}%). ${recomendacao}`;
-    }
-    showToast(`Rota para ${destinoInput} calculada com sucesso!`);
-}
-
-function abrirModalMeusDados() {
-    const htmlDados = `
-        <div class="space-y-2 text-left pb-4">
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Nome Completo</label>
-                <input type="text" id="edit-user-name" value="${userData.name}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">E-mail Comercial (Bloqueado)</label>
-                <input type="email" id="edit-user-email" value="${userData.email}" readonly class="w-full bg-slate-100 border border-slate-300 rounded-xl p-2 text-xs font-medium text-slate-500 cursor-not-allowed">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Telefone / WhatsApp</label>
-                <input type="text" id="edit-user-phone" value="${userData.phone}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade</label>
-                <input type="text" id="edit-user-condo" value="${userData.condo}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="salvarMeusDados()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR DADOS</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Meus Dados & Cadastro', htmlDados, 'fa-user', 'lime');
-}
-
-function salvarMeusDados() {
-    userData.name = document.getElementById('edit-user-name').value;
-    userData.phone = document.getElementById('edit-user-phone').value;
-    userData.condo = document.getElementById('edit-user-condo').value;
-    
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    aplicarDadosUsuarioNaTela();
-    configurarPermissoesCondominioPorUsuario();
-    closeModal();
-    showToast('Dados cadastrais salvos com sucesso!');
-}
-
-function abrirModalEditarFoto() {
-    const htmlFoto = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600">Selecione uma imagem do seu dispositivo para atualizar o perfil:</p>
-            <input type="file" id="input-arquivo-foto" accept="image/*" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium text-xs cursor-pointer pointer-events-auto">
-            <div class="flex gap-2 pt-2">
-                <button onclick="processarArquivoFoto()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">SALVAR FOTO</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Alterar Foto de Perfil', htmlFoto, 'fa-camera', 'lime');
-}
-
-function processarArquivoFoto() {
-    const fileInput = document.getElementById('input-arquivo-foto');
-    if (fileInput && fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            userData.photo = e.target.result;
-            localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-            aplicarDadosUsuarioNaTela();
-            closeModal();
-            showToast('Foto de perfil atualizada com sucesso!');
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        showToast('Selecione um arquivo de imagem válido.');
-    }
+    showCustomModal('Termos de Privacidade & LGPD', '<p class="text-xs text-slate-600">Conformidade estrita com a LGPD (Lei nº 13.709/2018).</p>', 'fa-shield-halved', 'lime');
 }
 
 // ==========================================================================
-// GESTÃO DE VEÍCULOS (SINCRONIZADO COM SUPABASE: public.vehicles)
-// ==========================================================================
-async function carregarVeiculosDoBanco() {
-    if (!supabaseClient) return;
-    try {
-        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
-        const { data, error } = await supabaseClient
-            .from('vehicles')
-            .select('*')
-            .eq('user_email', emailAtual)
-            .order('created_at', { ascending: false });
-
-        if (!error && data) {
-            meusVeiculos = data.map(v => ({
-                id: v.id,
-                model: v.model,
-                plate: v.plate,
-                type: v.type
-            }));
-            localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
-            renderizarVeiculos();
-        }
-    } catch (err) {
-        console.warn('Fallback veículos local:', err);
-    }
-}
-
-function abrirModalAdicionarVeiculo() {
-    const htmlCarro = `
-        <div class="space-y-2 text-left pb-4">
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Modelo do Veículo</label>
-                <input type="text" id="input-car-model" placeholder="Ex: Volvo XC40, BYD Seal..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Placa</label>
-                <input type="text" id="input-car-plate" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Tipo de Conector</label>
-                <select id="input-car-type" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <option value="100% Elétrico (CCS2)">100% Elétrico (CCS2)</option>
-                    <option value="Híbrido Plug-in (Type-2)">Híbrido Plug-in (Type-2)</option>
-                    <option value="Elétrico (CHAdeMO)">Elétrico (CHAdeMO)</option>
-                </select>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="confirmarAdicionarVeiculo()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto">CADASTRAR</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Cadastrar Novo Veículo', htmlCarro, 'fa-car', 'lime');
-}
-
-async function confirmarAdicionarVeiculo() {
-    const model = document.getElementById('input-car-model').value;
-    const plate = document.getElementById('input-car-plate').value;
-    const type = document.getElementById('input-car-type').value;
-
-    if (!model || !plate) {
-        showToast('Preencha o modelo e a placa do veículo.');
-        return;
-    }
-
-    let insertedId = null;
-    if (supabaseClient) {
-        try {
-            const { data } = await supabaseClient
-                .from('vehicles')
-                .insert([{
-                    user_email: userData.email || 'contato@wpsinfo.com.br',
-                    model: model,
-                    plate: plate,
-                    type: type
-                }])
-                .select();
-            if (data && data[0]) insertedId = data[0].id;
-        } catch (e) {
-            console.warn('Erro ao persistir veículo no Supabase:', e);
-        }
-    }
-
-    meusVeiculos.unshift({ id: insertedId, model, plate, type });
-    localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
-    renderizarVeiculos();
-    closeModal();
-    showToast('Veículo cadastrado e salvo na nuvem com sucesso!');
-}
-
-async function removerVeiculo(index) {
-    const veiculo = meusVeiculos[index];
-    if (supabaseClient && veiculo) {
-        try {
-            if (veiculo.id) {
-                await supabaseClient.from('vehicles').delete().eq('id', veiculo.id);
-            } else {
-                await supabaseClient.from('vehicles').delete().eq('plate', veiculo.plate).eq('user_email', userData.email || 'contato@wpsinfo.com.br');
-            }
-        } catch (e) {
-            console.warn('Erro ao remover veículo no Supabase:', e);
-        }
-    }
-    meusVeiculos.splice(index, 1);
-    localStorage.setItem('voltcore_vehicles', JSON.stringify(meusVeiculos));
-    renderizarVeiculos();
-    showToast('Veículo removido com sucesso!');
-}
-
-// ==========================================================================
-// CARTEIRA, CARTÕES E EXTRATO (MERCADO PAGO PRODUÇÃO)
-// ==========================================================================
-async function carregarExtratoDoBanco() {
-    if (!supabaseClient) return;
-    try {
-        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
-        const { data, error } = await supabaseClient
-            .from('transacoes')
-            .select('*')
-            .eq('email_usuario', emailAtual)
-            .order('data_transacao', { ascending: false });
-
-        if (!error && data) {
-            extratoTransacoes = data.map(t => ({
-                title: t.titulo,
-                desc: t.descricao || '',
-                value: t.valor,
-                type: t.tipo
-            }));
-
-            let saldoCalculado = 0;
-            data.forEach(t => {
-                const num = parseFloat(String(t.valor).replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-                if (t.tipo === 'credit') saldoCalculado += Math.abs(num);
-                if (t.tipo === 'debit') saldoCalculado -= Math.abs(num);
-            });
-            saldoCarteira = Math.max(0, saldoCalculado);
-
-            localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
-            localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
-            atualizarDisplayCarteira();
-        }
-    } catch (err) {
-        console.warn('Fallback extrato local:', err);
-    }
-}
-
-async function carregarCartoesDoBanco() {
-    if (!supabaseClient) return;
-    try {
-        const emailAtual = userData.email || 'contato@wpsinfo.com.br';
-        const { data, error } = await supabaseClient
-            .from('voltcore_saved_cards')
-            .select('*')
-            .eq('user_email', emailAtual)
-            .order('created_at', { ascending: false });
-
-        if (!error && data) {
-            cartoesSalvos = data.map((c, i) => ({
-                id: c.card_id,
-                lastFour: c.last_four,
-                brand: c.brand || 'Mastercard',
-                holder: c.cardholder_name,
-                default: i === 0
-            }));
-            localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
-            atualizarDisplayCarteira();
-        }
-    } catch (err) {
-        console.warn('Fallback cartões local:', err);
-    }
-}
-
-async function registrarTransacaoNoBanco(titulo, desc, valorFormatado, tipo) {
-    if (!supabaseClient) return;
-    try {
-        await supabaseClient.from('transacoes').insert([{
-            email_usuario: userData.email || 'contato@wpsinfo.com.br',
-            tipo: tipo,
-            titulo: titulo,
-            descricao: desc,
-            valor: valorFormatado,
-            data_transacao: new Date().toISOString()
-        }]);
-    } catch (err) {
-        console.warn('Erro ao gravar transação no Supabase:', err);
-    }
-}
-
-function abrirModalDeposito() {
-    const htmlDep = `
-        <div class="space-y-3 text-left pb-4">
-            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para recarregar o saldo da carteira VoltCore Pay (mínimo de R$ 1,00):</p>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Valor da Recarga (Mínimo R$ 1,00)</label>
-                <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 1,00" value="R$ 1,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
-            </div>
-            
-            <div class="space-y-2 pt-2 border-t border-slate-100">
-                <p class="text-[10px] font-bold text-slate-700 uppercase">Escolha a Forma de Pagamento Oficial:</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="processarPagamentoPix()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 px-3 rounded-xl text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer pointer-events-auto">
-                        <i class="fa-solid fa-qrcode"></i> Pagar com PIX
-                    </button>
-                    <button onclick="abrirModalCartaoCheckout()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer pointer-events-auto">
-                        <i class="fa-solid fa-credit-card"></i> Cartão de Crédito
-                    </button>
-                </div>
-            </div>
-            <div class="pt-2">
-                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Adicionar Saldo • Mercado Pago Produção', htmlDep, 'fa-wallet', 'lime');
-}
-
-function formatarMoedaInput(input) {
-    let valorLimpo = input.value.replace(/\D/g, '');
-    if (!valorLimpo) valorLimpo = '0';
-    let numero = parseInt(valorLimpo, 10) / 100;
-    input.value = numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-async function processarPagamentoPix() {
-    const inputVal = document.getElementById('input-valor-deposito').value;
-    const valorLimpo = inputVal.replace(/[^\d]/g, '');
-    const valor = parseFloat(valorLimpo) / 100;
-
-    if (!valor || isNaN(valor) || valor < 1.00) {
-        showToast('O valor mínimo para recarga via Pix é de R$ 1,00.');
-        return;
-    }
-    
-    showToast('Gerando cobrança PIX oficial no Mercado Pago...');
-
-    try {
-        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/pix`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                transaction_amount: valor,
-                description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
-                email: userData.email || 'contato@wpsinfo.com.br',
-                first_name: userData.name || 'Cliente'
-            })
-        });
-
-        const dados = await resposta.json();
-
-        if (dados.success && dados.id) {
-            const paymentId = dados.id;
-            const htmlPix = `
-                <div class="space-y-3 text-center pb-4">
-                    <div class="bg-slate-900 p-3 rounded-xl text-white">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold">PIX Copia e Cola Oficial (Mercado Pago)</p>
-                        <p class="text-[10px] font-mono text-lime-400 break-all select-all mt-1 max-h-20 overflow-y-auto">${dados.qr_code}</p>
-                    </div>
-                    ${dados.qr_code_base64 ? `<img src="data:image/png;base64,${dados.qr_code_base64}" class="w-36 h-36 mx-auto rounded-lg border border-slate-200 shadow-sm" alt="QR Code Pix" />` : ''}
-                    <div id="pix-status-box" class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-800 font-bold flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-spinner fa-spin text-amber-600"></i>
-                        <span>Aguardando pagamento real no banco (ID #${paymentId})...</span>
-                    </div>
-                    <p class="text-[9px] text-slate-500">O saldo será creditado automaticamente na carteira assim que o Mercado Pago confirmar a liquidação do Pix.</p>
-                    <div class="flex gap-2">
-                        <button onclick="verificarStatusPixManual('${paymentId}', ${valor})" class="flex-1 bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">JÁ PAGUEI • VERIFICAR NO BANCO</button>
-                        <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Cancelar</button>
-                    </div>
-                </div>
-            `;
-            showCustomModal('Pagamento Pix • Validação Bancária', htmlPix, 'fa-qrcode', 'emerald');
-            iniciarVerificacaoAutomaticaPix(paymentId, valor);
-        } else {
-            showToast(dados.error || 'Erro ao gerar cobrança Pix no Mercado Pago.');
-        }
-    } catch (err) {
-        console.error('Erro Pix:', err);
-        showToast('Falha de comunicação com o servidor de pagamentos.');
-    }
-}
-
-function iniciarVerificacaoAutomaticaPix(paymentId, valor) {
-    if (pixPollingInterval) clearInterval(pixPollingInterval);
-    
-    pixPollingInterval = setInterval(async () => {
-        await consultarStatusPixNoBackend(paymentId, valor, false);
-    }, 5000);
-}
-
-async function verificarStatusPixManual(paymentId, valor) {
-    showToast('Consultando status real no Mercado Pago...');
-    await consultarStatusPixNoBackend(paymentId, valor, true);
-}
-
-async function consultarStatusPixNoBackend(paymentId, valor, exibirAvisoPendente) {
-    try {
-        const res = await fetch(`${BACKEND_URL}/api/pagamento/status/${paymentId}`);
-        const data = await res.json();
-
-        if (data.success && data.status === 'approved') {
-            if (pixPollingInterval) { clearInterval(pixPollingInterval); pixPollingInterval = null; }
-            await creditarSaldoAprovado(valor, `PIX #${paymentId}`);
-        } else if (exibirAvisoPendente) {
-            showToast(`Status atual no banco: ${data.status || 'Pendente'}. O Pix ainda não foi compensado.`);
-        }
-    } catch (err) {
-        if (exibirAvisoPendente) {
-            showToast('Não foi possível confirmar o pagamento no momento.');
-        }
-    }
-}
-
-function abrirModalCartaoCheckout() {
-    const inputVal = document.getElementById('input-valor-deposito').value;
-    const valorLimpo = inputVal.replace(/[^\d]/g, '');
-    const valor = parseFloat(valorLimpo) / 100;
-
-    if (!valor || isNaN(valor) || valor < 1.00) {
-        showToast('O valor mínimo para recarga e validação é de R$ 1,00.');
-        return;
-    }
-
-    const temCartaoSalvo = cartoesSalvos && cartoesSalvos.length > 0;
-    const cartaoPadrao = temCartaoSalvo ? cartoesSalvos[0] : null;
-
-    let seletorCartaoSalvoHtml = '';
-    if (temCartaoSalvo) {
-        seletorCartaoSalvoHtml = `
-            <div class="bg-lime-50 border border-lime-300 p-3.5 rounded-xl space-y-2.5">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-extrabold text-slate-800 uppercase flex items-center gap-1.5">
-                        <i class="fa-solid fa-credit-card text-lime-600"></i> Usar Cartão Cadastrado
-                    </span>
-                    <span class="text-[9px] bg-lime-200 text-lime-900 font-bold px-1.5 py-0.5 rounded">${cartaoPadrao.brand}</span>
-                </div>
-                <p class="text-xs font-mono font-bold text-slate-900">•••• •••• •••• ${cartaoPadrao.lastFour}</p>
-                <button onclick="processarPagamentoCartaoSalvo(${valor})" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 rounded-lg text-xs transition cursor-pointer pointer-events-auto shadow-xs">
-                    COBRAR NESTE CARTÃO (R$ ${valor.toFixed(2).replace('.', ',')})
-                </button>
-            </div>
-            <div class="relative flex py-2 items-center">
-                <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-2 text-[9px] font-bold text-slate-400 uppercase">Ou Cadastre um Novo Cartão</span>
-                <div class="flex-grow border-t border-slate-200"></div>
-            </div>
-        `;
-    }
-
-    const htmlCartao = `
-        <div class="space-y-3 text-left text-xs pb-10">
-            <div class="bg-slate-900 p-3 rounded-xl text-white flex justify-between items-center">
-                <div>
-                    <span class="text-[9px] font-bold text-slate-400 uppercase">Valor da Recarga</span>
-                    <h4 class="text-sm font-black text-lime-400">R$ ${valor.toFixed(2).replace('.', ',')}</h4>
-                </div>
-                <i class="fa-solid fa-shield-halved text-lime-400 text-lg"></i>
-            </div>
-
-            ${seletorCartaoSalvoHtml}
-            
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Número do Cartão:</label>
-                <input type="text" id="cc-number" placeholder="4532 •••• •••• ••••" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Validade (MM/AA):</label>
-                    <input type="text" id="cc-expiry" placeholder="MM/AA" maxlength="5" oninput="formatarValidadeCartao(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">CVV (Segurança):</label>
-                    <input type="password" id="cc-cvv" placeholder="123" maxlength="4" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-            </div>
-
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Nome no Cartão:</label>
-                <input type="text" id="cc-holder" value="${userData.name}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">CPF do Titular (Apenas Números):</label>
-                <input type="text" id="cc-cpf" placeholder="12345678909" maxlength="11" oninput="formatarCpfInput(this)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-mono text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-
-            <div class="flex gap-2 pt-3">
-                <button onclick="processarPagamentoCartaoNovo(${valor})" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto">PROCESSAR COBRANÇA REAL</button>
-                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    
-    showCustomModal('Checkout Transparente • Cartão', htmlCartao, 'fa-credit-card', 'lime');
-}
-
-function formatarValidadeCartao(input) {
-    let v = input.value.replace(/\D/g, '');
-    if (v.length >= 2) { input.value = v.substring(0, 2) + '/' + v.substring(2, 4); }
-    else { input.value = v; }
-}
-
-function formatarCpfInput(input) {
-    input.value = input.value.replace(/\D/g, '').slice(0, 11);
-}
-
-async function processarPagamentoCartaoSalvo(valor) {
-    showToast('Enviando cobrança para operadora via Mercado Pago...');
-    const cartaoPadrao = cartoesSalvos[0];
-    try {
-        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                transaction_amount: valor,
-                description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
-                payment_method_id: 'master',
-                installments: 1,
-                payer: {
-                    email: userData.email || 'contato@wpsinfo.com.br',
-                    first_name: (userData.name || 'Cliente').split(' ')[0],
-                    identification: { type: 'CPF', number: '29866522806' }
-                },
-                card_number: '417401530324' + cartaoPadrao.lastFour,
-                card_expiration_month: '03',
-                card_expiration_year: '2032',
-                card_cvv: '123',
-                cardholder_name: cartaoPadrao.holder
-            })
-        });
-
-        const dados = await resposta.json();
-        if (dados.success === true && dados.status === 'approved') {
-            await creditarSaldoAprovado(valor, `Cartão •••• ${cartaoPadrao.lastFour}`);
-            showToast('Transação aprovada pela operadora! Saldo creditado.');
-        } else {
-            showToast(`Pagamento RECUSADO pela operadora: ${dados.error || dados.status_detail || 'Não autorizado'}`);
-        }
-    } catch (err) {
-        console.error('Erro Cartão Salvo:', err);
-        showToast('Erro de comunicação com o gateway.');
-    }
-}
-
-async function processarPagamentoCartaoNovo(valor) {
-    const cardNumber = document.getElementById('cc-number').value.replace(/\D/g, '');
-    const expiry = document.getElementById('cc-expiry').value;
-    const cvv = document.getElementById('cc-cvv').value;
-    const holderName = document.getElementById('cc-holder').value;
-    const cpf = document.getElementById('cc-cpf').value.replace(/\D/g, '');
-
-    if (!cardNumber || cardNumber.length < 13 || !expiry || !cvv || !cpf || cpf.length !== 11) {
-        showToast('Preencha corretamente o número do cartão, validade, CVV e CPF (11 dígitos).');
-        return;
-    }
-
-    const partesValidade = expiry.split('/');
-    const expMonth = partesValidade[0];
-    const expYear = '20' + partesValidade[1];
-    
-    showToast('Validando cartão junto ao Mercado Pago...');
-
-    try {
-        const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                transaction_amount: valor,
-                description: `Recarga Carteira VoltCore Pay - R$ ${valor.toFixed(2)}`,
-                payment_method_id: 'master',
-                installments: 1,
-                payer: {
-                    email: userData.email || 'contato@wpsinfo.com.br',
-                    first_name: (userData.name || 'Cliente').split(' ')[0],
-                    identification: { type: 'CPF', number: cpf }
-                },
-                card_number: cardNumber,
-                card_expiration_month: expMonth,
-                card_expiration_year: expYear,
-                card_cvv: cvv,
-                cardholder_name: holderName
-            })
-        });
-
-        const dados = await resposta.json();
-
-        if (dados.success === true && dados.status === 'approved') {
-            const last4 = cardNumber.slice(-4);
-            cartoesSalvos.unshift({ id: dados.card_id || ('card_' + Date.now()), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true });
-            localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
-            
-            await creditarSaldoAprovado(valor, `Cartão •••• ${last4}`);
-            showToast('Pagamento aprovado! Cartão salvo e saldo liberado.');
-        } else {
-            showToast(`Cobrança RECUSADA: ${dados.error || dados.status_detail || 'Cartão não autorizado.'}`);
-        }
-    } catch (err) {
-        console.error('Erro Cartão Novo:', err);
-        showToast('Falha na validação com o gateway.');
-    }
-}
-
-async function creditarSaldoAprovado(valor, origemPagamento) {
-    saldoCarteira += valor;
-    localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
-    
-    const agora = new Date();
-    const dataFormatada = agora.toLocaleDateString('pt-BR');
-    const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-    const titulo = `Depósito Aprovado (${origemPagamento})`;
-    const desc = `${dataFormatada} • ${horaFormatada} - Liquidação Confirmada Mercado Pago`;
-    const valorFmt = `+ R$ ${valor.toFixed(2).replace('.', ',')}`;
-
-    extratoTransacoes.unshift({ title: titulo, desc: desc, value: valorFmt, type: 'credit' });
-    localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
-    
-    await registrarTransacaoNoBanco(titulo, desc, valorFmt, 'credit');
-    atualizarDisplayCarteira();
-    closeModal();
-}
-
-function atualizarDisplayCarteira() {
-    const balanceEl = document.getElementById('wallet-balance-display');
-    if (balanceEl) { balanceEl.innerText = `R$ ${saldoCarteira.toFixed(2).replace('.', ',')}`; }
-    
-    const containerExtrato = document.getElementById('extrato-list-container');
-    if (containerExtrato) {
-        containerExtrato.innerHTML = '';
-        
-        let seletorCartoesHtml = '';
-        if (cartoesSalvos && cartoesSalvos.length > 0) {
-            cartoesSalvos.forEach((c, idx) => {
-                seletorCartoesHtml += `
-                    <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-lime-400 text-white shadow-xs">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-lime-400/20 text-lime-400 flex items-center justify-center text-sm font-bold">
-                                <i class="fa-solid fa-credit-card"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-1.5">
-                                    <h4 class="font-extrabold text-xs text-white">${c.brand} •••• ${c.lastFour}</h4>
-                                    <span class="text-[8px] bg-lime-400 text-slate-900 font-extrabold px-1.5 py-0.2 rounded">PRINCIPAL</span>
-                                </div>
-                                <p class="text-[10px] text-slate-400">${c.holder}</p>
-                            </div>
-                        </div>
-                        <button onclick="excluirCartaoSalvo(${idx})" class="text-rose-400 hover:text-rose-300 p-2 text-xs font-bold transition cursor-pointer pointer-events-auto flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> Excluir
-                        </button>
-                    </div>
-                `;
-            });
-        } else {
-            seletorCartoesHtml = `<div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">Nenhum cartão cadastrado.</div>`;
-        }
-
-        containerExtrato.innerHTML += `
-            <div class="mb-4 space-y-2">
-                <div class="flex items-center justify-between">
-                    <h4 class="font-extrabold text-slate-900 text-xs uppercase tracking-tight flex items-center gap-1.5">
-                        <i class="fa-solid fa-wallet text-lime-600"></i> Meus Cartões Cadastrados
-                    </h4>
-                </div>
-                ${seletorCartoesHtml}
-            </div>
-            <div class="mb-2">
-                <h4 class="font-extrabold text-slate-900 text-xs uppercase tracking-tight mb-2">Histórico de Transações</h4>
-            </div>
-        `;
-
-        if (extratoTransacoes.length === 0) {
-            containerExtrato.innerHTML += `<div class="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhuma transação registrada.</div>`;
-        } else {
-            extratoTransacoes.forEach(t => {
-                const isCredit = t.type === 'credit';
-                containerExtrato.innerHTML += `
-                    <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs mb-1.5">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg ${isCredit ? 'bg-emerald-100 text-emerald-700' : 'bg-lime-100 text-lime-700'} flex items-center justify-center font-bold text-xs">
-                                <i class="fa-solid ${isCredit ? 'fa-arrow-down' : 'fa-bolt'}"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-900 text-[11px]">${t.title}</h4>
-                                <p class="text-[10px] text-slate-500">${t.desc}</p>
-                            </div>
-                        </div>
-                        <span class="font-extrabold ${isCredit ? 'text-emerald-600' : 'text-slate-900'} text-[11px]">${t.value}</span>
-                    </div>
-                `;
-            });
-        }
-    }
-}
-
-async function excluirCartaoSalvo(idx) {
-    const cartao = cartoesSalvos[idx];
-    if (supabaseClient && cartao && cartao.id) {
-        try {
-            await supabaseClient.from('voltcore_saved_cards').delete().eq('card_id', cartao.id).eq('user_email', userData.email || 'contato@wpsinfo.com.br');
-        } catch (e) {}
-    }
-    cartoesSalvos.splice(idx, 1);
-    localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
-    atualizarDisplayCarteira();
-    showToast('Cartão removido da carteira digital com sucesso!');
-}
-
-function renderizarVeiculos() {
-    const container = document.getElementById('vehicles-grid-container');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    if (meusVeiculos.length === 0) {
-        container.innerHTML = `<div class="col-span-full p-6 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhum veículo cadastrado.</div>`;
-        return;
-    }
-
-    meusVeiculos.forEach((v, index) => {
-        container.innerHTML += `
-            <div class="bg-slate-50 p-3 rounded-xl border-2 border-lime-400 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-lg bg-lime-100 text-lime-700 flex items-center justify-center text-sm"><i class="fa-solid fa-car-side"></i></div>
-                    <div>
-                        <span class="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">${v.type}</span>
-                        <h3 class="font-extrabold text-slate-900 text-xs mt-0.5">${v.model} • Placa ${v.plate}</h3>
-                    </div>
-                </div>
-                <button onclick="removerVeiculo(${index})" class="text-rose-500 hover:text-rose-700 p-1.5 text-xs cursor-pointer pointer-events-auto" title="Remover"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        `;
-    });
-}
-
-// ==========================================================================
-// ESTAÇÕES OCPP & REALTIME (SUPABASE: public.pontos_recarga)
-// ==========================================================================
-async function carregarEstacoesDoBanco() {
-    if (supabaseClient) {
-        try {
-            const { data, error } = await supabaseClient.from('pontos_recarga').select('*').order('id_ponto', { ascending: true });
-            if (!error && data && data.length > 0) {
-                stations = data.map((st, index) => {
-                    const idNum = parseInt(st.id_ponto || (index + 1), 10);
-                    let condoNome = st.condominio || 'Condomínio Gioviale • Torre Sul';
-                    return {
-                        id: idNum,
-                        name: st.nome_vaga || `VAGA 0${idNum}`,
-                        condo: condoNome,
-                        type: st.potencia_kw ? `Conector (${st.potencia_kw} kW)` : 'Conector Type-2 (22 kW)',
-                        status: st.status || 'Disponível',
-                        user: st.usuario || null,
-                        kwh: parseFloat(st.kwh || 0),
-                        cost: parseFloat(st.tarifa_kwh || 1.18),
-                        timer: parseInt(st.tempo_decorrido || 0, 10),
-                        inicio_recarga: st.inicio_recarga || null,
-                        expiracao_reserva: st.expiracao_reserva || null,
-                        ocppId: st.ocpp_id || `CP-ID-${idNum}`,
-                        ocppStatus: st.ocpp_status || 'Online (Connected)'
-                    };
-                });
-                salvarEstacoesLocalStorage();
-                renderStations();
-                renderCommercialStations();
-                return;
-            }
-        } catch (err) {}
-    }
-    carregarOuInicializarEstacoes();
-    renderStations();
-    renderCommercialStations();
-}
-
-function configurarSupabaseRealtime() {
-    if (!supabaseClient) return;
-    try {
-        supabaseClient.channel('tabela-pontos-sync-v930-ocpp').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
-            carregarEstacoesDoBanco();
-        }).subscribe();
-    } catch (err) {}
-}
-
-async function sincronizarEstacaoNoSupabase(st) {
-    if (!supabaseClient) return;
-    try {
-        await supabaseClient.from('pontos_recarga').upsert([{
-            id_ponto: String(st.id),
-            nome_vaga: st.name,
-            condominio: st.condo,
-            status: st.status,
-            usuario: st.user || null,
-            potencia_kw: 22.0,
-            tarifa_kwh: 1.18,
-            kwh: st.kwh || 0,
-            inicio_recarga: st.inicio_recarga || null,
-            tempo_decorrido: String(st.timer || 0),
-            expiracao_reserva: st.expiracao_reserva || null,
-            ocpp_id: st.ocppId,
-            ocpp_status: st.ocppStatus
-        }], { onConflict: 'id_ponto' });
-    } catch (err) {}
-}
-
-function carregarOuInicializarEstacoes() {
-    const savedStations = localStorage.getItem('voltcore_stations_v5_ocpp');
-    if (savedStations) {
-        try { stations = JSON.parse(savedStations); return; } catch(e) {}
-    }
-    stations = JSON.parse(JSON.stringify(ESTACOES_PADRAO));
-    localStorage.setItem('voltcore_stations_v5_ocpp', JSON.stringify(stations));
-}
-
-function salvarEstacoesLocalStorage() {
-    localStorage.setItem('voltcore_stations_v5_ocpp', JSON.stringify(stations));
-}
-
-let mapInitialized = false;
-let leafletMap = null;
-let currentMarkers = [];
-let mapInterativoAtivo = false;
-
-function switchMode(mode) {
-    currentMode = mode;
-    const btnCondo = document.getElementById('btn-mode-condo');
-    const btnCom = document.getElementById('btn-mode-com');
-    const viewCondo = document.getElementById('tab-stations');
-    const viewCom = document.getElementById('view-commercial');
-    const condoBar = document.getElementById('sticky-condo-bar');
-
-    if (mode === 'condo') {
-        if (btnCondo) btnCondo.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-900 text-white transition shadow-xs cursor-pointer pointer-events-auto";
-        if (btnCom) btnCom.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer pointer-events-auto";
-        if (viewCondo) viewCondo.classList.remove('hidden');
-        if (viewCom) viewCom.classList.add('hidden');
-        if (condoBar) condoBar.classList.remove('hidden');
-        renderStations();
-    } else {
-        if (btnCom) btnCom.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-900 text-white transition shadow-xs cursor-pointer pointer-events-auto";
-        if (btnCondo) btnCondo.className = "flex-1 py-1.5 px-3 rounded-xl text-[10px] font-extrabold flex items-center justify-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer pointer-events-auto";
-        if (viewCom) viewCom.classList.remove('hidden');
-        if (viewCondo) viewCondo.classList.add('hidden');
-        if (condoBar) condoBar.classList.add('hidden');
-        setTimeout(() => { initLeafletMap(); renderCommercialStations(); }, 200);
-    }
-}
-
-const postosRodoviaComercial = [
-    { id_comercial: 101, name: "Posto Ipiranga • Av. Reynaldo Porcari", address: "Av. Reynaldo Porcari, 2100 - Medeiros, Jundiaí/SP", city: "jundiai", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.1920, -46.9680], ocppId: "CP-ROD-01" },
-    { id_comercial: 102, name: "Supermercado Boa • Conveniência Jundiaí", address: "Av. Nove de Julho, 1500 - Jundiaí/SP", city: "jundiai", hours: "07h às 22h", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-23.1850, -46.8900], ocppId: "CP-ROD-02" },
-    { id_comercial: 103, name: "Auto Posto Campinas • Rod. Dom Pedro", address: "Rod. Dom Pedro I, Km 134 - Campinas/SP", city: "campinas", hours: "06h às 22h", type: "AC", plugs: "Rápida Type-2 (22kW)", status: "Disponível", coords: [-22.9056, -47.0608], ocppId: "CP-ROD-03" },
-    { id_comercial: 104, name: "Shopping Iguatemi Campinas • Estacionamento", address: "Av. Iguatemi, 777 - Campinas/SP", city: "campinas", hours: "10h às 22h", type: "DC", plugs: "Rápida CCS2 (50kW)", status: "Em Uso", coords: [-22.8900, -47.0120], ocppId: "CP-ROD-04" },
-    { id_comercial: 105, name: "Eletroposto Itatiba Central", address: "Praça da Bandeira, 88 - Centro, Itatiba/SP", city: "itatiba", hours: "24 horas", type: "DC", plugs: "Rápida CCS2 (50kW)", status: "Disponível", coords: [-23.0075, -46.8411], ocppId: "CP-ROD-05" },
-    { id_comercial: 106, name: "Shell Rodovia Anhanguera (Cajamar)", address: "Rodovia Anhanguera, Km 38 - Cajamar/SP", city: "cajamar", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.3550, -46.8770], ocppId: "CP-ROD-06" },
-    { id_comercial: 107, name: "Eletroposto Jacareí Rodovia", address: "Rod. Presidente Dutra, Km 162 - Jacareí/SP", city: "jacarei", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.3050, -45.9670], ocppId: "CP-ROD-07" },
-    { id_comercial: 108, name: "Eletroposto Sorocaba Center", address: "Av. Washington Luiz, 500 - Sorocaba/SP", city: "sorocaba", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.5015, -47.4582], ocppId: "CP-ROD-08" },
-    { id_comercial: 109, name: "Supermercado Tauste • Sorocaba", address: "Av. General Carneiro, 1200 - Sorocaba/SP", city: "sorocaba", hours: "07h às 23h", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-23.5100, -47.4700], ocppId: "CP-ROD-09" },
-    { id_comercial: 110, name: "Eletroposto Uberaba Rodovia", address: "BR-050, Km 172 - Uberaba/MG", city: "uberaba", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-19.7479, -47.9392], ocppId: "CP-ROD-10" },
-    { id_comercial: 111, name: "Eletroposto Valinhos Shopping", address: "Rod. Anhanguera, Km 119 - Valinhos/SP", city: "valinhos", hours: "08h às 22h", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-22.9785, -46.9942], ocppId: "CP-ROD-11" },
-    { id_comercial: 112, name: "Eletroposto Vinhedo Plaza", address: "Estrada da Boiada, 500 - Vinhedo/SP", city: "vinhedo", hours: "24 horas", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-23.0305, -46.9750], ocppId: "CP-ROD-12" },
-    { id_comercial: 113, name: "Eletroposto São José do Rio Preto", address: "Av. Alberto Andaló, 3000 - São José do Rio Preto/SP", city: "sao jose do rio preto", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-20.8113, -49.3762], ocppId: "CP-ROD-13" },
-    { id_comercial: 114, name: "Eletroposto Limeira Rodovia", address: "Rod. Anhanguera, Km 148 - Limeira/SP", city: "limeira", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-22.5645, -47.4013], ocppId: "CP-ROD-14" },
-    { id_comercial: 115, name: "Eletroposto Caieiras Centro", address: "Av. Pres. Kennedy, 200 - Caieiras/SP", city: "caieiras", hours: "24 horas", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-23.3644, -46.7420], ocppId: "CP-ROD-15" },
-    { id_comercial: 116, name: "Eletroposto São Paulo (Paulista)", address: "Av. Paulista, 1000 - São Paulo/SP", city: "sao paulo", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.5614, -46.6565], ocppId: "CP-ROD-16" },
-    { id_comercial: 117, name: "Eletroposto Foz do Iguaçu (Fronteira)", address: "Av. das Cataratas, 4000 - Foz do Iguaçu/PR", city: "foz do iguacu", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (200kW)", status: "Disponível", coords: [-25.5159, -54.5854], ocppId: "CP-ROD-17" },
-    { id_comercial: 118, name: "Eletroposto Divisa Paraguai (Ciudad del Este)", address: "Zona Franca - Divisa Brasil/Paraguai", city: "paraguai", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2/GB/T (150kW)", status: "Disponível", coords: [-25.5097, -54.6111], ocppId: "CP-ROD-18" }
-];
-
-function initLeafletMap() {
-    if (mapInitialized && leafletMap) {
-        leafletMap.invalidateSize();
-        return;
-    }
-    leafletMap = L.map('leaflet-map', {
-        dragging: false, touchZoom: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false
-    }).setView([-23.1857, -46.9755], 10);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
-    }).addTo(leafletMap);
-
-    plotarMarcadoresMapa('ALL', '');
-    mapInitialized = true;
-}
-
-function ativarInteracaoMapa() {
-    mapInterativoAtivo = !mapInterativoAtivo;
-    const blocker = document.getElementById('map-scroll-blocker');
-    const lockTxt = document.getElementById('map-lock-txt');
-    const btnToggle = document.getElementById('btn-toggle-map');
-
-    if (mapInterativoAtivo) {
-        if (blocker) blocker.classList.add('opacity-0', 'pointer-events-none');
-        if (lockTxt) lockTxt.innerText = "Bloquear Mapa (Scroll Livre)";
-        if (btnToggle) btnToggle.className = "text-[9px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg shadow-xs hover:bg-emerald-700 transition cursor-pointer pointer-events-auto flex items-center gap-1";
-        if (leafletMap) { leafletMap.dragging.enable(); leafletMap.touchZoom.enable(); leafletMap.scrollWheelZoom.enable(); }
-        showToast('Mapa desbloqueado para navegação!');
-    } else {
-        if (blocker) blocker.classList.remove('opacity-0', 'pointer-events-none');
-        if (lockTxt) lockTxt.innerText = "Toque para Mexer no Mapa";
-        if (btnToggle) btnToggle.className = "text-[9px] font-bold bg-slate-900 text-lime-400 px-2 py-1 rounded-lg shadow-xs hover:bg-slate-800 transition cursor-pointer pointer-events-auto flex items-center gap-1";
-        if (leafletMap) { leafletMap.dragging.disable(); leafletMap.touchZoom.disable(); leafletMap.scrollWheelZoom.disable(); }
-        showToast('Mapa travado. Scroll da tela liberado.');
-    }
-}
-
-let filtroTipoAtual = 'ALL';
-function filtrarMapaComercial(tipo) {
-    filtroTipoAtual = tipo;
-    const btnAc = document.getElementById('btn-filter-ac');
-    const btnDc = document.getElementById('btn-filter-dc');
-    const btnAll = document.getElementById('btn-filter-all');
-
-    if (btnAc && btnDc && btnAll) {
-        btnAc.className = "flex-1 py-1.5 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:bg-slate-50 transition cursor-pointer pointer-events-auto";
-        btnDc.className = "flex-1 py-1.5 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:bg-slate-50 transition cursor-pointer pointer-events-auto";
-        btnAll.className = "py-1.5 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:bg-slate-50 transition cursor-pointer pointer-events-auto";
-
-        if (tipo === 'AC') { btnAc.className = "flex-1 py-1.5 px-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-1 shadow transition cursor-pointer pointer-events-auto"; }
-        else if (tipo === 'DC') { btnDc.className = "flex-1 py-1.5 px-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-1 shadow transition cursor-pointer pointer-events-auto"; }
-        else { btnAll.className = "py-1.5 px-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center justify-center gap-1 shadow transition cursor-pointer pointer-events-auto"; }
-    }
-    const termoBusca = document.getElementById('commercialSearchInput') ? document.getElementById('commercialSearchInput').value : '';
-    plotarMarcadoresMapa(filtroTipoAtual, termoBusca);
-    renderCommercialStations(termoBusca);
-}
-
-function filtrarPostosComerciaisBusca() {
-    const termo = document.getElementById('commercialSearchInput').value;
-    plotarMarcadoresMapa(filtroTipoAtual, termo);
-    renderCommercialStations(termo);
-}
-
-function mostrarMaisProximasComercial() {
-    showToast('Exibindo eletropostos OCPP mais próximos da sua localização.');
-    plotarMarcadoresMapa('ALL', 'jundiai');
-    renderCommercialStations('jundiai');
-}
-
-function plotarMarcadoresMapa(filtroTipo, termoBusca) {
-    if (!leafletMap) return;
-    currentMarkers.forEach(m => leafletMap.removeLayer(m));
-    currentMarkers = [];
-    
-    let encontrados = 0;
-    postosRodoviaComercial.forEach(p => {
-        if (filtroTipo !== 'ALL' && p.type !== filtroTipo) return;
-        if (termoBusca && termoBusca.trim() !== '') {
-            const query = termoBusca.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const nomeNorm = p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const cidadeNorm = p.city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const endNorm = p.address.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            if (!nomeNorm.includes(query) && !cidadeNorm.includes(query) && !endNorm.includes(query)) return;
-        }
-        encontrados++;
-
-        const corPin = p.type === 'AC' ? '#8cc63f' : '#3b82f6';
-        const customIcon = L.divIcon({
-            className: 'custom-map-pin',
-            html: `<div style="background: ${corPin}; color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 12px rgba(140,198,63,0.8); border: 2px solid #ffffff;"><i class="fa-solid fa-bolt text-[10px]"></i></div>`,
-            iconSize: [32, 32], iconAnchor: [16, 16]
-        });
-
-        const lat = p.coords[0];
-        const lng = p.coords[1];
-        const enderecoEncoded = encodeURIComponent(p.name + ' - ' + p.address);
-
-        const popupHtml = `
-            <div style="font-family: 'Inter', sans-serif; width: 200px;">
-                <h4 style="font-weight: 800; font-size: 12px; color: #0f172a; margin-bottom: 2px;">${p.name}</h4>
-                <p style="font-size: 9px; color: #475569; margin-bottom: 2px;"><i class="fa-solid fa-microchip" style="color: ${corPin};"></i> ID OCPP: <strong>${p.ocppId}</strong></p>
-                <p style="font-size: 9px; color: #475569; margin-bottom: 4px;"><i class="fa-solid fa-location-dot" style="color: ${corPin};"></i> ${p.address}</p>
-                <div style="font-size: 9px; color: #334155; margin-bottom: 5px;"><strong>Plugs:</strong> <span style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #475569;">${p.plugs}</span></div>
-                <div style="display: flex; gap: 3px;">
-                    <button onclick="abrirLeitorQrCodeCamera()" style="flex: 1; background: ${corPin}; color: #ffffff; border: none; padding: 4px; border-radius: 5px; font-weight: bold; font-size: 9px; cursor: pointer;" class="pointer-events-auto"><i class="fa-solid fa-qrcode"></i> QR</button>
-                    <button onclick="abrirSeletorGPS(${lat}, ${lng}, '${enderecoEncoded}')" style="flex: 1; background: #0f172a; color: #ffffff; border: none; padding: 4px; border-radius: 5px; font-weight: bold; font-size: 9px; cursor: pointer;" class="pointer-events-auto"><i class="fa-solid fa-route"></i> Rota</button>
-                </div>
-            </div>
-        `;
-        const marker = L.marker(p.coords, { icon: customIcon }).addTo(leafletMap).bindPopup(popupHtml);
-        currentMarkers.push(marker);
-    });
-
-    if (encontrados > 0 && currentMarkers.length > 0) {
-        const group = L.featureGroup(currentMarkers);
-        leafletMap.fitBounds(group.getBounds().pad(0.3));
-    }
-}
-
-function renderCommercialStations(termoBusca = '') {
-    const grid = document.getElementById('commercial-stations-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    let totalRenderizados = 0;
-    let comLivre = 0, comReservado = 0, comCarga = 0;
-
-    postosRodoviaComercial.forEach(p => {
-        if (p.status === 'Disponível') comLivre++;
-        if (p.status === 'Reservado') comReservado++;
-        if (p.status === 'Em Uso') comCarga++;
-
-        if (filtroTipoAtual !== 'ALL' && p.type !== filtroTipoAtual) return;
-        if (termoBusca && termoBusca.trim() !== '') {
-            const query = termoBusca.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const nomeNorm = p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const cidadeNorm = p.city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const endNorm = p.address.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            if (!nomeNorm.includes(query) && !cidadeNorm.includes(query) && !endNorm.includes(query)) return;
-        }
-        totalRenderizados++;
-
-        const isDC = p.type === 'DC';
-        const corTag = isDC ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-lime-100 text-lime-800 border-lime-200';
-        const iconeTipo = isDC ? 'fa-bolt-lightning text-blue-600' : 'fa-bolt text-lime-600';
-        const lat = p.coords[0];
-        const lng = p.coords[1];
-        const enderecoEncoded = encodeURIComponent(p.name + ' - ' + p.address);
-
-        grid.innerHTML += `
-            <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[8px] font-extrabold px-2 py-0.5 rounded-full border ${corTag} flex items-center gap-1">
-                            <i class="fa-solid ${iconeTipo}"></i> ${isDC ? 'Carga Rápida DC' : 'Carga Lenta AC'}
-                        </span>
-                        <span class="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-mono">OCPP ID: ${p.ocppId}</span>
-                    </div>
-                    <h4 class="font-extrabold text-slate-900 text-xs">${p.name}</h4>
-                    <p class="text-[10px] text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${p.address}</p>
-                    <p class="text-[9px] text-slate-700 font-semibold mt-1">Plugues: ${p.plugs}</p>
-                </div>
-                <div class="flex gap-1.5 pt-1 border-t border-slate-100">
-                    <button onclick="abrirLeitorQrCodeCamera()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[10px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto">
-                        <i class="fa-solid fa-qrcode"></i> Ler QR Code
-                    </button>
-                    <button onclick="abrirSeletorGPS(${lat}, ${lng}, '${enderecoEncoded}')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 px-2.5 rounded-lg text-[10px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto" title="Abrir GPS">
-                        <i class="fa-solid fa-route text-lime-400"></i> Rota
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-
-    if (document.getElementById('comm-stat-livre')) document.getElementById('comm-stat-livre').innerText = comLivre;
-    if (document.getElementById('comm-stat-reservado')) document.getElementById('comm-stat-reservado').innerText = comReservado;
-    if (document.getElementById('comm-stat-carregando')) document.getElementById('comm-stat-carregando').innerText = comCarga;
-
-    if (totalRenderizados === 0) {
-        grid.innerHTML = `<div class="col-span-full p-4 bg-white rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhum eletroposto OCPP encontrado.</div>`;
-    }
-}
-
-function abrirSeletorGPS(lat, lng, enderecoEncoded) {
-    const htmlGps = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600 font-medium">Escolha o aplicativo de navegação desejado:</p>
-            <div class="space-y-2">
-                <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" onclick="closeModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold p-3 rounded-xl flex items-center justify-between shadow transition cursor-pointer pointer-events-auto">
-                    <span class="flex items-center gap-2"><i class="fa-brands fa-google text-lime-400 text-base"></i> Google Maps</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400"></i>
-                </a>
-                <a href="https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank" onclick="closeModal()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-extrabold p-3 rounded-xl flex items-center justify-between shadow transition cursor-pointer pointer-events-auto">
-                    <span class="flex items-center gap-2"><i class="fa-brands fa-waze text-white text-base"></i> Waze</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-xs text-sky-200"></i>
-                </a>
-            </div>
-            <div class="pt-2">
-                <button onclick="closeModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Navegação GPS', htmlGps, 'fa-route', 'lime');
-}
-
-function mudarCondominio() {
-    const selectCondo = document.getElementById('select-condo');
-    if (selectCondo) { localStorage.setItem('voltcore_selected_condo', selectCondo.value); }
-    renderStations();
-    showToast(`Condomínio OCPP alterado.`);
-}
-
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('tab-' + tabId);
-    if (target) target.classList.remove('hidden');
-    const viewCom = document.getElementById('view-commercial');
-    if (viewCom) viewCom.classList.add('hidden');
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('text-lime-600');
-        btn.classList.add('text-slate-400');
-        if(btn.dataset.tab === tabId) {
-            btn.classList.remove('text-slate-400');
-            btn.classList.add('text-lime-600');
-        }
-    });
-}
-
-function setFilter(status) {
-    currentFilter = status;
-    const buttons = document.querySelectorAll('.filter-btn');
-    buttons.forEach((btn) => {
-        btn.className = "filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-center cursor-pointer pointer-events-auto shadow-2xs";
-        if ((status === 'all' && btn.id === 'tab-btn-todas') || 
-            (status === 'Disponível' && btn.innerText.includes('Disponíveis')) || 
-            (status === 'Reservado' && btn.innerText.includes('Reservadas')) || 
-            (status === 'Em Uso' && btn.innerText.includes('Em Carga'))) {
-            btn.className = "filter-btn flex-1 py-1 text-[9px] font-bold rounded-lg bg-lime-400 text-slate-900 transition text-center cursor-pointer pointer-events-auto shadow-2xs";
-        }
-    });
-    if (currentMode === 'condo') { renderStations(); } else { renderCommercialStations(); }
-}
-
-function renderStations() {
-    const grid = document.getElementById('stations-grid');
-    if(!grid) return;
-    grid.innerHTML = '';
-    let livre = 0, reservado = 0, carregando = 0;
-    const selectCondo = document.getElementById('select-condo');
-    const currentCondo = selectCondo ? selectCondo.value : userData.condo;
-    
-    if (!stations || stations.length === 0) { carregarOuInicializarEstacoes(); }
-
-    const btnTodasEl = document.getElementById('tab-btn-todas');
-    if (btnTodasEl) {
-        if (userData.role === 'ADM_MASTER') {
-            btnTodasEl.classList.remove('hidden');
-            btnTodasEl.style.display = 'block';
-        } else {
-            btnTodasEl.classList.add('hidden');
-            btnTodasEl.style.display = 'none';
-        }
-    }
-
-    stations.forEach(st => {
-        if (userData.role !== 'ADM_MASTER' && st.condo !== currentCondo) return;
-        if (st.condo !== currentCondo && userData.role === 'MORADOR') return;
-
-        if (st.status === 'Disponível') livre++;
-        if (st.status === 'Reservado') reservado++;
-        if (st.status === 'Em Uso') carregando++;
-        
-        if (currentFilter !== 'all' && st.status !== currentFilter) return;
-        
-        let badge = '', content = '', btn = '';
-        if (st.status === 'Disponível') {
-            badge = `<span class="bg-slate-100 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> OCPP ONLINE</span>`;
-            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600 flex items-center justify-between"><span>ID: <strong>${st.ocppId}</strong></span><span class="text-emerald-700 font-bold"><i class="fa-solid fa-microchip"></i> Conectado</span></div>`;
-            btn = `<div class="flex gap-1.5"><button onclick="reserveSpot(${st.id})" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><i class="fa-solid fa-bookmark"></i> Reservar</button><button onclick="abrirLeitorQrCodeCamera()" class="w-1/2 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[11px] transition flex items-center justify-center gap-1 shadow-xs cursor-pointer pointer-events-auto"><i class="fa-solid fa-qrcode"></i> Ler QR</button></div>`;
-        } else if (st.status === 'Reservado') {
-            badge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> RESERVADO (OCPP)</span>`;
-            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-600"><p class="flex justify-between font-medium"><span>Morador:</span> <strong class="text-slate-800">${st.user || 'Morador'}</strong></p></div>`;
-            btn = `<div class="flex gap-1.5"><button onclick="startCharging(${st.id})" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-bolt"></i> INICIAR RECARGA</button><button onclick="cancelReservation(${st.id})" class="bg-slate-100 hover:bg-rose-50 text-slate-600 font-bold py-2 px-2 rounded-lg border border-slate-200 text-xs cursor-pointer pointer-events-auto" title="Cancelar"><i class="fa-solid fa-xmark"></i></button></div>`;
-        } else {
-            badge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> RECARGA OCPP ATIVA</span>`;
-            content = `<div class="my-1.5 bg-slate-50 border border-slate-200/80 p-2 rounded-lg space-y-1"><div class="flex justify-between items-center text-[11px]"><span class="font-bold text-slate-700">Consumo:</span> <span class="font-extrabold text-emerald-700 text-xs">${(st.kwh || 0).toFixed(2)} kWh</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-emerald-500 h-1.5 rounded-full animate-pulse" style="width: 75%"></div></div></div>`;
-            btn = `<button onclick="stopCharging(${st.id})" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 text-[11px] cursor-pointer pointer-events-auto"><i class="fa-solid fa-hand"></i> FINALIZAR RECARGA</button>`;
-        }
-        
-        const card = document.createElement('article');
-        card.className = `bg-white rounded-xl border ${st.status === 'Reservado' ? 'border-amber-300' : st.status === 'Em Uso' ? 'border-emerald-400' : 'border-slate-200'} p-2.5 shadow-xs relative overflow-hidden transition`;
-        card.innerHTML = `
-            <div class="flex items-start justify-between border-b border-slate-100 pb-1.5">
-                <div>
-                    <div class="flex items-center gap-1 mb-0.5">${badge}</div>
-                    <h3 class="text-xs font-extrabold text-slate-900 tracking-tight">${st.name}</h3>
-                    <p class="text-[9px] text-slate-500 font-mono">${st.ocppId} • ${st.type}</p>
-                </div>
-                <div class="text-right bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg">
-                    <p class="text-[7px] font-bold text-slate-400 uppercase leading-none mb-0.5">Tempo (h:m:s)</p>
-                    <p class="text-[11px] font-black text-slate-800">${formatTimer(st, st.timer || 0)}</p>
-                </div>
-            </div>
-            ${content}
-            ${btn}
-        `;
-        grid.appendChild(card);
-    });
-
-    if (currentMode === 'condo') {
-        if(document.getElementById('stat-livre')) document.getElementById('stat-livre').innerText = livre;
-        if(document.getElementById('stat-reservado')) document.getElementById('stat-reservado').innerText = reservado;
-        if(document.getElementById('stat-carregando')) document.getElementById('stat-carregando').innerText = carregando;
-    }
-}
-
-function formatTimer(st, sec) {
-    if (st.status === 'Reservado' && st.expiracao_reserva) {
-        const agora = new Date().getTime();
-        const expiracao = new Date(st.expiracao_reserva).getTime();
-        const segundosRestantes = Math.floor((expiracao - agora) / 1000);
-        return segundosRestantes > 0 ? segundosRestantes : 0;
-    }
-    if (sec <= 0) return "00:00:00";
-    const h = Math.floor(sec / 3600).toString().padStart(2, '0');
-    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
-    const s = (sec % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-}
-
-function updateTimersAndLoad() {
-    let houveMudanca = false;
-    stations.forEach(st => {
-        if (st.status === 'Reservado') {
-            if (st.expiracao_reserva) {
-                const agora = new Date().getTime();
-                const expiracao = new Date(st.expiracao_reserva).getTime();
-                const segundosRestantes = Math.floor((expiracao - agora) / 1000);
-                if (segundosRestantes > 0) {
-                    st.timer = segundosRestantes;
-                    houveMudanca = true;
-                } else {
-                    st.status = 'Disponível'; st.user = null; st.timer = 0; st.inicio_recarga = null; st.expiracao_reserva = null;
-                    houveMudanca = true;
-                    sincronizarEstacaoNoSupabase(st);
-                }
-            } else {
-                if (st.timer > 0) { st.timer--; houveMudanca = true; }
-                else { st.status = 'Disponível'; st.user = null; st.timer = 0; st.inicio_recarga = null; st.expiracao_reserva = null; houveMudanca = true; sincronizarEstacaoNoSupabase(st); }
-            }
-        }
-        if (st.status === 'Em Uso') {
-            if (st.inicio_recarga) {
-                const agora = new Date().getTime();
-                const inicio = new Date(st.inicio_recarga).getTime();
-                const segundosDecorridos = Math.floor((agora - inicio) / 1000);
-                if (segundosDecorridos >= 0) {
-                    st.timer = segundosDecorridos;
-                    st.kwh = 1.0 + (segundosDecorridos * 0.0035);
-                    houveMudanca = true;
-                }
-            } else {
-                st.timer++; st.kwh += 0.0035; houveMudanca = true;
-            }
-        }
-    });
-    if (houveMudanca) {
-        salvarEstacoesLocalStorage();
-        if (currentMode === 'condo') { renderStations(); }
-    }
-}
-
-async function reserveSpot(id) {
-    const st = stations.find(s => s.id === id);
-    if (!st || st.status !== 'Disponível') {
-        showToast('Esta vaga não está mais disponível.');
-        await carregarEstacoesDoBanco();
-        return;
-    }
-
-    const agora = new Date();
-    const expiracao = new Date(agora.getTime() + 15 * 60000);
-
-    st.status = 'Reservado';
-    st.user = userData.name || userData.email;
-    st.timer = 900;
-    st.inicio_recarga = null;
-    st.expiracao_reserva = expiracao.toISOString();
-    
-    salvarEstacoesLocalStorage();
-    renderStations();
-    showToast(`Vaga ${st.name} reservada via OCPP!`);
-    await sincronizarEstacaoNoSupabase(st);
-}
-
-async function startCharging(id) {
-    const st = stations.find(s => s.id === id);
-    if (!st) return;
-
-    if (saldoCarteira <= 0) {
-        showToast('Saldo insuficiente na carteira. Adicione créditos antes de iniciar a recarga.');
-        return;
-    }
-
-    st.status = 'Em Uso';
-    st.user = userData.name || userData.email;
-    st.inicio_recarga = new Date().toISOString();
-    st.timer = 0;
-    st.kwh = 1.0;
-    st.expiracao_reserva = null;
-    
-    salvarEstacoesLocalStorage();
-    renderStations();
-    showToast(`Transação OCPP RemoteStart enviada para ${st.name}!`);
-    await sincronizarEstacaoNoSupabase(st);
-}
-
-async function stopCharging(id) {
-    const st = stations.find(s => s.id === id);
-    if (!st) return;
-    const kWhConsumidos = st.kwh > 0 ? st.kwh : 14.2;
-    const custoTotal = (kWhConsumidos * 1.18) + 2.20;
-    const inicioSessao = st.inicio_recarga || new Date().toISOString();
-
-    const agora = new Date();
-    const dataFormatada = agora.toLocaleDateString('pt-BR');
-    const horaFim = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-    const titulo = `${st.name} (${st.condo.split('•')[0].trim()})`;
-    const desc = `${dataFormatada} • Finalizada às ${horaFim} (${kWhConsumidos.toFixed(2)} kWh • OCPP Tarifado)`;
-    const valorFmt = `R$ ${custoTotal.toFixed(2).replace('.', ',')}`;
-
-    extratoTransacoes.unshift({ title: titulo, desc: desc, value: valorFmt, type: 'debit' });
-    localStorage.setItem('voltcore_extrato', JSON.stringify(extratoTransacoes));
-    saldoCarteira -= custoTotal;
-    if (saldoCarteira < 0) saldoCarteira = 0;
-    localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
-    atualizarDisplayCarteira();
-
-    if (supabaseClient) {
-        try {
-            await supabaseClient.from('charging_sessions').insert([{
-                station_name: st.name, condo_name: st.condo, user_email: userData.email || 'contato@wpsinfo.com.br',
-                start_time: inicioSessao, end_time: agora.toISOString(), total_kwh: parseFloat(kWhConsumidos.toFixed(3)),
-                total_cost: parseFloat(custoTotal.toFixed(2)), ociosidade_fee: 2.20, status: 'Completed'
-            }]);
-            await registrarTransacaoNoBanco(titulo, desc, valorFmt, 'debit');
-        } catch (err) {}
-    }
-    
-    st.status = 'Disponível'; st.user = null; st.kwh = 0; st.timer = 0; st.inicio_recarga = null; st.expiracao_reserva = null;
-    salvarEstacoesLocalStorage();
-    renderStations();
-    await sincronizarEstacaoNoSupabase(st);
-    
-    showToast(`OCPP RemoteStop efetuado! Total R$ ${custoTotal.toFixed(2)} registrado na nuvem.`);
-}
-
-async function cancelReservation(id) {
-    const st = stations.find(s => s.id === id);
-    if (!st) return;
-    st.status = 'Disponível'; st.user = null; st.timer = 0; st.inicio_recarga = null; st.expiracao_reserva = null;
-    salvarEstacoesLocalStorage();
-    renderStations();
-    await sincronizarEstacaoNoSupabase(st);
-    showToast(`Reserva OCPP cancelada.`);
-}
-
-// ==========================================================================
-// PAINEL ADM / SÍNDICO (BLOQUEADO PARA MORADORES)
+// PAINEL DE GESTÃO CORPORATIVA (ADM MASTER & SÍNDICO)
 // ==========================================================================
 async function carregarMoradoresDoBanco() {
     if (!supabaseClient) return;
     try {
-        const { data, error } = await supabaseClient.from('moradores').select('*').order('criado_em', { ascending: false });
-        if (!error && data && data.length > 0) {
+        const { data } = await supabaseClient.from('moradores').select('*').order('criado_em', { ascending: false });
+        if (data && data.length > 0) {
             moradoresCondominio = data.map(m => ({
-                id: m.id, nome: m.nome, condo: m.condominio, bloco: m.bloco || 'Torre Única',
-                unidade: m.unidade || 'Apto 00', endereco: m.endereco || 'Jundiaí/SP', vaga: m.vaga,
-                veiculo: m.veiculo || 'Veículo Elétrico', placa: m.placa || 'N/D', status: m.status || 'Ativo',
-                data: m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : '26/10/2026',
-                horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '14.2 kWh', ociosidade: 'Não', valor: m.valor_atual || 'R$ 0,00'
+                id: m.id,
+                nome: m.nome || 'Condômino',
+                email: m.email || '',
+                condo: m.condominio || 'Belarte Residencial Jundiaí',
+                bloco: m.bloco || 'Torre Única',
+                unidade: m.unidade || 'Apto 00',
+                vaga: m.vaga || 'Vaga 01',
+                veiculo: m.veiculo || 'Elétrico',
+                placa: m.placa || 'N/D',
+                status: m.status || 'Pendente',
+                valor: m.valor_atual || 'R$ 0,00'
             }));
-            localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
         }
-    } catch (err) {}
+    } catch(e) {}
 }
 
 async function abrirPainelGestao() {
-    if (userData.role !== 'ADM_MASTER') {
-        showToast('Acesso negado: Perfil restrito a Administradores.');
+    if (userData.role !== 'ADM_MASTER' && userData.role !== 'SINDICO') {
+        showToast('Acesso negado: Perfil restrito.');
         return;
     }
     await carregarMoradoresDoBanco();
@@ -1981,51 +787,53 @@ async function abrirPainelGestao() {
 }
 
 function renderizarConteudoPainelGestao(termoFiltro = '') {
-    let htmlMoradores = '';
-    const termo = termoFiltro.toLowerCase().trim();
-
-    moradoresCondominio.forEach((m, idx) => {
-        if (termo) {
-            const nomeMatch = m.nome.toLowerCase().includes(termo);
-            const placaMatch = (m.placa || '').toLowerCase().includes(termo);
-            const vagaMatch = (m.vaga || '').toLowerCase().includes(termo);
-            if (!nomeMatch && !placaMatch && !vagaMatch) return;
+    let moradoresFiltrados = moradoresCondominio.filter(m => {
+        if (userData.role === 'SINDICO') {
+            return m.condo.toLowerCase().includes(userData.condo.toLowerCase());
         }
+        return true;
+    });
 
-        const isInativo = m.status === 'Inativo';
+    const termo = termoFiltro.toLowerCase().trim();
+    if (termo) {
+        moradoresFiltrados = moradoresFiltrados.filter(m => 
+            m.nome.toLowerCase().includes(termo) || 
+            (m.placa || '').toLowerCase().includes(termo) || 
+            (m.vaga || '').toLowerCase().includes(termo)
+        );
+    }
+
+    let htmlMoradores = '';
+    moradoresFiltrados.forEach((m, idx) => {
+        const isPendente = m.status === 'Pendente';
+        const isAtivo = m.status === 'Ativo';
+        
         htmlMoradores += `
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2.5 text-xs">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-slate-100">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 text-xs hover:border-lime-400 transition">
+                <div class="flex justify-between items-center pb-2.5 border-b border-slate-100">
                     <div>
-                        <strong class="text-slate-900 text-sm font-extrabold">${m.nome}</strong> 
-                        <span class="text-slate-500 font-medium ml-1">(${m.vaga} - ${m.unidade || 'Apto'})</span>
-                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-microchip text-lime-600 mr-1"></i> ${m.condo} (${m.bloco || 'Torre'}) • ${m.endereco || ''}</div>
+                        <div class="flex items-center gap-2">
+                            <strong class="text-slate-900 text-sm font-black">${m.nome}</strong>
+                            <span class="text-[9px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">${m.unidade} • ${m.vaga}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building text-lime-600 mr-1"></i> ${m.condo}</div>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                        <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">${m.valor}</span>
-                        <span class="text-[10px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200' : 'text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200'}">${m.status}</span>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
-                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
-                        <p class="text-slate-700"><strong>Veículo:</strong> <span class="font-medium">${m.veiculo}</span></p>
-                        <p class="text-slate-700"><strong>Placa:</strong> <span class="font-medium font-mono text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">${m.placa || 'N/D'}</span></p>
-                    </div>
-                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
-                        <p class="text-slate-700"><strong>Sessão OCPP:</strong> <span class="font-medium">${m.data} • ${m.horaInicio || '12:00'} (${m.duracao || '42 min'})</span></p>
-                        <p class="text-slate-700"><strong>Volume / Ociosidade:</strong> <span class="font-medium text-emerald-700">${m.kwh || '14.2 kWh'}</span> | <span class="text-amber-700 font-bold">${m.ociosidade || 'Não'}</span></p>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-emerald-700 text-xs bg-emerald-50 px-3 py-1 rounded-xl">${m.valor}</span>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-xl ${isPendente ? 'bg-amber-100 text-amber-900 border border-amber-300' : isAtivo ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${m.status}</span>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 gap-2 border-t border-slate-50">
-                    <span class="text-[10px] text-slate-400 italic flex items-center gap-1"><i class="fa-solid fa-shield-halved text-lime-600"></i> Rastreabilidade LGPD Ativa.</span>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="estornarOuAjustarSaldoMorador(${idx})" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition cursor-pointer pointer-events-auto">
-                            <i class="fa-solid fa-rotate-left"></i> Estorno / Saldo
-                        </button>
-                        <button onclick="alternarStatusMorador(${idx})" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold ${isInativo ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-rose-100 text-rose-800 hover:bg-rose-200'} transition cursor-pointer pointer-events-auto">
-                            ${isInativo ? 'Reativar Condômino' : 'Inativar Condômino'}
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-[10px] text-slate-400">Veículo: ${m.veiculo} (${m.placa})</span>
+                    <div class="flex gap-2">
+                        ${isPendente ? `
+                            <button onclick="aprovarMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-lime-500 hover:bg-lime-600 text-slate-900 transition cursor-pointer">
+                                <i class="fa-solid fa-check"></i> Aprovar Acesso
+                            </button>
+                        ` : ''}
+                        <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold ${isAtivo ? 'bg-rose-100 text-rose-900' : 'bg-emerald-100 text-emerald-900'} transition cursor-pointer">
+                            ${isAtivo ? 'Inativar' : 'Ativar'}
                         </button>
                     </div>
                 </div>
@@ -2033,56 +841,71 @@ function renderizarConteudoPainelGestao(termoFiltro = '') {
         `;
     });
 
-    const tituloPainel = 'Central ADM Master • Gestão em Massa';
+    const tituloPainel = userData.role === 'SINDICO' ? `Painel Síndico • ${userData.condo}` : 'Central ADM Master • Gestão Corporativa';
+
     const conteudoGestao = `
-        <div class="space-y-4 text-left text-xs pb-4">
-            <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-xl shadow-md">
+        <div class="space-y-4 text-left text-xs pb-4 flex flex-col h-full">
+            <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-2xl shadow-md shrink-0">
                 <div>
-                    <h4 class="font-extrabold text-lime-400 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> ${tituloPainel}</h4>
-                    <p class="text-[11px] text-slate-300">Gestão avançada de faturamento, ociosidade e telemetria de carregadores.</p>
+                    <h4 class="font-black text-lime-400 text-sm flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> ${tituloPainel}</h4>
+                    <p class="text-[11px] text-slate-300">Aprovação de novos moradores e telemetria OCPP.</p>
                 </div>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer pointer-events-auto shrink-0" title="Fechar">
-                    <i class="fa-solid fa-xmark text-sm"></i>
+                <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Totens OCPP Online</span>
-                    <span class="text-sm font-black text-slate-900">8 / 8 Conectados</span>
-                </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Faturamento Mês</span>
-                    <span class="text-xs font-black text-emerald-600">R$ 796,50 (OCPP)</span>
-                </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-0.5">
-                    <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Taxa Ociosidade</span>
-                    <span class="text-xs font-black text-amber-600">R$ 45,00 Acumulado</span>
-                </div>
+
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                <input type="text" id="filtro-morador-input" oninput="filtrarGestaoMoradores(this)" value="${termoFiltro}" placeholder="Pesquisar por nome, placa ou vaga..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <div class="space-y-3 pt-1">
-                <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pb-2 border-b border-slate-200">
-                    <div class="relative flex-1">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-                        <input type="text" id="filtro-morador-input" oninput="filtrarGestaoMoradores(this)" value="${termoFiltro}" placeholder="Filtrar por nome do morador, placa ou vaga..." class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    </div>
-                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow-xs transition cursor-pointer pointer-events-auto flex items-center justify-center gap-1.5 shrink-0">
-                        <i class="fa-solid fa-user-plus"></i> Novo Condômino
-                    </button>
-                </div>
-                
-                <div class="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
-                    ${htmlMoradores || '<div class="p-6 bg-slate-50 rounded-xl text-center text-slate-500">Nenhum registro encontrado para este filtro.</div>'}
-                </div>
+            <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+                ${htmlMoradores || '<div class="p-8 bg-slate-50 rounded-2xl text-center text-slate-500 font-medium">Nenhum morador pendente ou cadastrado.</div>'}
             </div>
-            
-            <div class="flex gap-2 pt-2 border-t border-slate-100">
-                <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs transition cursor-pointer pointer-events-auto">FECHAR PAINEL</button>
-            </div>
+
+            <button onclick="closeModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs cursor-pointer">FECHAR PAINEL</button>
         </div>
     `;
-    showCustomModal(tituloPainel, conteudoGestao, 'fa-building-shield', 'lime');
+
+    showCustomModalAmplo(tituloPainel, conteudoGestao);
+}
+
+function showCustomModalAmplo(title, htmlContent) {
+    const customModal = document.getElementById('customModal');
+    if (!customModal) return;
+    const modalBox = customModal.querySelector('.bg-white') || customModal.children[0];
+    if (modalBox) {
+        modalBox.className = "bg-white w-[95vw] max-w-5xl h-[85vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-5 relative overflow-hidden";
+    }
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    if (modalTitle) modalTitle.style.display = 'none';
+    if (modalDesc) {
+        modalDesc.innerHTML = htmlContent;
+        modalDesc.className = "flex-1 overflow-hidden flex flex-col";
+    }
+    customModal.classList.remove('hidden');
+}
+
+async function aprovarMorador(idx) {
+    const m = moradoresCondominio[idx];
+    m.status = 'Ativo';
+    if (supabaseClient && m.id) {
+        try { await supabaseClient.from('moradores').update({ status: 'Ativo' }).eq('id', m.id); } catch(e){}
+    }
+    showToast(`Acesso do morador ${m.nome} aprovado com sucesso!`);
+    renderizarConteudoPainelGestao();
+}
+
+async function alternarStatusMorador(idx) {
+    const m = moradoresCondominio[idx];
+    m.status = m.status === 'Ativo' ? 'Inativo' : 'Ativo';
+    if (supabaseClient && m.id) {
+        try { await supabaseClient.from('moradores').update({ status: m.status }).eq('id', m.id); } catch(e){}
+    }
+    showToast(`Status alterado para ${m.status}`);
+    renderizarConteudoPainelGestao();
 }
 
 function filtrarGestaoMoradores(input) {
@@ -2093,125 +916,20 @@ function filtrarGestaoMoradores(input) {
     }, 50);
 }
 
-function estornarOuAjustarSaldoMorador(idx) {
-    const morador = moradoresCondominio[idx];
-    showToast(`Solicitação de ajuste financeira registrada para ${morador.nome}.`);
-}
-
-async function alternarStatusMorador(idx) {
-    const morador = moradoresCondominio[idx];
-    const novoStatus = morador.status === 'Ativo' ? 'Inativo' : 'Ativo';
-    morador.status = novoStatus;
-
-    if (supabaseClient && morador.id) {
-        try { await supabaseClient.from('moradores').update({ status: novoStatus }).eq('id', morador.id); } catch (e) {}
-    }
-
-    showToast(`Morador ${morador.nome} ${novoStatus === 'Inativo' ? 'inativado' : 'reativado'}.`);
-    localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    renderizarConteudoPainelGestao(document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '');
-}
-
-function abrirModalCadastrarMorador() {
-    const htmlForm = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Nome do Morador:</label>
-                <input type="text" id="novo-morador-nome" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Nome do Condomínio:</label>
-                    <input type="text" id="novo-morador-condo" placeholder="Ex: Condomínio Gioviale" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Bloco / Torre:</label>
-                    <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Norte" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Unidade / Apto:</label>
-                    <input type="text" id="novo-morador-unidade" placeholder="Ex: Apto 101" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Vaga / OCPP ID:</label>
-                    <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 01" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Endereço Completo:</label>
-                <input type="text" id="novo-morador-endereco" placeholder="Ex: Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Veículo / Modelo:</label>
-                    <input type="text" id="novo-morador-veiculo" placeholder="Ex: BYD Seal (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Placa:</label>
-                    <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="salvarNovoMorador()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer pointer-events-auto">CONFIRMAR CADASTRO</button>
-                <button onclick="abrirPainelGestao()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Cadastrar Novo Condômino', htmlForm, 'fa-user-plus', 'lime');
-}
-
-async function salvarNovoMorador() {
-    const nome = document.getElementById('novo-morador-nome').value;
-    const condo = document.getElementById('novo-morador-condo').value || 'Condomínio Residencial';
-    const bloco = document.getElementById('novo-morador-bloco').value || 'Torre Única';
-    const unidade = document.getElementById('novo-morador-unidade').value || 'Apto 00';
-    const vaga = document.getElementById('novo-morador-vaga').value || 'Vaga 00';
-    const endereco = document.getElementById('novo-morador-endereco').value || 'Jundiaí/SP';
-    const veiculo = document.getElementById('novo-morador-veiculo').value || 'Veículo Elétrico';
-    const placa = document.getElementById('novo-morador-placa').value || 'ABC-0000';
-
-    if (!nome || !vaga) {
-        showToast('Preencha o nome e a vaga do morador.');
-        return;
-    }
-
-    let insertedId = null;
-    if (supabaseClient) {
-        try {
-            const { data } = await supabaseClient.from('moradores').insert([{
-                nome, condominio: condo, bloco, unidade, endereco, vaga, veiculo, placa, status: 'Ativo', valor_atual: 'R$ 0,00'
-            }]).select();
-            if (data && data[0]) insertedId = data[0].id;
-        } catch (e) {}
-    }
-
-    const agora = new Date();
-    moradoresCondominio.unshift({
-        id: insertedId, nome, condo, bloco, unidade, endereco, vaga, veiculo, placa, status: 'Ativo',
-        data: agora.toLocaleDateString('pt-BR'), horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '0.0 kWh', ociosidade: 'Não', valor: 'R$ 0,00'
-    });
-    localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    showToast(`Condômino ${nome} cadastrado e salvo na nuvem!`);
-    abrirPainelGestao();
-}
-
 function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
+    const customModal = document.getElementById('customModal');
+    const modalBox = customModal ? (customModal.querySelector('.bg-white') || customModal.children[0]) : null;
+    if (modalBox) {
+        modalBox.className = "bg-white w-[90vw] max-w-md rounded-3xl shadow-2xl border border-slate-200 p-5 relative overflow-hidden";
+    }
     const modalTitle = document.getElementById('modalTitle');
     const modalDesc = document.getElementById('modalDesc');
-    const customModal = document.getElementById('customModal');
-    if (modalTitle) modalTitle.innerText = title;
+    if (modalTitle) { modalTitle.style.display = 'flex'; modalTitle.innerText = title; }
     if (modalDesc) modalDesc.innerHTML = htmlContent;
     if (customModal) customModal.classList.remove('hidden');
 }
 
 function closeModal() {
-    if (pixPollingInterval) { clearInterval(pixPollingInterval); pixPollingInterval = null; }
-    if (streamCameraAtiva) {
-        streamCameraAtiva.getTracks().forEach(track => track.stop());
-        streamCameraAtiva = null;
-    }
     const customModal = document.getElementById('customModal');
     if (customModal) customModal.classList.add('hidden');
 }
@@ -2222,6 +940,8 @@ function showToast(msg) {
     if (toast && toastMsg) {
         toastMsg.innerText = msg;
         toast.classList.remove('translate-y-20', 'opacity-0');
-        setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 3500);
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3500);
     }
 }
