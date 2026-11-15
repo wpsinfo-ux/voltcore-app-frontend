@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.35 (COMPLETO, INTEGRAL & PADRÃO TUPI)
+   VOLTCORE PRO • FRONT-END ENGINE V9.37 (COMPLETO, INTEGRAL & PADRÃO TUPI)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -47,6 +47,13 @@ let cartoesSalvos = [
 ];
 let moradoresCondominio = [];
 
+// E-mails oficiais já conhecidos na base (nunca acionam cadastro novo por engano)
+const EMAILS_CADASTRADOS_BASE = [
+    "contato@wpsinfo.com.br",
+    "wandersonp_s@hotmail.com",
+    "wand3rson.s@gmail.com"
+];
+
 const CONDOS_DISPONIVEIS = [
     "Belarte Residencial Jundiaí",
     "Condomínio Gioviale • Torre Sul",
@@ -67,7 +74,7 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v935', 'true');
+    localStorage.setItem('voltcore_version_v937', 'true');
 
     carregarTudoPersistente();
     
@@ -97,8 +104,10 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO PADRÃO TUPI • MULTITENANT & OLHINHO FUNCIONAL
+// TELA DE AUTENTICAÇÃO PADRÃO TUPI • ABAS CLARAS & CHECAGEM ROBUSTA
 // ==========================================================================
+let modoAuthAtual = 'login'; // 'login' ou 'cadastro'
+
 function prepararTelaAuthPadraoTupiCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
@@ -115,6 +124,11 @@ function prepararTelaAuthPadraoTupiCompleta() {
                 <p class="text-[11px] text-slate-500">Soluções inteligentes de recarga e condomínios</p>
             </div>
 
+            <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
+                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'login' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">Já tenho conta</button>
+                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'cadastro' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">Cadastrar</button>
+            </div>
+
             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
                 <input type="checkbox" id="check-lgpd-login" checked class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
                 <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
@@ -125,10 +139,10 @@ function prepararTelaAuthPadraoTupiCompleta() {
             <div id="auth-form-container" class="space-y-3 text-left">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
-                    <input type="email" id="tupi-email" placeholder="Seu e-mail cadastrado" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
 
-                <div id="container-extra-cadastro" class="space-y-3 hidden">
+                <div id="container-extra-cadastro" class="space-y-3 ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
                         <input type="text" id="tupi-nome" placeholder="Informe o seu nome" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
@@ -149,14 +163,14 @@ function prepararTelaAuthPadraoTupiCompleta() {
                     </button>
                 </div>
 
-                <div id="senha-criterios" class="hidden text-[10px] space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600">
+                <div id="senha-criterios" class="${modoAuthAtual === 'cadastro' ? '' : 'hidden'} text-[10px] space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600">
                     <p id="crit-len" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Mínimo 8 caracteres</p>
                     <p id="crit-upper" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra maiúscula (A-Z)</p>
                     <p id="crit-lower" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra minúscula (a-z)</p>
                     <p id="crit-num" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Um número (0-9)</p>
                 </div>
 
-                <div id="container-confirma-senha" class="relative hidden">
+                <div id="container-confirma-senha" class="relative ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
                     <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha</label>
                     <input type="password" id="tupi-confirma" placeholder="Confirme sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                     <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
@@ -169,7 +183,7 @@ function prepararTelaAuthPadraoTupiCompleta() {
                 </div>
 
                 <button type="button" onclick="processarAuthTupi()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
-                    Entrar
+                    ${modoAuthAtual === 'login' ? 'Entrar' : 'Cadastrar Conta'}
                 </button>
             </div>
 
@@ -181,14 +195,15 @@ function prepararTelaAuthPadraoTupiCompleta() {
         </div>
     `;
 
-    const emailInput = document.getElementById('tupi-email');
     const senhaInput = document.getElementById('tupi-senha');
-    if (emailInput) {
-        emailInput.addEventListener('input', () => checarSeEmailExiste(emailInput.value.trim()));
-    }
     if (senhaInput) {
         senhaInput.addEventListener('input', () => validarCriteriosSenha(senhaInput.value));
     }
+}
+
+function alternarModoAuth(modo) {
+    modoAuthAtual = modo;
+    prepararTelaAuthPadraoTupiCompleta();
 }
 
 function alternarVisibilidadeSenha(idInput, btn) {
@@ -214,42 +229,6 @@ function validarCriteriosSenha(senha) {
     document.getElementById('crit-num').style.color = /[0-9]/.test(senha) ? '#16a34a' : '#64748b';
 }
 
-let isUsuarioNovoDetectado = false;
-async function checarSeEmailExiste(email) {
-    const extraCampos = document.getElementById('container-extra-cadastro');
-    const confirmaCampos = document.getElementById('container-confirma-senha');
-    const criteriosSenha = document.getElementById('senha-criterios');
-    const btnAcao = document.getElementById('btn-tupi-acao');
-
-    if (!email || !email.includes('@') || email.length < 5) return;
-
-    let existe = false;
-    const emailLower = email.toLowerCase().trim();
-    
-    if (emailLower === 'contato@wpsinfo.com.br' || emailLower === 'wandersonp_s@hotmail.com' || emailLower === 'wand3rson.s@gmail.com') {
-        existe = true;
-    } else if (supabaseClient) {
-        try {
-            const { data } = await supabaseClient.from('voltcore_roles').select('email').eq('email', emailLower).maybeSingle();
-            if (data) existe = true;
-        } catch(e){}
-    }
-
-    isUsuarioNovoDetectado = !existe;
-
-    if (isUsuarioNovoDetectado) {
-        if (extraCampos) extraCampos.classList.remove('hidden');
-        if (confirmaCampos) confirmaCampos.classList.remove('hidden');
-        if (criteriosSenha) criteriosSenha.classList.remove('hidden');
-        if (btnAcao) btnAcao.innerText = 'Cadastrar Conta';
-    } else {
-        if (extraCampos) extraCampos.classList.add('hidden');
-        if (confirmaCampos) confirmaCampos.classList.add('hidden');
-        if (criteriosSenha) criteriosSenha.classList.add('hidden');
-        if (btnAcao) btnAcao.innerText = 'Entrar';
-    }
-}
-
 async function processarAuthTupi() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
@@ -257,7 +236,7 @@ async function processarAuthTupi() {
         return;
     }
 
-    const email = document.getElementById('tupi-email').value.trim();
+    const email = document.getElementById('tupi-email').value.trim().toLowerCase();
     const senha = document.getElementById('tupi-senha').value.trim();
 
     if (!email || !email.includes('@') || !senha) {
@@ -265,7 +244,10 @@ async function processarAuthTupi() {
         return;
     }
 
-    if (isUsuarioNovoDetectado) {
+    // Se o usuário está na aba de login, mas o e-mail consta na base ou se modoAuthAtual === 'cadastro'
+    const isCadastradoBase = EMAILS_CADASTRADOS_BASE.includes(email);
+
+    if (modoAuthAtual === 'cadastro' && !isCadastradoBase) {
         const nome = document.getElementById('tupi-nome').value.trim();
         const condo = document.getElementById('tupi-condo').value;
         const confirma = document.getElementById('tupi-confirma').value.trim();
@@ -312,12 +294,13 @@ async function processarAuthTupi() {
     await sincronizarDadosNuvemUsuario();
 }
 
-// =================================0=========================================
-// AVALIAÇÃO DE PERMISSÕES & HIERARQUIA
+// ==========================================================================
+// AVALIAÇÃO RIGOROSA DE PERMISSÕES & HIERARQUIA
 // ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     
+    // Apenas o e-mail master oficial possui privilégio ADM_MASTER
     if (emailLimpo === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM_MASTER';
         userData.name = 'Wanderson Pedro da Silva (ADM Master)';
@@ -330,6 +313,7 @@ function avaliarPermissaoPorEmail(email) {
         userData.allowedCondos = ["Belarte Residencial Jundiaí"];
         userData.statusAprovacao = 'Aprovado';
     } else {
+        // Demais contas (Hotmail, Gmail pessoal, etc.) entram estritamente como Morador/Usuário
         userData.role = 'MORADOR';
         userData.allowedCondos = [];
         if (emailLimpo === 'wandersonp_s@hotmail.com' || emailLimpo === 'wand3rson.s@gmail.com') {
