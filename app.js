@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.19 (COMPLETO & PRODUÇÃO ESTRITA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.20 (PRODUÇÃO ESTRITA & SEGURANÇA REAL)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -15,12 +15,13 @@ if (window.supabase && SUPABASE_URL) {
 let stations = [];
 let currentMode = 'condo';
 let currentFilter = 'Disponível';
+let pixPollingInterval = null;
 
 let userData = {
     name: "",
     email: "",
     phone: "",
-    role: "MORADOR", 
+    role: "MORADOR",
     condo: "Belarte Residencial Jundiaí",
     allowedCondos: ["Belarte Residencial Jundiaí"],
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
@@ -45,9 +46,7 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = async function() {
-    if (!localStorage.getItem('voltcore_version_v919')) {
-        localStorage.setItem('voltcore_version_v919', 'true');
-    }
+    localStorage.setItem('voltcore_version_v920', 'true');
 
     carregarTudoPersistente();
     
@@ -77,11 +76,13 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// HIERARQUIA E TRAVA ESTRITA DE PERFIL POR E-MAIL (MULTITENANT)
+// HIERARQUIA E TRAVA ESTRITA DE PERFIL POR E-MAIL (MULTITENANT BLINDADO)
 // ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     
+    // APENAS contato@wpsinfo.com.br é ADM_MASTER.
+    // wandersonp_s@hotmail.com e todos os demais são estritamente MORADOR.
     if (emailLimpo === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM_MASTER';
         userData.name = 'Wanderson Pedro da Silva (ADM Master)';
@@ -96,12 +97,43 @@ function avaliarPermissaoPorEmail(email) {
         userData.allowedCondos = [];
         if (emailLimpo === 'wandersonp_s@hotmail.com') {
             userData.name = 'Wanderson Pedro da Silva';
+            userData.condo = 'Belarte Residencial Jundiaí';
         } else if (emailLimpo === 'wand3rson.s@gmail.com') {
             userData.name = 'Wanderson (Google)';
         } else {
             userData.name = emailLimpo.split('@')[0] || 'Condômino';
         }
     }
+}
+
+function aplicarControlePermissoesPerfil() {
+    const isMaster = userData.role === 'ADM_MASTER';
+    
+    // 1. Trata elementos marcados com .adm-only-element
+    document.querySelectorAll('.adm-only-element').forEach(el => {
+        if (!isMaster) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+        } else {
+            el.classList.remove('hidden');
+            el.style.setProperty('display', 'flex', 'important');
+        }
+    });
+
+    // 2. Varredura direta no cabeçalho e botões pelo texto/função para garantir remoção visual
+    document.querySelectorAll('button, a').forEach(btn => {
+        const txt = (btn.innerText || '').trim();
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        if (txt.includes('ADM / Síndico') || txt.includes('ADM/Síndico') || onclickAttr.includes('abrirPainelGestao')) {
+            if (!isMaster) {
+                btn.classList.add('hidden');
+                btn.style.setProperty('display', 'none', 'important');
+            } else {
+                btn.classList.remove('hidden');
+                btn.style.setProperty('display', 'flex', 'important');
+            }
+        }
+    });
 }
 
 async function sincronizarDadosNuvemUsuario() {
@@ -312,28 +344,19 @@ async function realizarLoginGoogle() {
     configurarPermissoesCondominioPorUsuario();
     await sincronizarDadosNuvemUsuario();
     await carregarEstacoesDoBanco();
-    showToast('Login com Google realizado (Morador Comum)');
+    showToast('Login com Google realizado (Morador)');
 }
 
 function carregarTudoPersistente() {
     const savedUser = localStorage.getItem('voltcore_user_data');
     if (savedUser) { 
         try { userData = JSON.parse(savedUser); } catch(e){} 
-    } else {
-        userData = {
-            name: "",
-            email: "",
-            phone: "",
-            role: "MORADOR",
-            condo: "Belarte Residencial Jundiaí",
-            allowedCondos: ["Belarte Residencial Jundiaí"],
-            photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-            lgpdAccepted: false
-        };
     }
     
     if (userData.email) {
         avaliarPermissaoPorEmail(userData.email);
+    } else {
+        userData.role = 'MORADOR';
     }
 
     aplicarDadosUsuarioNaTela();
@@ -385,19 +408,6 @@ function aplicarDadosUsuarioNaTela() {
     if (nameEl) nameEl.innerText = userData.name || 'Novo Usuário VoltCore';
     if (emailEl) emailEl.innerText = userData.email || 'Conectado via LGPD';
     if (condoEl) condoEl.innerText = userData.condo;
-}
-
-function aplicarControlePermissoesPerfil() {
-    const adminButtons = document.querySelectorAll('.adm-only-element');
-    adminButtons.forEach(el => {
-        if (userData.role !== 'ADM_MASTER') {
-            el.classList.add('hidden');
-            el.style.setProperty('display', 'none', 'important');
-        } else {
-            el.classList.remove('hidden');
-            el.style.setProperty('display', 'flex', 'important');
-        }
-    });
 }
 
 function configurarPermissoesCondominioPorUsuario() {
@@ -531,10 +541,14 @@ async function realizarLogin() {
     configurarPermissoesCondominioPorUsuario();
     await sincronizarDadosNuvemUsuario();
     await carregarEstacoesDoBanco();
-    showToast('Bem-vindo ao VoltCore PRO! Vínculo: ' + userData.condo);
+    showToast(`Bem-vindo ao VoltCore PRO! Perfil: ${userData.role}`);
 }
 
 function logoutApp() {
+    if (pixPollingInterval) {
+        clearInterval(pixPollingInterval);
+        pixPollingInterval = null;
+    }
     localStorage.removeItem('voltcore_logged');
     localStorage.removeItem('voltcore_user_data');
     const screenAuth = document.getElementById('screen-auth');
@@ -662,7 +676,7 @@ function abrirModalMeusDados() {
             </div>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">E-mail Comercial</label>
-                <input type="email" id="edit-user-email" value="${userData.email}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <input type="email" id="edit-user-email" value="${userData.email}" readonly class="w-full bg-slate-100 border border-slate-300 rounded-xl p-2 text-xs font-medium text-slate-500 cursor-not-allowed">
             </div>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Telefone / WhatsApp</label>
@@ -683,7 +697,6 @@ function abrirModalMeusDados() {
 
 function salvarMeusDados() {
     userData.name = document.getElementById('edit-user-name').value;
-    userData.email = document.getElementById('edit-user-email').value;
     userData.phone = document.getElementById('edit-user-phone').value;
     userData.condo = document.getElementById('edit-user-condo').value;
     
@@ -836,7 +849,7 @@ async function removerVeiculo(index) {
 }
 
 // ==========================================================================
-// CARTEIRA, CARTÕES E EXTRATO (SINCRONIZADO COM SUPABASE)
+// CARTEIRA, CARTÕES E EXTRATO (VALIADAÇÃO REAL MERCADO PAGO - ZERO CRÉDITO FAKE)
 // ==========================================================================
 async function carregarExtratoDoBanco() {
     if (!supabaseClient) return;
@@ -848,7 +861,7 @@ async function carregarExtratoDoBanco() {
             .eq('email_usuario', emailAtual)
             .order('data_transacao', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
             extratoTransacoes = data.map(t => ({
                 title: t.titulo,
                 desc: t.descricao || '',
@@ -918,7 +931,7 @@ async function registrarTransacaoNoBanco(titulo, desc, valorFormatado, tipo) {
 function abrirModalDeposito() {
     const htmlDep = `
         <div class="space-y-3 text-left pb-4">
-            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para recarregar o saldo da carteira VoltCore Pay (mínimo de R$ 1,00 para validação):</p>
+            <p class="text-[11px] text-slate-600">Insira o valor em Reais (R$) para recarregar o saldo da carteira VoltCore Pay (mínimo de R$ 1,00):</p>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Valor da Recarga (Mínimo R$ 1,00)</label>
                 <input type="text" id="input-valor-deposito" oninput="formatarMoedaInput(this)" placeholder="R$ 1,00" value="R$ 1,00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none text-right font-mono text-sm">
@@ -960,7 +973,7 @@ async function processarPagamentoPix() {
         return;
     }
     
-    showToast('Conectando ao Mercado Pago (Produção)...');
+    showToast('Gerando cobrança PIX oficial no Mercado Pago...');
 
     try {
         const resposta = await fetch(`${BACKEND_URL}/api/pagamento/pix`, {
@@ -976,7 +989,8 @@ async function processarPagamentoPix() {
 
         const dados = await resposta.json();
 
-        if (dados.success) {
+        if (dados.success && dados.id) {
+            const paymentId = dados.id;
             const htmlPix = `
                 <div class="space-y-3 text-center pb-4">
                     <div class="bg-slate-900 p-3 rounded-xl text-white">
@@ -984,20 +998,59 @@ async function processarPagamentoPix() {
                         <p class="text-[10px] font-mono text-lime-400 break-all select-all mt-1 max-h-20 overflow-y-auto">${dados.qr_code}</p>
                     </div>
                     ${dados.qr_code_base64 ? `<img src="data:image/png;base64,${dados.qr_code_base64}" class="w-36 h-36 mx-auto rounded-lg border border-slate-200 shadow-sm" alt="QR Code Pix" />` : ''}
-                    <p class="text-[10px] text-slate-600">Escaneie o QR Code ou copie o código para pagar R$ ${valor.toFixed(2).replace('.', ',')}.</p>
+                    <div id="pix-status-box" class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-800 font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin text-amber-600"></i>
+                        <span>Aguardando pagamento real no banco (ID #${paymentId})...</span>
+                    </div>
+                    <p class="text-[9px] text-slate-500">O saldo será creditado automaticamente na carteira assim que o Mercado Pago confirmar a liquidação do Pix.</p>
                     <div class="flex gap-2">
-                        <button onclick="finalizarCreditoPix(${valor})" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">CONFIRMAR E CREDITAR</button>
-                        <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
+                        <button onclick="verificarStatusPixManual('${paymentId}', ${valor})" class="flex-1 bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer pointer-events-auto">JÁ PAGUEI • VERIFICAR NO BANCO</button>
+                        <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Cancelar</button>
                     </div>
                 </div>
             `;
-            showCustomModal('Pagamento Pix Instantâneo', htmlPix, 'fa-qrcode', 'emerald');
+            showCustomModal('Pagamento Pix • Validação Bancária', htmlPix, 'fa-qrcode', 'emerald');
+            iniciarVerificacaoAutomaticaPix(paymentId, valor);
         } else {
-            showToast('Erro ao gerar Pix no servidor.');
+            showToast(dados.error || 'Erro ao gerar cobrança Pix no Mercado Pago.');
         }
     } catch (err) {
         console.error('Erro Pix:', err);
-        showToast('Falha de comunicação com o backend de pagamentos.');
+        showToast('Falha de comunicação com o servidor de pagamentos.');
+    }
+}
+
+function iniciarVerificacaoAutomaticaPix(paymentId, valor) {
+    if (pixPollingInterval) clearInterval(pixPollingInterval);
+    
+    pixPollingInterval = setInterval(async () => {
+        await consultarStatusPixNoBackend(paymentId, valor, false);
+    }, 5000);
+}
+
+async function verificarStatusPixManual(paymentId, valor) {
+    showToast('Consultando status real no Mercado Pago...');
+    await consultarStatusPixNoBackend(paymentId, valor, true);
+}
+
+async function consultarStatusPixNoBackend(paymentId, valor, exibirAvisoPendente) {
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/pagamento/status/${paymentId}`);
+        const data = await res.json();
+
+        if (data.success && data.status === 'approved') {
+            if (pixPollingInterval) {
+                clearInterval(pixPollingInterval);
+                pixPollingInterval = null;
+            }
+            await creditarSaldoAprovado(valor, `PIX #${paymentId}`);
+        } else if (exibirAvisoPendente) {
+            showToast(`Status atual no banco: ${data.status || 'Pendente'}. O Pix ainda não foi compensado.`);
+        }
+    } catch (err) {
+        if (exibirAvisoPendente) {
+            showToast('Não foi possível confirmar o pagamento no momento.');
+        }
     }
 }
 
@@ -1076,7 +1129,7 @@ function abrirModalCartaoCheckout() {
             </div>
 
             <div class="flex gap-2 pt-3">
-                <button onclick="processarPagamentoCartaoNovo(${valor})" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto">CADASTRAR E COBRAR</button>
+                <button onclick="processarPagamentoCartaoNovo(${valor})" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-lg transition cursor-pointer pointer-events-auto">PROCESSAR COBRANÇA REAL</button>
                 <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer pointer-events-auto">Voltar</button>
             </div>
         </div>
@@ -1099,7 +1152,7 @@ function formatarCpfInput(input) {
 }
 
 async function processarPagamentoCartaoSalvo(valor) {
-    showToast('Cobrando no cartão cadastrado...');
+    showToast('Enviando cobrança para operadora via Mercado Pago...');
     const cartaoPadrao = cartoesSalvos[0];
     try {
         const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
@@ -1124,16 +1177,15 @@ async function processarPagamentoCartaoSalvo(valor) {
         });
 
         const dados = await resposta.json();
-        if (dados.success || dados.status === 'approved') {
-            await finalizarCreditoPix(valor);
-            showToast('Pagamento com cartão cadastrado aprovado com sucesso!');
+        if (dados.success === true && dados.status === 'approved') {
+            await creditarSaldoAprovado(valor, `Cartão •••• ${cartaoPadrao.lastFour}`);
+            showToast('Transação aprovada pela operadora! Saldo creditado.');
         } else {
-            showToast(dados.error || 'Transação não autorizada pela operadora.');
+            showToast(`Pagamento RECUSADO pela operadora: ${dados.error || dados.status_detail || 'Não autorizado'}`);
         }
     } catch (err) {
         console.error('Erro Cartão Salvo:', err);
-        await finalizarCreditoPix(valor);
-        showToast('Pagamento aprovado (Modo Carteira Salva).');
+        showToast('Erro de comunicação com o gateway. Nenhum valor foi creditado.');
     }
 }
 
@@ -1144,8 +1196,8 @@ async function processarPagamentoCartaoNovo(valor) {
     const holderName = document.getElementById('cc-holder').value;
     const cpf = document.getElementById('cc-cpf').value.replace(/\D/g, '');
 
-    if (!cardNumber || !expiry || !cvv || !cpf) {
-        showToast('Preencha todos os dados do novo cartão e o CPF.');
+    if (!cardNumber || cardNumber.length < 13 || !expiry || !cvv || !cpf || cpf.length !== 11) {
+        showToast('Preencha corretamente o número do cartão, validade, CVV e CPF (11 dígitos).');
         return;
     }
 
@@ -1158,7 +1210,7 @@ async function processarPagamentoCartaoNovo(valor) {
     const expMonth = partesValidade[0];
     const expYear = '20' + partesValidade[1];
     
-    showToast('Processando novo cartão de crédito...');
+    showToast('Validando cartão junto ao Mercado Pago...');
 
     try {
         const resposta = await fetch(`${BACKEND_URL}/api/pagamento/cartao`, {
@@ -1184,28 +1236,24 @@ async function processarPagamentoCartaoNovo(valor) {
 
         const dados = await resposta.json();
 
-        if (dados.success || dados.status === 'approved') {
-            const last4 = cardNumber.slice(-4) || '4622';
+        // TRAVA DE SEGURANÇA: Só salva o cartão e só credita se o Mercado Pago aprovar de fato!
+        if (dados.success === true && dados.status === 'approved') {
+            const last4 = cardNumber.slice(-4);
             cartoesSalvos.unshift({ id: dados.card_id || ('card_' + Date.now()), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true });
             localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
             
-            await finalizarCreditoPix(valor);
-            showToast('Novo cartão cadastrado e pagamento aprovado!');
+            await creditarSaldoAprovado(valor, `Cartão •••• ${last4}`);
+            showToast('Pagamento aprovado! Cartão salvo e saldo liberado.');
         } else {
-            showToast(dados.error || 'Transação não autorizada pela operadora.');
+            showToast(`Cobrança RECUSADA: ${dados.error || dados.status_detail || 'Cartão não autorizado pelo emissor.'}`);
         }
     } catch (err) {
         console.error('Erro Cartão Novo:', err);
-        const last4 = cardNumber.slice(-4) || '4622';
-        cartoesSalvos.unshift({ id: 'card_' + Date.now(), lastFour: last4, brand: 'Mastercard', holder: holderName, default: true });
-        localStorage.setItem('voltcore_saved_cards', JSON.stringify(cartoesSalvos));
-        
-        await finalizarCreditoPix(valor);
-        showToast('Pagamento aprovado! Novo cartão salvo na carteira.');
+        showToast('Falha na validação com o gateway. Nenhum valor foi cobrado ou creditado.');
     }
 }
 
-async function finalizarCreditoPix(valor) {
+async function creditarSaldoAprovado(valor, origemPagamento) {
     saldoCarteira += valor;
     localStorage.setItem('voltcore_wallet_balance', saldoCarteira);
     
@@ -1213,8 +1261,8 @@ async function finalizarCreditoPix(valor) {
     const dataFormatada = agora.toLocaleDateString('pt-BR');
     const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-    const titulo = 'Depósito Confirmado (Mercado Pago)';
-    const desc = `${dataFormatada} • ${horaFormatada} - Recarga de Saldo na Carteira VoltCore Pay`;
+    const titulo = `Depósito Aprovado (${origemPagamento})`;
+    const desc = `${dataFormatada} • ${horaFormatada} - Liquidação Confirmada Mercado Pago`;
     const valorFmt = `+ R$ ${valor.toFixed(2).replace('.', ',')}`;
 
     const novoItemExtrato = {
@@ -1229,7 +1277,6 @@ async function finalizarCreditoPix(valor) {
     await registrarTransacaoNoBanco(titulo, desc, valorFmt, 'credit');
     atualizarDisplayCarteira();
     closeModal();
-    showToast(`Crédito de R$ ${valor.toFixed(2).replace('.', ',')} adicionado à carteira!`);
 }
 
 function atualizarDisplayCarteira() {
@@ -1268,7 +1315,7 @@ function atualizarDisplayCarteira() {
         } else {
             seletorCartoesHtml = `
                 <div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">
-                    Nenhum cartão cadastrado. Ele será salvo automaticamente na primeira recarga.
+                    Nenhum cartão cadastrado. Ele será salvo automaticamente após uma cobrança aprovada.
                 </div>
             `;
         }
@@ -1288,7 +1335,7 @@ function atualizarDisplayCarteira() {
         `;
 
         if (extratoTransacoes.length === 0) {
-            containerExtrato.innerHTML += `<div class="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhuma transação registrada. Carteira limpa para novo usuário.</div>`;
+            containerExtrato.innerHTML += `<div class="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-200">Nenhuma transação registrada.</div>`;
         } else {
             extratoTransacoes.forEach(t => {
                 const isCredit = t.type === 'credit';
@@ -1408,7 +1455,7 @@ function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
         supabaseClient
-            .channel('tabela-pontos-sync-v919-ocpp')
+            .channel('tabela-pontos-sync-v920-ocpp')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'pontos_recarga' },
@@ -1984,6 +2031,11 @@ async function startCharging(id) {
     const st = stations.find(s => s.id === id);
     if (!st) return;
 
+    if (saldoCarteira <= 0) {
+        showToast('Saldo insuficiente na carteira. Adicione créditos antes de iniciar a recarga.');
+        return;
+    }
+
     st.status = 'Em Uso';
     st.user = userData.name || userData.email;
     st.inicio_recarga = new Date().toISOString();
@@ -2073,7 +2125,7 @@ async function cancelReservation(id) {
 }
 
 // ==========================================================================
-// PAINEL ADM / SÍNDICO (SINCRONIZADO COM SUPABASE: public.moradores)
+// PAINEL ADM / SÍNDICO (BLOQUEADO PARA MORADORES)
 // ==========================================================================
 async function carregarMoradoresDoBanco() {
     if (!supabaseClient) return;
@@ -2111,6 +2163,10 @@ async function carregarMoradoresDoBanco() {
 }
 
 async function abrirPainelGestao() {
+    if (userData.role !== 'ADM_MASTER') {
+        showToast('Acesso negado: Perfil restrito a Administradores.');
+        return;
+    }
     await carregarMoradoresDoBanco();
     renderizarConteudoPainelGestao('');
 }
@@ -2378,6 +2434,10 @@ function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
 }
 
 function closeModal() {
+    if (pixPollingInterval) {
+        clearInterval(pixPollingInterval);
+        pixPollingInterval = null;
+    }
     if (streamCameraAtiva) {
         streamCameraAtiva.getTracks().forEach(track => track.stop());
         streamCameraAtiva = null;
@@ -2394,6 +2454,6 @@ function showToast(msg) {
         toast.classList.remove('translate-y-20', 'opacity-0');
         setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
-        }, 3000);
+        }, 3500);
     }
 }
