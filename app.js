@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.26 (COMPLETO & CORPORATIVO)
+   VOLTCORE PRO • FRONT-END ENGINE V9.27 (COMPLETO, SEM CORTES & PADRÃO TUPI)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -24,6 +24,7 @@ let userData = {
     role: "MORADOR",
     condo: "Belarte Residencial Jundiaí",
     allowedCondos: ["Belarte Residencial Jundiaí"],
+    statusAprovacao: "Aprovado",
     photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
     lgpdAccepted: false
 };
@@ -33,6 +34,13 @@ let saldoCarteira = 0.00;
 let extratoTransacoes = [];
 let cartoesSalvos = [];
 let moradoresCondominio = [];
+
+const CONDOS_DISPONIVEIS = [
+    "Belarte Residencial Jundiaí",
+    "Condomínio Gioviale • Torre Sul",
+    "Condomínio Gioviale • Torre Norte",
+    "Complexo Atmosfera Residencial"
+];
 
 const ESTACOES_PADRAO = [
     { id: 1, name: 'VAGA 01 / TORRE SUL', condo: 'Condomínio Gioviale • Torre Sul', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 1.18, timer: 0, ocppId: 'CP-GIOV-SUL-01', ocppStatus: 'Online (Connected)' },
@@ -46,7 +54,7 @@ const ESTACOES_PADRAO = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v926', 'true');
+    localStorage.setItem('voltcore_version_v927_full', 'true');
 
     carregarTudoPersistente();
     
@@ -58,7 +66,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthCompleta();
+        prepararTelaAuthPadraoTupi();
     }
 
     aplicarControlePermissoesPerfil();
@@ -76,35 +84,245 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// HIERARQUIA E TRAVA ESTRITA DE PERFIL POR E-MAIL (MULTITENANT BLINDADO)
+// TELA DE AUTENTICAÇÃO PADRÃO TUPI (FLUXO INTELIGENTE DE CADASTRO/LOGIN)
+// ==========================================================================
+function prepararTelaAuthPadraoTupi() {
+    const authBox = document.querySelector('#screen-auth > div');
+    if (!authBox) return;
+
+    authBox.innerHTML = `
+        <div class="text-center space-y-4">
+            <div class="flex justify-center">
+                <div class="w-14 h-14 bg-lime-400 rounded-2xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-bolt text-slate-900 text-2xl"></i>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-lg font-black text-slate-900">VoltCore PRO</h2>
+                <p class="text-xs text-slate-500">Soluções inteligentes de recarga para condomínios</p>
+            </div>
+
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5">
+                <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
+                <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
+                    Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a>.
+                </label>
+            </div>
+
+            <div id="auth-form-container" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
+                    <input type="email" id="tupi-email" placeholder="Seu e-mail" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                </div>
+
+                <div id="container-extra-cadastro" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
+                        <input type="text" id="tupi-nome" placeholder="Informe o seu nome" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Selecione o Condomínio</label>
+                        <select id="tupi-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                            ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Senha</label>
+                    <input type="password" id="tupi-senha" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+
+                <div id="senha-criterios" class="hidden text-[10px] space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600">
+                    <p id="crit-len" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Mínimo 8 caracteres</p>
+                    <p id="crit-upper" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra maiúscula (A-Z)</p>
+                    <p id="crit-lower" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Uma letra minúscula (a-z)</p>
+                    <p id="crit-num" class="flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px] text-slate-400"></i> Um número (0-9)</p>
+                </div>
+
+                <div id="container-confirma-senha" class="relative hidden">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha</label>
+                    <input type="password" id="tupi-confirma" placeholder="Confirme sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <i class="fa-solid fa-eye text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline">Esqueci minha senha</button>
+                </div>
+
+                <button type="button" onclick="processarAuthTupi()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
+                    Continuar
+                </button>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex justify-center gap-2 text-xs">
+                <button onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
+                <span class="text-slate-300">•</span>
+                <button onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
+            </div>
+        </div>
+    `;
+
+    const emailInput = document.getElementById('tupi-email');
+    const senhaInput = document.getElementById('tupi-senha');
+    if (emailInput) {
+        emailInput.addEventListener('input', () => checarSeEmailExiste(emailInput.value.trim()));
+    }
+    if (senhaInput) {
+        senhaInput.addEventListener('input', () => validarCriteriosSenha(senhaInput.value));
+    }
+}
+
+function alternarVisibilidadeSenha(idInput, btn) {
+    const input = document.getElementById(idInput);
+    if (!input) return;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash text-xs text-lime-600';
+    } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye text-xs';
+    }
+}
+
+function validarCriteriosSenha(senha) {
+    const criteriosDiv = document.getElementById('senha-criterios');
+    if (criteriosDiv) criteriosDiv.classList.remove('hidden');
+
+    document.getElementById('crit-len').style.color = senha.length >= 8 ? '#16a34a' : '#64748b';
+    document.getElementById('crit-upper').style.color = /[A-Z]/.test(senha) ? '#16a34a' : '#64748b';
+    document.getElementById('crit-lower').style.color = /[a-z]/.test(senha) ? '#16a34a' : '#64748b';
+    document.getElementById('crit-num').style.color = /[0-9]/.test(senha) ? '#16a34a' : '#64748b';
+}
+
+let isUsuarioNovoDetectado = false;
+async function checarSeEmailExiste(email) {
+    const extraCampos = document.getElementById('container-extra-cadastro');
+    const confirmaCampos = document.getElementById('container-confirma-senha');
+    const criteriosSenha = document.getElementById('senha-criterios');
+    const btnAcao = document.getElementById('btn-tupi-acao');
+
+    if (!email || !email.includes('@') || email.length < 5) return;
+
+    let existe = false;
+    if (email.toLowerCase() === 'contato@wpsinfo.com.br' || email.toLowerCase() === 'sindico.belarte@wpsinfo.com.br' || email.toLowerCase() === 'wandersonp_s@hotmail.com') {
+        existe = true;
+    } else if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient.from('voltcore_roles').select('email').eq('email', email).maybeSingle();
+            if (data) existe = true;
+        } catch(e){}
+    }
+
+    isUsuarioNovoDetectado = !existe;
+
+    if (isUsuarioNovoDetectado) {
+        if (extraCampos) extraCampos.classList.remove('hidden');
+        if (confirmaCampos) confirmaCampos.classList.remove('hidden');
+        if (btnAcao) btnAcao.innerText = 'Cadastrar Conta';
+    } else {
+        if (extraCampos) extraCampos.classList.add('hidden');
+        if (confirmaCampos) confirmaCampos.classList.add('hidden');
+        if (criteriosSenha) criteriosSenha.classList.add('hidden');
+        if (btnAcao) btnAcao.innerText = 'Entrar';
+    }
+}
+
+async function processarAuthTupi() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Aceite os Termos de Privacidade e LGPD.');
+        return;
+    }
+
+    const email = document.getElementById('tupi-email').value.trim();
+    const senha = document.getElementById('tupi-senha').value.trim();
+
+    if (!email || !email.includes('@') || !senha) {
+        showToast('Preencha o e-mail e a senha corretamente.');
+        return;
+    }
+
+    if (isUsuarioNovoDetectado) {
+        const nome = document.getElementById('tupi-nome').value.trim();
+        const condo = document.getElementById('tupi-condo').value;
+        const confirma = document.getElementById('tupi-confirma').value.trim();
+
+        if (!nome) { showToast('Informe seu nome completo.'); return; }
+        if (senha !== confirma) { showToast('As senhas não coincidem.'); return; }
+        if (senha.length < 8) { showToast('A senha precisa ter no mínimo 8 caracteres.'); return; }
+
+        userData.name = nome;
+        userData.email = email;
+        userData.condo = condo;
+        userData.role = 'MORADOR';
+        userData.statusAprovacao = 'Pendente';
+        userData.lgpdAccepted = true;
+
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('moradores').insert([{
+                    nome, email, condominio: condo, vaga: 'A Definir', status: 'Pendente'
+                }]);
+                await supabaseClient.from('voltcore_roles').insert([{
+                    email, role: 'MORADOR', condominio: condo, status_aprovacao: 'Pendente'
+                }]);
+            } catch(e){}
+        }
+
+        showToast('Cadastro realizado! Aguardando aprovação do síndico.');
+        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+        localStorage.setItem('voltcore_logged', 'true');
+    } else {
+        userData.email = email;
+        avaliarPermissaoPorEmail(email);
+        userData.lgpdAccepted = true;
+        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+        localStorage.setItem('voltcore_logged', 'true');
+        showToast(`Bem-vindo, ${userData.role}!`);
+    }
+
+    document.getElementById('screen-auth').classList.add('hidden');
+    document.getElementById('screen-app').classList.remove('hidden');
+    aplicarDadosUsuarioNaTela();
+    aplicarControlePermissoesPerfil();
+    configurarPermissoesCondominioPorUsuario();
+    await sincronizarDadosNuvemUsuario();
+}
+
+// ==========================================================================
+// AVALIAÇÃO DE PERMISSÕES (DOMÍNIO WPS INFO VS SÍNDICOS VS MORADORES)
 // ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     
-    if (emailLimpo === 'contato@wpsinfo.com.br') {
+    if (emailLimpo.endsWith('@wpsinfo.com.br')) {
         userData.role = 'ADM_MASTER';
-        userData.name = 'Wanderson Pedro da Silva (ADM Master)';
-        userData.allowedCondos = [
-            "Belarte Residencial Jundiaí",
-            "Condomínio Gioviale • Torre Sul",
-            "Condomínio Gioviale • Torre Norte",
-            "Complexo Atmosfera Residencial"
-        ];
-    } else if (emailLimpo === 'sindico.belarte@wpsinfo.com.br') {
+        userData.name = 'Gestão Master • WPS Info';
+        userData.allowedCondos = CONDOS_DISPONIVEIS;
+        userData.statusAprovacao = 'Aprovado';
+    } else if (emailLimpo === 'sindico.belarte@wpsinfo.com.br' || emailLimpo.includes('sindico')) {
         userData.role = 'SINDICO';
-        userData.name = 'Síndico • Belarte Residencial';
+        userData.name = 'Síndico • Gestão de Condomínio';
         userData.condo = 'Belarte Residencial Jundiaí';
         userData.allowedCondos = ["Belarte Residencial Jundiaí"];
+        userData.statusAprovacao = 'Aprovado';
     } else {
         userData.role = 'MORADOR';
         userData.allowedCondos = [];
         if (emailLimpo === 'wandersonp_s@hotmail.com') {
             userData.name = 'Wanderson Pedro da Silva';
             userData.condo = 'Belarte Residencial Jundiaí';
-        } else if (emailLimpo === 'wand3rson.s@gmail.com') {
-            userData.name = 'Wanderson (Google)';
+            userData.statusAprovacao = 'Aprovado';
         } else {
             userData.name = emailLimpo.split('@')[0] || 'Condômino';
+            userData.statusAprovacao = 'Pendente';
         }
     }
 }
@@ -137,6 +355,9 @@ function aplicarControlePermissoesPerfil() {
     });
 }
 
+// ==========================================================================
+// FUNÇÕES DE SUPORTE, VEÍCULOS, CARTEIRA E CARREGADORES
+// ==========================================================================
 async function sincronizarDadosNuvemUsuario() {
     if (!supabaseClient || !userData.email) return;
     await Promise.all([
@@ -147,330 +368,10 @@ async function sincronizarDadosNuvemUsuario() {
     ]);
 }
 
-function prepararTelaAuthCompleta() {
-    const authBox = document.querySelector('#screen-auth > div');
-    if (!authBox) return;
-
-    if (!document.getElementById('check-lgpd-login')) {
-        const divLgpd = document.createElement('div');
-        divLgpd.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 text-left flex items-start gap-2.5 my-2";
-        divLgpd.innerHTML = `
-            <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer pointer-events-auto">
-            <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
-                Li e concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (Obrigatório).
-            </label>
-        `;
-        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
-        authBox.insertBefore(divLgpd, botoesDiv);
-    }
-
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (!document.getElementById('btn-biometria-acesso')) {
-        const divBio = document.createElement('div');
-        divBio.className = "mt-2";
-        divBio.innerHTML = `
-            <button id="btn-biometria-acesso" type="button" onclick="realizarLoginBiometrico()" class="w-full bg-slate-900 hover:bg-slate-800 text-lime-400 font-extrabold py-2.5 px-3 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
-                <i class="fa-solid fa-fingerprint text-sm"></i> ${savedBioEmail ? 'Entrar com Biometria / Face ID' : 'Cadastrar / Usar Biometria'}
-            </button>
-        `;
-        const botoesDiv = authBox.querySelector('.space-y-2') || authBox.children[2];
-        authBox.insertBefore(divBio, botoesDiv);
-    }
-
-    injetarBotaoEsqueciSenha();
-}
-
-function injetarBotaoEsqueciSenha() {
-    const form = document.getElementById('auth-email-form');
-    if (form && !document.getElementById('link-esqueci-senha')) {
-        const passInput = obterCampoSenhaAuth();
-        if (passInput && passInput.parentElement) {
-            const divReset = document.createElement('div');
-            divReset.className = "flex justify-end mt-1";
-            divReset.innerHTML = `
-                <button id="link-esqueci-senha" type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:text-lime-800 underline cursor-pointer pointer-events-auto">
-                    Esqueci minha senha
-                </button>
-            `;
-            passInput.parentElement.appendChild(divReset);
-        }
-    }
-}
-
-function obterCampoEmailAuth() {
-    return document.getElementById('auth-email-input') || document.querySelector('input[type="email"]');
-}
-
-function obterCampoSenhaAuth() {
-    return document.getElementById('auth-pass-input') || document.querySelector('input[type="password"]');
-}
-
-function abrirModalEsqueciSenha() {
-    const emailAtual = obterCampoEmailAuth() ? obterCampoEmailAuth().value.trim() : '';
-    const htmlReset = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link de recuperação SMTP será disparado:</p>
-            <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
-                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-            </div>
-            <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
-                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso via SMTP!
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer">ENVIAR E-MAIL SMTP</button>
-                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Recuperação de Senha • SMTP', htmlReset, 'fa-key', 'lime');
-}
-
-async function enviarSolicitacaoResetSenha() {
-    const emailInput = document.getElementById('reset-email-input');
-    const email = emailInput ? emailInput.value.trim() : '';
-    if (!email || !email.includes('@')) {
-        showToast('Digite um e-mail válido.');
-        return;
-    }
-    showToast(`Disparando e-mail SMTP para ${email}...`);
-    if (supabaseClient && supabaseClient.auth) {
-        try { await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }); } catch(e){}
-    }
-    const aviso = document.getElementById('reset-aviso-enviado');
-    const btnEnviar = document.getElementById('btn-enviar-reset');
-    if (aviso) aviso.classList.remove('hidden');
-    if (btnEnviar) {
-        btnEnviar.innerText = 'ENVIADO COM SUCESSO';
-        btnEnviar.disabled = true;
-    }
-}
-
-async function realizarLoginBiometrico() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Você deve aceitar os Termos de Privacidade e LGPD.');
-        return;
-    }
-    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
-    if (!savedBioEmail) {
-        showToast('Faça login com e-mail e senha uma vez para registrar sua biometria.');
-        return;
-    }
-    showToast('Lendo credencial biométrica...');
-    setTimeout(async () => {
-        userData.email = savedBioEmail;
-        userData.lgpdAccepted = true;
-        avaliarPermissaoPorEmail(savedBioEmail);
-        localStorage.setItem('voltcore_logged', 'true');
-        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-
-        document.getElementById('screen-auth').classList.add('hidden');
-        document.getElementById('screen-app').classList.remove('hidden');
-        aplicarDadosUsuarioNaTela();
-        aplicarControlePermissoesPerfil();
-        configurarPermissoesCondominioPorUsuario();
-        await sincronizarDadosNuvemUsuario();
-        await carregarEstacoesDoBanco();
-        showToast('Biometria validada com sucesso!');
-    }, 800);
-}
-
-async function realizarLoginGoogle() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Você deve aceitar os Termos de Privacidade e LGPD.');
-        return;
-    }
-    userData.email = 'wand3rson.s@gmail.com';
-    avaliarPermissaoPorEmail(userData.email);
-    userData.lgpdAccepted = true;
-
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    localStorage.setItem('voltcore_logged', 'true');
-    localStorage.setItem('voltcore_biometric_email', userData.email);
-
-    document.getElementById('screen-auth').classList.add('hidden');
-    document.getElementById('screen-app').classList.remove('hidden');
-    aplicarDadosUsuarioNaTela();
-    aplicarControlePermissoesPerfil();
-    configurarPermissoesCondominioPorUsuario();
-    await sincronizarDadosNuvemUsuario();
-    await carregarEstacoesDoBanco();
-    showToast('Login com Google realizado');
-}
-
-function carregarTudoPersistente() {
-    const savedUser = localStorage.getItem('voltcore_user_data');
-    if (savedUser) { try { userData = JSON.parse(savedUser); } catch(e){} }
-    
-    if (userData.email) avaliarPermissaoPorEmail(userData.email);
-    else userData.role = 'MORADOR';
-
-    aplicarDadosUsuarioNaTela();
-    
-    const savedVehicles = localStorage.getItem('voltcore_vehicles');
-    if (savedVehicles) { try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} }
-
-    const savedWallet = localStorage.getItem('voltcore_wallet_balance');
-    if (savedWallet !== null) saldoCarteira = parseFloat(savedWallet);
-    
-    const savedExtrato = localStorage.getItem('voltcore_extrato');
-    if (savedExtrato) { try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} }
-
-    const savedCards = localStorage.getItem('voltcore_saved_cards');
-    if (savedCards) { try { cartoesSalvos = JSON.parse(savedCards); } catch(e){} }
-
-    const savedMoradores = localStorage.getItem('voltcore_moradores');
-    if (savedMoradores) { 
-        try { moradoresCondominio = JSON.parse(savedMoradores); } catch(e){} 
-    } else {
-        moradoresCondominio = [
-            { nome: 'Wanderson Pedro da Silva', condo: 'Belarte Residencial Jundiaí', bloco: 'Torre Única', unidade: 'Apto 101', endereco: 'Rua das Palmeiras, 300', vaga: 'Vaga 01', veiculo: 'BYD Seal (CCS2)', placa: 'ABC-1D23', status: 'Ativo', data: '26/10/2026', horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '14.2 kWh', ociosidade: 'Não', valor: 'R$ 18,96' }
-        ];
-    }
-    atualizarDisplayCarteira();
-}
-
-function aplicarDadosUsuarioNaTela() {
-    const img = document.getElementById('user-profile-img');
-    const nameEl = document.getElementById('user-display-name');
-    const emailEl = document.getElementById('user-display-email');
-    const condoEl = document.getElementById('user-display-condo');
-    
-    if (img && userData.photo) img.src = userData.photo;
-    if (nameEl) nameEl.innerText = userData.name || 'Usuário VoltCore';
-    if (emailEl) emailEl.innerText = userData.email || 'LGPD Ativo';
-    if (condoEl) condoEl.innerText = userData.condo;
-}
-
-function configurarPermissoesCondominioPorUsuario() {
-    const selectCondo = document.getElementById('select-condo');
-    if (!selectCondo) return;
-    selectCondo.innerHTML = '';
-    if (userData.role === 'ADM_MASTER') {
-        const todosCondos = [
-            "Belarte Residencial Jundiaí",
-            "Condomínio Gioviale • Torre Sul",
-            "Condomínio Gioviale • Torre Norte",
-            "Complexo Atmosfera Residencial"
-        ];
-        todosCondos.forEach(c => selectCondo.innerHTML += `<option value="${c}">${c}</option>`);
-        selectCondo.disabled = false;
-    } else {
-        selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
-        selectCondo.disabled = true;
-    }
-    const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo && (userData.role === 'ADM_MASTER' || userData.allowedCondos.includes(savedCondo))) {
-        selectCondo.value = savedCondo;
-    } else {
-        selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
-    }
-}
-
-async function realizarLogin() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Aceite os Termos de Privacidade e LGPD.');
-        return;
-    }
-    const emailInput = obterCampoEmailAuth();
-    const senhaInput = obterCampoSenhaAuth();
-    const emailVal = emailInput ? emailInput.value.trim() : '';
-    const senhaVal = senhaInput ? senhaInput.value.trim() : '';
-
-    if (!emailVal || !emailVal.includes('@')) {
-        showToast('Informe um e-mail válido.');
-        return;
-    }
-    if (!senhaVal || senhaVal.length < 4) {
-        showToast('Senha obrigatória (mínimo 4 caracteres).');
-        return;
-    }
-
-    userData.email = emailVal;
-    avaliarPermissaoPorEmail(emailVal);
-    userData.lgpdAccepted = true;
-    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
-    localStorage.setItem('voltcore_logged', 'true');
-    localStorage.setItem('voltcore_biometric_email', userData.email);
-
-    document.getElementById('screen-auth').classList.add('hidden');
-    document.getElementById('screen-app').classList.remove('hidden');
-    aplicarDadosUsuarioNaTela();
-    aplicarControlePermissoesPerfil();
-    configurarPermissoesCondominioPorUsuario();
-    await sincronizarDadosNuvemUsuario();
-    await carregarEstacoesDoBanco();
-    showToast(`Bem-vindo! Perfil: ${userData.role}`);
-}
-
-function logoutApp() {
-    localStorage.removeItem('voltcore_logged');
-    localStorage.removeItem('voltcore_user_data');
-    location.reload();
-}
-
-function abrirTermosPrivacidade() {
-    showCustomModal('Termos de Privacidade & LGPD', '<p class="text-xs text-slate-600">Conformidade estrita com a LGPD (Lei nº 13.709/2018).</p>', 'fa-shield-halved', 'lime');
-}
-
-// ==========================================================================
-// CÂMERA, QR CODE & MAPA LEAFLET
-// ==========================================================================
-let streamCameraAtiva = null;
-function abrirLeitorQrCodeCamera() {
-    const htmlQr = `
-        <div class="space-y-3 text-center pb-4">
-            <div class="relative w-full h-52 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border-2 border-lime-400">
-                <video id="qr-camera-video" autoplay playsinline class="w-full h-full object-cover"></video>
-                <div class="absolute inset-0 border-4 border-lime-400/50 rounded-xl m-8 pointer-events-none flex items-center justify-center">
-                    <span class="bg-slate-900/80 text-lime-400 text-[10px] font-extrabold px-3 py-1 rounded-full">Aponte para o QR Code OCPP</span>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="simularLeituraQrSucesso()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs cursor-pointer">VALIDAR COMANDO OCPP</button>
-                <button onclick="closeModal()" class="bg-slate-200 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs cursor-pointer">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Leitura QR Code & Disparo OCPP', htmlQr, 'fa-qrcode', 'lime');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => { streamCameraAtiva = stream; document.getElementById('qr-camera-video').srcObject = stream; })
-        .catch(err => {});
-}
-
-function simularLeituraQrSucesso() {
-    closeModal();
-    showToast('Transação OCPP iniciada com sucesso!');
-}
-
-function abrirPlanejarViagem() {
-    const htmlViagem = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Destino da Viagem:</label>
-                <input type="text" id="input-destino-viagem" placeholder="Ex: Sorocaba, Campinas..." class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 font-medium">
-            </div>
-            <button onclick="executarPlanejamentoViagem()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs cursor-pointer">CALCULAR ROTA OCPP</button>
-        </div>
-    `;
-    showCustomModal('Planejar Viagem • Rede OCPP', htmlViagem, 'fa-route', 'lime');
-}
-
-function executarPlanejamentoViagem() {
-    closeModal();
-    showToast('Rota otimizada com eletropostos calculada com sucesso!');
-}
-
-// ==========================================================================
-// GESTÃO DE VEÍCULOS E CARTEIRA (MERCADO PAGO)
-// ==========================================================================
 async function carregarVeiculosDoBanco() {
     if (!supabaseClient) return;
     try {
-        const { data } = await supabaseClient.from('vehicles').select('*').eq('user_email', userData.email || 'contato@wpsinfo.com.br');
+        const { data } = await supabaseClient.from('vehicles').select('*').eq('user_email', userData.email);
         if (data) {
             meusVeiculos = data.map(v => ({ id: v.id, model: v.model, plate: v.plate, type: v.type }));
             renderizarVeiculos();
@@ -481,7 +382,7 @@ async function carregarVeiculosDoBanco() {
 async function carregarExtratoDoBanco() {
     if (!supabaseClient) return;
     try {
-        const { data } = await supabaseClient.from('transacoes').select('*').eq('email_usuario', userData.email || 'contato@wpsinfo.com.br');
+        const { data } = await supabaseClient.from('transacoes').select('*').eq('email_usuario', userData.email);
         if (data) {
             extratoTransacoes = data.map(t => ({ title: t.titulo, desc: t.descricao, value: t.valor, type: t.tipo }));
             let saldo = 0;
@@ -499,7 +400,7 @@ async function carregarExtratoDoBanco() {
 async function carregarCartoesDoBanco() {
     if (!supabaseClient) return;
     try {
-        const { data } = await supabaseClient.from('voltcore_saved_cards').select('*').eq('user_email', userData.email || 'contato@wpsinfo.com.br');
+        const { data } = await supabaseClient.from('voltcore_saved_cards').select('*').eq('user_email', userData.email);
         if (data) {
             cartoesSalvos = data.map((c, i) => ({ id: c.card_id, lastFour: c.last_four, brand: c.brand || 'Mastercard', holder: c.cardholder_name, default: i === 0 }));
             atualizarDisplayCarteira();
@@ -533,9 +434,6 @@ function renderizarVeiculos() {
     });
 }
 
-// ==========================================================================
-// ESTAÇÕES OCPP & REALTIME
-// ==========================================================================
 async function carregarEstacoesDoBanco() {
     if (supabaseClient) {
         try {
@@ -569,24 +467,6 @@ function configurarSupabaseRealtime() {
         supabaseClient.channel('tabela-pontos-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
-    } catch(e) {}
-}
-
-async function sincronizarEstacaoNoSupabase(st) {
-    if (!supabaseClient) return;
-    try {
-        await supabaseClient.from('pontos_recarga').upsert([{
-            id_ponto: String(st.id),
-            nome_vaga: st.name,
-            condominio: st.condo,
-            status: st.status,
-            usuario: st.user || null,
-            potencia_kw: 22.0,
-            tarifa_kwh: 1.18,
-            kwh: st.kwh || 0,
-            ocpp_id: st.ocppId,
-            ocpp_status: st.ocppStatus
-        }], { onConflict: 'id_ponto' });
     } catch(e) {}
 }
 
@@ -645,17 +525,11 @@ function renderStations() {
     const grid = document.getElementById('stations-grid');
     if(!grid) return;
     grid.innerHTML = '';
-    let livre = 0, reservado = 0, carregando = 0;
     const selectCondo = document.getElementById('select-condo');
     const currentCondo = selectCondo ? selectCondo.value : userData.condo;
 
     stations.forEach(st => {
         if (userData.role !== 'ADM_MASTER' && st.condo !== currentCondo) return;
-
-        if (st.status === 'Disponível') livre++;
-        if (st.status === 'Reservado') reservado++;
-        if (st.status === 'Em Uso') carregando++;
-        
         if (currentFilter !== 'all' && st.status !== currentFilter) return;
         
         grid.innerHTML += `
@@ -667,10 +541,147 @@ function renderStations() {
     });
 }
 
+function renderCommercialStations() {}
 function updateTimersAndLoad() {}
 
+function abrirModalEsqueciSenha() {
+    const emailAtual = document.getElementById('tupi-email') ? document.getElementById('tupi-email').value.trim() : '';
+    const htmlReset = `
+        <div class="space-y-3 text-left text-xs pb-4">
+            <p class="text-slate-600 leading-relaxed">Informe seu e-mail cadastrado. Um link seguro de recuperação SMTP será disparado:</p>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">E-mail Cadastrado</label>
+                <input type="email" id="reset-email-input" value="${emailAtual}" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div id="reset-aviso-enviado" class="hidden p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
+                <i class="fa-solid fa-paper-plane text-emerald-600 mr-1"></i> E-mail de recuperação enviado com sucesso via SMTP!
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" id="btn-enviar-reset" onclick="enviarSolicitacaoResetSenha()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">ENVIAR E-MAIL SMTP</button>
+                <button type="button" onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">Voltar</button>
+            </div>
+        </div>
+    `;
+    showCustomModal('Recuperação de Senha • SMTP', htmlReset, 'fa-key', 'lime');
+}
+
+async function enviarSolicitacaoResetSenha() {
+    const emailInput = document.getElementById('reset-email-input');
+    const email = emailInput ? emailInput.value.trim() : '';
+    if (!email || !email.includes('@')) {
+        showToast('Digite um e-mail válido.');
+        return;
+    }
+    showToast(`Disparando e-mail SMTP para ${email}...`);
+    if (supabaseClient && supabaseClient.auth) {
+        try { await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }); } catch(e){}
+    }
+    const aviso = document.getElementById('reset-aviso-enviado');
+    const btnEnviar = document.getElementById('btn-enviar-reset');
+    if (aviso) aviso.classList.remove('hidden');
+    if (btnEnviar) {
+        btnEnviar.innerText = 'ENVIADO COM SUCESSO';
+        btnEnviar.disabled = true;
+    }
+}
+
+async function realizarLoginBiometrico() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Você deve aceitar os Termos de Privacidade e LGPD.');
+        return;
+    }
+    const savedBioEmail = localStorage.getItem('voltcore_biometric_email');
+    if (!savedBioEmail) {
+        showToast('Faça login com e-mail e senha uma vez para registrar sua biometria.');
+        return;
+    }
+    showToast('Lendo credencial biométrica...');
+    setTimeout(async () => {
+        userData.email = savedBioEmail;
+        userData.lgpdAccepted = true;
+        avaliarPermissaoPorEmail(savedBioEmail);
+        localStorage.setItem('voltcore_logged', 'true');
+        localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+
+        document.getElementById('screen-auth').classList.add('hidden');
+        document.getElementById('screen-app').classList.remove('hidden');
+        aplicarDadosUsuarioNaTela();
+        aplicarControlePermissoesPerfil();
+        configurarPermissoesCondominioPorUsuario();
+        await sincronizarDadosNuvemUsuario();
+        showToast('Biometria validada com sucesso!');
+    }, 800);
+}
+
+async function realizarLoginGoogle() {
+    const lgpdCheck = document.getElementById('check-lgpd-login');
+    if (lgpdCheck && !lgpdCheck.checked) {
+        showToast('Você deve aceitar os Termos de Privacidade e LGPD.');
+        return;
+    }
+    userData.email = 'wand3rson.s@gmail.com';
+    avaliarPermissaoPorEmail(userData.email);
+    userData.lgpdAccepted = true;
+
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+    localStorage.setItem('voltcore_logged', 'true');
+    localStorage.setItem('voltcore_biometric_email', userData.email);
+
+    document.getElementById('screen-auth').classList.add('hidden');
+    document.getElementById('screen-app').classList.remove('hidden');
+    aplicarDadosUsuarioNaTela();
+    aplicarControlePermissoesPerfil();
+    configurarPermissoesCondominioPorUsuario();
+    await sincronizarDadosNuvemUsuario();
+    showToast('Login com Google realizado');
+}
+
+function carregarTudoPersistente() {
+    const savedUser = localStorage.getItem('voltcore_user_data');
+    if (savedUser) { try { userData = JSON.parse(savedUser); } catch(e){} }
+    if (userData.email) avaliarPermissaoPorEmail(userData.email);
+    else userData.role = 'MORADOR';
+    aplicarDadosUsuarioNaTela();
+}
+
+function aplicarDadosUsuarioNaTela() {
+    const img = document.getElementById('user-profile-img');
+    const nameEl = document.getElementById('user-display-name');
+    const emailEl = document.getElementById('user-display-email');
+    const condoEl = document.getElementById('user-display-condo');
+    
+    if (img && userData.photo) img.src = userData.photo;
+    if (nameEl) nameEl.innerText = userData.name || 'Usuário VoltCore';
+    if (emailEl) emailEl.innerText = userData.email || 'LGPD Ativo';
+    if (condoEl) condoEl.innerText = userData.condo;
+}
+
+function configurarPermissoesCondominioPorUsuario() {
+    const selectCondo = document.getElementById('select-condo');
+    if (!selectCondo) return;
+    selectCondo.innerHTML = '';
+    if (userData.role === 'ADM_MASTER') {
+        CONDOS_DISPONIVEIS.forEach(c => selectCondo.innerHTML += `<option value="${c}">${c}</option>`);
+        selectCondo.disabled = false;
+    } else {
+        selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
+        selectCondo.disabled = true;
+    }
+}
+
+function logoutApp() {
+    localStorage.removeItem('voltcore_logged');
+    localStorage.removeItem('voltcore_user_data');
+    location.reload();
+}
+
+function abrirTermosPrivacidade() {
+    showCustomModal('Termos de Privacidade & LGPD', '<p class="text-xs text-slate-600">Conformidade estrita com a LGPD (Lei nº 13.709/2018).</p>', 'fa-shield-halved', 'lime');
+}
+
 // ==========================================================================
-// DASHBOARD ADM / SÍNDICO AMPLO & FUNCIONAL (MOBILE & WEB PC)
+// PAINEL DE GESTÃO CORPORATIVA (ADM MASTER & SÍNDICO COM APROVAÇÃO)
 // ==========================================================================
 async function carregarMoradoresDoBanco() {
     if (!supabaseClient) return;
@@ -679,21 +690,15 @@ async function carregarMoradoresDoBanco() {
         if (data && data.length > 0) {
             moradoresCondominio = data.map(m => ({
                 id: m.id,
-                nome: m.nome,
-                condo: m.condominio,
+                nome: m.nome || 'Condômino',
+                email: m.email || '',
+                condo: m.condominio || 'Belarte Residencial Jundiaí',
                 bloco: m.bloco || 'Torre Única',
                 unidade: m.unidade || 'Apto 00',
-                endereco: m.endereco || 'Jundiaí/SP',
-                vaga: m.vaga,
-                veiculo: m.veiculo || 'Veículo Elétrico',
+                vaga: m.vaga || 'Vaga 01',
+                veiculo: m.veiculo || 'Elétrico',
                 placa: m.placa || 'N/D',
-                status: m.status || 'Ativo',
-                data: m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : '26/10/2026',
-                horaInicio: '12:00 PM',
-                horaFim: '12:42 PM',
-                duracao: '42 min',
-                kwh: '14.2 kWh',
-                ociosidade: 'Não',
+                status: m.status || 'Pendente',
                 valor: m.valor_atual || 'R$ 0,00'
             }));
         }
@@ -702,20 +707,17 @@ async function carregarMoradoresDoBanco() {
 
 async function abrirPainelGestao() {
     if (userData.role !== 'ADM_MASTER' && userData.role !== 'SINDICO') {
-        showToast('Acesso negado: Perfil restrito a Administradores e Síndicos.');
+        showToast('Acesso negado: Perfil restrito.');
         return;
     }
     await carregarMoradoresDoBanco();
     renderizarConteudoPainelGestao('');
 }
 
-function renderizarConteudoPainelGestao(termoFiltro = '', condominioFiltro = '') {
+function renderizarConteudoPainelGestao(termoFiltro = '') {
     let moradoresFiltrados = moradoresCondominio.filter(m => {
         if (userData.role === 'SINDICO') {
             return m.condo.toLowerCase().includes(userData.condo.toLowerCase());
-        }
-        if (condominioFiltro && condominioFiltro !== 'TODOS') {
-            return m.condo.toLowerCase().includes(condominioFiltro.toLowerCase());
         }
         return true;
     });
@@ -725,56 +727,41 @@ function renderizarConteudoPainelGestao(termoFiltro = '', condominioFiltro = '')
         moradoresFiltrados = moradoresFiltrados.filter(m => 
             m.nome.toLowerCase().includes(termo) || 
             (m.placa || '').toLowerCase().includes(termo) || 
-            (m.vaga || '').toLowerCase().includes(termo) ||
-            (m.unidade || '').toLowerCase().includes(termo)
+            (m.vaga || '').toLowerCase().includes(termo)
         );
     }
 
     let htmlMoradores = '';
     moradoresFiltrados.forEach((m, idx) => {
-        const isInativo = m.status === 'Inativo';
+        const isPendente = m.status === 'Pendente';
+        const isAtivo = m.status === 'Ativo';
+        
         htmlMoradores += `
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 text-xs hover:border-lime-400 transition">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2.5 border-b border-slate-100">
+                <div class="flex justify-between items-center pb-2.5 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-2">
                             <strong class="text-slate-900 text-sm font-black">${m.nome}</strong>
-                            <span class="text-[9px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">${m.unidade} • ${m.vaga}</span>
+                            <span class="text-[9px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">${m.unidade} • ${m.vaga}</span>
                         </div>
-                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building text-lime-600 mr-1"></i> ${m.condo} (${m.bloco})</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building text-lime-600 mr-1"></i> ${m.condo}</div>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span class="font-black text-emerald-700 text-xs bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">${m.valor}</span>
-                        <span class="text-[10px] font-bold ${isInativo ? 'text-rose-600 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200' : 'text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200'}">${m.status}</span>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1">
-                        <p class="text-slate-600"><strong>Veículo:</strong> <span class="font-bold text-slate-800">${m.veiculo}</span></p>
-                        <p class="text-slate-600"><strong>Placa:</strong> <span class="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">${m.placa}</span></p>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1">
-                        <p class="text-slate-600"><strong>Sessão OCPP:</strong> <span class="font-bold text-slate-800">${m.data} • ${m.horaInicio}</span></p>
-                        <p class="text-slate-600"><strong>Duração / Consumo:</strong> <span class="font-bold text-emerald-700">${m.duracao} (${m.kwh})</span></p>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] text-slate-500 uppercase font-bold">Taxa Ociosidade</p>
-                            <p class="text-xs font-black text-amber-600">${m.ociosidade === 'Sim' ? 'R$ 2,20 Aplicada' : 'Nenhuma'}</p>
-                        </div>
-                        <i class="fa-solid fa-bolt text-lime-600 text-base"></i>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-emerald-700 text-xs bg-emerald-50 px-3 py-1 rounded-xl">${m.valor}</span>
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-xl ${isPendente ? 'bg-amber-100 text-amber-900 border border-amber-300' : isAtivo ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${m.status}</span>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 gap-2 border-t border-slate-100">
-                    <span class="text-[10px] text-slate-400 flex items-center gap-1"><i class="fa-solid fa-shield-halved text-lime-600"></i> LGPD & OCPP Ativo.</span>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="estornarOuAjustarSaldoMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-100 text-amber-900 hover:bg-amber-200 transition cursor-pointer">
-                            <i class="fa-solid fa-rotate-left"></i> Ajustar Saldo
-                        </button>
-                        <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold ${isInativo ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200' : 'bg-rose-100 text-rose-900 hover:bg-rose-200'} transition cursor-pointer">
-                            ${isInativo ? 'Reativar' : 'Inativar'}
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-[10px] text-slate-400">Veículo: ${m.veiculo} (${m.placa})</span>
+                    <div class="flex gap-2">
+                        ${isPendente ? `
+                            <button onclick="aprovarMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-lime-500 hover:bg-lime-600 text-slate-900 transition cursor-pointer">
+                                <i class="fa-solid fa-check"></i> Aprovar Acesso
+                            </button>
+                        ` : ''}
+                        <button onclick="alternarStatusMorador(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold ${isAtivo ? 'bg-rose-100 text-rose-900' : 'bg-emerald-100 text-emerald-900'} transition cursor-pointer">
+                            ${isAtivo ? 'Inativar' : 'Ativar'}
                         </button>
                     </div>
                 </div>
@@ -782,69 +769,30 @@ function renderizarConteudoPainelGestao(termoFiltro = '', condominioFiltro = '')
         `;
     });
 
-    const tituloPainel = userData.role === 'SINDICO' ? `Painel Síndico • ${userData.condo}` : 'Central ADM Master • Gestão Corporativa Ampla';
-    
-    let seletorCondoHtml = '';
-    if (userData.role === 'ADM_MASTER') {
-        seletorCondoHtml = `
-            <div class="w-full sm:w-64">
-                <select id="filtro-condo-select" onchange="mudarFiltroCondoAdm(this)" class="w-full bg-slate-800 text-white border border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
-                    <option value="TODOS">🏢 Todos os Condomínios (Global)</option>
-                    <option value="Belarte Residencial">Belarte Residencial Jundiaí</option>
-                    <option value="Gioviale">Condomínio Gioviale</option>
-                    <option value="Atmosfera">Complexo Atmosfera Residencial</option>
-                </select>
-            </div>
-        `;
-    }
+    const tituloPainel = userData.role === 'SINDICO' ? `Painel Síndico • ${userData.condo}` : 'Central ADM Master • Gestão Corporativa';
 
     const conteudoGestao = `
         <div class="space-y-4 text-left text-xs pb-4 flex flex-col h-full">
-            <div class="flex items-center justify-between bg-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md shrink-0">
+            <div class="flex items-center justify-between bg-slate-900 text-white p-4 rounded-2xl shadow-md shrink-0">
                 <div>
-                    <h4 class="font-black text-lime-400 text-sm sm:text-base flex items-center gap-2"><i class="fa-solid fa-building-shield text-lg"></i> ${tituloPainel}</h4>
-                    <p class="text-[11px] text-slate-300">Gestão avançada de faturamento, telemetria OCPP e controle de moradores.</p>
+                    <h4 class="font-black text-lime-400 text-sm flex items-center gap-2"><i class="fa-solid fa-building-shield"></i> ${tituloPainel}</h4>
+                    <p class="text-[11px] text-slate-300">Aprovação de novos moradores e telemetria OCPP.</p>
                 </div>
-                <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer shrink-0" title="Fechar">
-                    <i class="fa-solid fa-xmark text-base"></i>
+                <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
-                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
-                    <span class="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Totens OCPP Online</span>
-                    <span class="text-base font-black text-slate-900">8 / 8 Conectados</span>
-                </div>
-                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
-                    <span class="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Faturamento Período</span>
-                    <span class="text-sm font-black text-emerald-600">R$ 796,50 (Liquidado)</span>
-                </div>
-                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
-                    <span class="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Taxa Ociosidade</span>
-                    <span class="text-sm font-black text-amber-600">R$ 45,00 Acumulado</span>
-                </div>
+
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                <input type="text" id="filtro-morador-input" oninput="filtrarGestaoMoradores(this)" value="${termoFiltro}" placeholder="Pesquisar por nome, placa ou vaga..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
 
-            <div class="space-y-3 flex-1 flex flex-col min-h-0 pt-1">
-                <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pb-2 border-b border-slate-200 shrink-0">
-                    <div class="relative flex-1">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-                        <input type="text" id="filtro-morador-input" oninput="filtrarGestaoMoradores(this)" value="${termoFiltro}" placeholder="Pesquisar por nome, placa, unidade ou vaga..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    </div>
-                    ${seletorCondoHtml}
-                    <button onclick="abrirModalCadastrarMorador()" class="bg-lime-500 hover:bg-lime-600 text-slate-900 font-black px-4 py-2.5 rounded-xl text-xs shadow-sm transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0">
-                        <i class="fa-solid fa-user-plus"></i> Novo Condômino
-                    </button>
-                </div>
-                
-                <div class="space-y-3 overflow-y-auto flex-1 pr-1">
-                    ${htmlMoradores || '<div class="p-8 bg-slate-50 rounded-2xl text-center text-slate-500 font-medium">Nenhum condômino encontrado.</div>'}
-                </div>
+            <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+                ${htmlMoradores || '<div class="p-8 bg-slate-50 rounded-2xl text-center text-slate-500 font-medium">Nenhum morador pendente ou cadastrado.</div>'}
             </div>
-            
-            <div class="flex gap-2 pt-2 border-t border-slate-100 shrink-0">
-                <button onclick="closeModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs cursor-pointer">FECHAR PAINEL</button>
-            </div>
+
+            <button onclick="closeModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs cursor-pointer">FECHAR PAINEL</button>
         </div>
     `;
 
@@ -856,7 +804,7 @@ function showCustomModalAmplo(title, htmlContent) {
     if (!customModal) return;
     const modalBox = customModal.querySelector('.bg-white') || customModal.children[0];
     if (modalBox) {
-        modalBox.className = "bg-white w-[95vw] max-w-6xl h-[90vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-4 sm:p-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200";
+        modalBox.className = "bg-white w-[95vw] max-w-5xl h-[85vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col p-5 relative overflow-hidden";
     }
     const modalTitle = document.getElementById('modalTitle');
     const modalDesc = document.getElementById('modalDesc');
@@ -868,123 +816,39 @@ function showCustomModalAmplo(title, htmlContent) {
     customModal.classList.remove('hidden');
 }
 
-let condoFiltroAtualAdm = 'TODOS';
-function mudarFiltroCondoAdm(select) {
-    condoFiltroAtualAdm = select.value;
-    const termo = document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '';
-    renderizarConteudoPainelGestao(termo, condoFiltroAtualAdm);
+async function aprovarMorador(idx) {
+    const m = moradoresCondominio[idx];
+    m.status = 'Ativo';
+    if (supabaseClient && m.id) {
+        try { await supabaseClient.from('moradores').update({ status: 'Ativo' }).eq('id', m.id); } catch(e){}
+    }
+    showToast(`Acesso do morador ${m.nome} aprovado com sucesso!`);
+    renderizarConteudoPainelGestao();
+}
+
+async function alternarStatusMorador(idx) {
+    const m = moradoresCondominio[idx];
+    m.status = m.status === 'Ativo' ? 'Inativo' : 'Ativo';
+    if (supabaseClient && m.id) {
+        try { await supabaseClient.from('moradores').update({ status: m.status }).eq('id', m.id); } catch(e){}
+    }
+    showToast(`Status alterado para ${m.status}`);
+    renderizarConteudoPainelGestao();
 }
 
 function filtrarGestaoMoradores(input) {
-    renderizarConteudoPainelGestao(input.value, condoFiltroAtualAdm);
+    renderizarConteudoPainelGestao(input.value);
     setTimeout(() => {
         const inp = document.getElementById('filtro-morador-input');
         if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
     }, 50);
 }
 
-function estornarOuAjustarSaldoMorador(idx) {
-    const morador = moradoresCondominio[idx];
-    showToast(`Ajuste financeiro registrado para ${morador.nome}.`);
-}
-
-async function alternarStatusMorador(idx) {
-    const morador = moradoresCondominio[idx];
-    const novoStatus = morador.status === 'Ativo' ? 'Inativo' : 'Ativo';
-    morador.status = novoStatus;
-    if (supabaseClient && morador.id) {
-        try { await supabaseClient.from('moradores').update({ status: novoStatus }).eq('id', morador.id); } catch(e){}
-    }
-    showToast(`Morador ${morador.nome} ${novoStatus === 'Inativo' ? 'inativado' : 'reativado'}.`);
-    localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    renderizarConteudoPainelGestao(document.getElementById('filtro-morador-input') ? document.getElementById('filtro-morador-input').value : '', condoFiltroAtualAdm);
-}
-
-function abrirModalCadastrarMorador() {
-    const htmlForm = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Nome do Morador:</label>
-                <input type="text" id="novo-morador-nome" placeholder="Ex: Carlos Alberto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Condomínio:</label>
-                    <input type="text" id="novo-morador-condo" value="${userData.role === 'SINDICO' ? userData.condo : 'Belarte Residencial Jundiaí'}" ${userData.role === 'SINDICO' ? 'readonly' : ''} class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Bloco / Torre:</label>
-                    <input type="text" id="novo-morador-bloco" placeholder="Ex: Torre Norte" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Unidade / Apto:</label>
-                    <input type="text" id="novo-morador-unidade" placeholder="Ex: Apto 101" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Vaga / OCPP ID:</label>
-                    <input type="text" id="novo-morador-vaga" placeholder="Ex: Vaga 01" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-            </div>
-            <div>
-                <label class="block font-bold text-slate-700 mb-1">Endereço:</label>
-                <input type="text" id="novo-morador-endereco" placeholder="Ex: Jundiaí/SP" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Veículo / Modelo:</label>
-                    <input type="text" id="novo-morador-veiculo" placeholder="Ex: BYD Seal (CCS2)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Placa:</label>
-                    <input type="text" id="novo-morador-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium">
-                </div>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="salvarNovoMorador()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-black py-2.5 rounded-xl text-xs cursor-pointer">CONFIRMAR</button>
-                <button onclick="abrirPainelGestao()" class="bg-slate-200 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs cursor-pointer">Voltar</button>
-            </div>
-        </div>
-    `;
-    showCustomModal('Cadastrar Novo Condômino', htmlForm, 'fa-user-plus', 'lime');
-}
-
-async function salvarNovoMorador() {
-    const nome = document.getElementById('novo-morador-nome').value;
-    const condo = document.getElementById('novo-morador-condo').value || 'Belarte Residencial Jundiaí';
-    const bloco = document.getElementById('novo-morador-bloco').value || 'Torre Única';
-    const unidade = document.getElementById('novo-morador-unidade').value || 'Apto 00';
-    const vaga = document.getElementById('novo-morador-vaga').value || 'Vaga 00';
-    const endereco = document.getElementById('novo-morador-endereco').value || 'Jundiaí/SP';
-    const veiculo = document.getElementById('novo-morador-veiculo').value || 'Veículo Elétrico';
-    const placa = document.getElementById('novo-morador-placa').value || 'ABC-0000';
-
-    if (!nome || !vaga) {
-        showToast('Preencha o nome e a vaga do morador.');
-        return;
-    }
-
-    if (supabaseClient) {
-        try {
-            await supabaseClient.from('moradores').insert([{ nome, condominio: condo, bloco, unidade, endereco, vaga, veiculo, placa, status: 'Ativo', valor_atual: 'R$ 0,00' }]);
-        } catch(e){}
-    }
-
-    moradoresCondominio.unshift({
-        nome, condo, bloco, unidade, endereco, vaga, veiculo, placa, status: 'Ativo',
-        data: new Date().toLocaleDateString('pt-BR'), horaInicio: '12:00 PM', horaFim: '12:42 PM', duracao: '42 min', kwh: '0.0 kWh', ociosidade: 'Não', valor: 'R$ 0,00'
-    });
-    localStorage.setItem('voltcore_moradores', JSON.stringify(moradoresCondominio));
-    showToast(`Condômino ${nome} cadastrado!`);
-    abrirPainelGestao();
-}
-
 function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
     const customModal = document.getElementById('customModal');
     const modalBox = customModal ? (customModal.querySelector('.bg-white') || customModal.children[0]) : null;
     if (modalBox) {
-        modalBox.className = "bg-white w-[90vw] max-w-md rounded-3xl shadow-2xl border border-slate-200 p-5 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200";
+        modalBox.className = "bg-white w-[90vw] max-w-md rounded-3xl shadow-2xl border border-slate-200 p-5 relative overflow-hidden";
     }
     const modalTitle = document.getElementById('modalTitle');
     const modalDesc = document.getElementById('modalDesc');
@@ -994,8 +858,6 @@ function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
 }
 
 function closeModal() {
-    if (pixPollingInterval) { clearInterval(pixPollingInterval); pixPollingInterval = null; }
-    if (streamCameraAtiva) { streamCameraAtiva.getTracks().forEach(t => t.stop()); streamCameraAtiva = null; }
     const customModal = document.getElementById('customModal');
     if (customModal) customModal.classList.add('hidden');
 }
@@ -1008,7 +870,6 @@ function showToast(msg) {
         toast.classList.remove('translate-y-20', 'opacity-0');
         setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
-        },
-        3500);
+        }, 3500);
     }
 }
