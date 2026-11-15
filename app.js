@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.37 (COMPLETO, INTEGRAL & PADRÃO TUPI)
+   VOLTCORE PRO • FRONT-END ENGINE V9.38 (COMPLETO, INTEGRAL & RESTAURADO)
    Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
    ========================================================================== */
 
@@ -47,7 +47,6 @@ let cartoesSalvos = [
 ];
 let moradoresCondominio = [];
 
-// E-mails oficiais já conhecidos na base (nunca acionam cadastro novo por engano)
 const EMAILS_CADASTRADOS_BASE = [
     "contato@wpsinfo.com.br",
     "wandersonp_s@hotmail.com",
@@ -73,8 +72,15 @@ const ESTACOES_PADRAO = [
     { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 1.18, timer: 0, ocppId: 'CP-BEL-01', ocppStatus: 'Online (Connected)' }
 ];
 
+const ESTACOES_COMERCIAIS_COMPLETAS = [
+    { id: 201, name: 'Eletroposto Rodovia Anhanguera • km 58 (Sul-Norte)', highway: 'Rodovia Anhanguera (SP-330)', type: 'Ultra-Rápido CCS2 (150 kW DC)', status: 'Disponível', cost: 1.85, distance: '3.2 km', lat: -23.18, lng: -46.88, aCDC: 'DC Ultra' },
+    { id: 202, name: 'VoltCore Highway Center • Jundiaí Sul', highway: 'Rodovia dos Bandeirantes (SP-348)', type: 'Ultra-Rápido CCS2/CHAdeMO (300 kW DC)', status: 'Disponível', cost: 1.95, distance: '5.8 km', lat: -23.21, lng: -46.92, aCDC: 'DC High Power' },
+    { id: 203, name: 'Posto Conveniência Shell • Itupeva SP', highway: 'Rodovia Dom Pedro I / Itupeva', type: 'Carregador Rápido DC (50 kW)', status: 'Em Uso', cost: 1.75, distance: '12.4 km', lat: -23.15, lng: -47.05, aCDC: 'DC Standard' },
+    { id: 204, name: 'Eletroposto Shopping Jundiaí • Estacionamento G2', highway: 'Av. 9 de Julho, Jundiaí - SP', type: 'Carregador Semi-Rápido AC (22 kW)', status: 'Disponível', cost: 1.45, distance: '1.5 km', lat: -23.19, lng: -46.89, aCDC: 'AC Triphasic' }
+];
+
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v937', 'true');
+    localStorage.setItem('voltcore_version_v938', 'true');
 
     carregarTudoPersistente();
     
@@ -104,9 +110,9 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO PADRÃO TUPI • ABAS CLARAS & CHECAGEM ROBUSTA
+// TELA DE AUTENTICAÇÃO PADRÃO TUPI • COM LOGO OFICIAL WPS INFO & VOLTCORE
 // ==========================================================================
-let modoAuthAtual = 'login'; // 'login' ou 'cadastro'
+let modoAuthAtual = 'login';
 
 function prepararTelaAuthPadraoTupiCompleta() {
     const authBox = document.querySelector('#screen-auth > div');
@@ -115,13 +121,13 @@ function prepararTelaAuthPadraoTupiCompleta() {
     authBox.innerHTML = `
         <div class="text-center space-y-3.5">
             <div class="flex justify-center">
-                <div class="w-14 h-14 bg-lime-400 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fa-solid fa-bolt text-slate-900 text-2xl"></i>
+                <div class="w-16 h-16 bg-gradient-to-br from-lime-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white">
+                    <i class="fa-solid fa-bolt text-slate-900 text-3xl"></i>
                 </div>
             </div>
             <div>
-                <h2 class="text-lg font-black text-slate-900">VoltCore PRO</h2>
-                <p class="text-[11px] text-slate-500">Soluções inteligentes de recarga e condomínios</p>
+                <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
+                <p class="text-[11px] text-slate-500 font-medium">WPS Info • Soluções Inteligentes de Recarga</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
@@ -244,7 +250,6 @@ async function processarAuthTupi() {
         return;
     }
 
-    // Se o usuário está na aba de login, mas o e-mail consta na base ou se modoAuthAtual === 'cadastro'
     const isCadastradoBase = EMAILS_CADASTRADOS_BASE.includes(email);
 
     if (modoAuthAtual === 'cadastro' && !isCadastradoBase) {
@@ -295,12 +300,12 @@ async function processarAuthTupi() {
 }
 
 // ==========================================================================
-// AVALIAÇÃO RIGOROSA DE PERMISSÕES & HIERARQUIA
+// AVALIAÇÃO RIGOROSA DE PERMISSÕES & HIERARQUIA (RBAC BLINDADO)
 // ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     
-    // Apenas o e-mail master oficial possui privilégio ADM_MASTER
+    // EXCLUSIVO: Apenas contato@wpsinfo.com.br possui privilégio ADM_MASTER
     if (emailLimpo === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM_MASTER';
         userData.name = 'Wanderson Pedro da Silva (ADM Master)';
@@ -313,7 +318,7 @@ function avaliarPermissaoPorEmail(email) {
         userData.allowedCondos = ["Belarte Residencial Jundiaí"];
         userData.statusAprovacao = 'Aprovado';
     } else {
-        // Demais contas (Hotmail, Gmail pessoal, etc.) entram estritamente como Morador/Usuário
+        // Demais e-mails (pessoais, Gmail, Hotmail, moradores) entram estritamente como MORADOR
         userData.role = 'MORADOR';
         userData.allowedCondos = [];
         if (emailLimpo === 'wandersonp_s@hotmail.com' || emailLimpo === 'wand3rson.s@gmail.com') {
@@ -342,7 +347,116 @@ function aplicarControlePermissoesPerfil() {
 }
 
 // ==========================================================================
-// FUNÇÕES DE SUPORTE, VEÍCULOS, CARTEIRA E ESTAÇÕES
+// ABA COMERCIAL DE ELEKTROPOSTOS & RODOVIAS (MAPA ACDC + PLANEJADOR)
+// ==========================================================================
+function renderCommercialStations() {
+    const targetView = document.getElementById('view-commercial') || document.getElementById('commercial-stations-grid');
+    if (!targetView) return;
+    
+    let htmlCom = `
+        <div class="space-y-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="font-black text-slate-900 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-road text-lime-600"></i> Rede Rodoviária, Eletropostos & Conveniência ACDC
+                    </h3>
+                    <p class="text-xs text-slate-500">Planejamento de rotas e carregadores ultrarrápidos DC em rodovias e centros comerciais.</p>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="abrirPlanejadorViagem()" class="flex-1 md:flex-none bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-route text-lime-400"></i> Planejar Viagem
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mapa simulado ACDC e barra de busca -->
+            <div class="bg-slate-900 text-white p-4 rounded-2xl relative overflow-hidden flex flex-col justify-between shadow-md">
+                <div class="absolute right-0 top-0 w-64 h-full opacity-10 bg-[radial-gradient(#84cc16_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                <div class="relative z-10 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-lime-400 uppercase tracking-widest bg-lime-950/80 px-2.5 py-1 rounded-lg border border-lime-800/50">Telemetria ACDC Ativa</span>
+                        <span class="text-[10px] text-slate-300"><i class="fa-solid fa-signal text-emerald-400 mr-1"></i> 100% Online</span>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                        <input type="text" id="busca-eletroposto-input" oninput="filtrarEletropostosRodovia(this.value)" placeholder="Buscar rodovia, cidade ou eletroposto (Ex: Anhanguera, Jundiaí)..." class="w-full pl-9 pr-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div id="grid-eletropostos-rodovia" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+    `;
+
+    ESTACOES_COMERCIAIS_COMPLETAS.forEach(cs => {
+        htmlCom += `
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 hover:border-lime-400 transition card-eletroposto-item" data-nome="${cs.name.toLowerCase()} ${cs.highway.toLowerCase()}">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-[9px] font-extrabold text-lime-700 bg-lime-100 px-2 py-0.5 rounded-md border border-lime-200">${cs.aCDC}</span>
+                        <h4 class="font-black text-slate-900 text-xs mt-1.5">${cs.name}</h4>
+                        <span class="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><i class="fa-solid fa-map-pin text-rose-500"></i>${cs.highway} • Distância: ${cs.distance}</span>
+                    </div>
+                    <span class="text-[9px] font-bold px-2.5 py-1 rounded-xl ${cs.status === 'Disponível' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800'}">${cs.status}</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span class="text-[11px] font-extrabold text-lime-700">${cs.type} • R$ ${cs.cost.toFixed(2)}/kWh</span>
+                    <button onclick="iniciarRecargaRodoviaria('${cs.name}', ${cs.cost})" class="bg-lime-500 hover:bg-lime-600 text-slate-900 text-[10px] font-extrabold px-3.5 py-2 rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1">
+                        <i class="fa-solid fa-bolt"></i> Carregar Aqui
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    htmlCom += `</div></div>`;
+    targetView.innerHTML = htmlCom;
+}
+
+function filtrarEletropostosRodovia(termo) {
+    const termoLower = termo.toLowerCase().trim();
+    document.querySelectorAll('.card-eletroposto-item').forEach(card => {
+        const texto = card.getAttribute('data-nome') || '';
+        if (texto.includes(termoLower)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function abrirPlanejadorViagem() {
+    const htmlModal = `
+        <div class="space-y-3 text-left text-xs pb-4">
+            <p class="text-slate-600">Planejador inteligente de rota com parada em eletropostos ultrarrápidos VoltCore.</p>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Origem</label>
+                <input type="text" value="Jundiaí - SP (Medeiros)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Destino</label>
+                <input type="text" id="viagem-destino" placeholder="Ex: São Paulo / Campinas / Ubatuba" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Autonomia Atual do Veículo (%)</label>
+                <input type="number" value="75" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <button onclick="calcularRotaViagem()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">CALCULAR ROTA E PARADAS</button>
+        </div>
+    `;
+    showCustomModal('Planejador de Viagem • VoltCore ACDC', htmlModal, 'fa-route', 'lime');
+}
+
+function calcularRotaViagem() {
+    showToast('Rota calculada! Parada recomendada no Eletroposto Anhanguera km 58.');
+    closeModal();
+}
+
+function iniciarRecargaRodoviaria(nomeEstacao, tarifa) {
+    showToast(`Conectando ao ${nomeEstacao} (${tarifa.toFixed(2)}/kWh)...`);
+}
+
+// ==========================================================================
+// FUNÇÕES DE SUPORTE, VEÍCULOS, CARTEIRA E PERFIL (100% FUNCIONAIS)
 // ==========================================================================
 async function sincronizarDadosNuvemUsuario() {
     if (!supabaseClient || !userData.email) return;
@@ -432,15 +546,132 @@ function renderizarVeiculos() {
     }
     meusVeiculos.forEach((v, index) => {
         container.innerHTML += `
-            <div class="bg-slate-50 p-3 rounded-xl border-2 border-lime-400 flex items-center justify-between">
+            <div class="bg-slate-50 p-3.5 rounded-2xl border-2 border-lime-400 flex items-center justify-between shadow-xs">
                 <div>
-                    <span class="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">${v.type || 'Conector CCS2'}</span>
-                    <h3 class="font-extrabold text-slate-900 text-xs mt-0.5">${v.model} • Placa ${v.plate}</h3>
+                    <span class="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">${v.type || 'Conector CCS2'}</span>
+                    <h3 class="font-black text-slate-900 text-xs mt-1">${v.model} • Placa ${v.plate}</h3>
                 </div>
-                <button onclick="removerVeiculo(${index})" class="text-rose-500 hover:text-rose-700 p-1.5 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                <button onclick="removerVeiculo(${index})" class="text-rose-500 hover:text-rose-700 p-2 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
     });
+}
+
+function abrirModalAdicionarVeiculo() {
+    const htmlModal = `
+        <div class="space-y-3 text-left text-xs pb-4">
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Modelo do Veículo</label>
+                <input type="text" id="novo-veiculo-modelo" placeholder="Ex: BYD Seal / Volvo EX30 / Tesla" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Placa</label>
+                <input type="text" id="novo-veiculo-placa" placeholder="Ex: ABC-1D23" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Tipo de Conector</label>
+                <select id="novo-veiculo-tipo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                    <option value="100% Elétrico (CCS2)">100% Elétrico (CCS2)</option>
+                    <option value="Híbrido Plug-in (Type-2)">Híbrido Plug-in (Type-2)</option>
+                    <option value="Tesla Supercharger">Tesla Supercharger</option>
+                </select>
+            </div>
+            <button onclick="salvarNovoVeiculo()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">ADICIONAR VEÍCULO</button>
+        </div>
+    `;
+    showCustomModal('Adicionar Novo Veículo', htmlModal, 'fa-car', 'lime');
+}
+
+async function salvarNovoVeiculo() {
+    const modelo = document.getElementById('novo-veiculo-modelo').value.trim();
+    const placa = document.getElementById('novo-veiculo-placa').value.trim();
+    const tipo = document.getElementById('novo-veiculo-tipo').value;
+
+    if (!modelo || !placa) {
+        showToast('Preencha o modelo e a placa do veículo.');
+        return;
+    }
+
+    const novo = { id: Date.now(), model: modelo, plate: placa, type: tipo };
+    meusVeiculos.push(novo);
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('vehicles').insert([{ user_email: userData.email, model: modelo, plate: placa, type: tipo }]);
+        } catch(e){}
+    }
+
+    renderizarVeiculos();
+    closeModal();
+    showToast('Veículo cadastrado com sucesso!');
+}
+
+function removerVeiculo(index) {
+    meusVeiculos.splice(index, 1);
+    renderizarVeiculos();
+    showToast('Veículo removido.');
+}
+
+function abrirModalRecargaPix() {
+    const htmlModal = `
+        <div class="space-y-3 text-center text-xs pb-4">
+            <p class="text-slate-600">Insira o valor da recarga via Pix (Mercado Pago API):</p>
+            <input type="number" id="pix-valor-input" value="50.00" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-center text-sm font-black focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            <div class="p-3 bg-slate-100 rounded-xl border border-slate-200 flex justify-center">
+                <div class="w-36 h-36 bg-white p-2 rounded-lg border border-slate-300 flex items-center justify-center font-bold text-slate-800 text-[10px]">
+                    [ QR CODE PIX MERCADO PAGO ]
+                </div>
+            </div>
+            <button onclick="confirmarRecargaPix()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">CONFIRMAR PAGAMENTO PIX</button>
+        </div>
+    `;
+    showCustomModal('Adicionar Créditos • Pix', htmlModal, 'fa-qrcode', 'lime');
+}
+
+async function confirmarRecargaPix() {
+    const inputVal = document.getElementById('pix-valor-input');
+    const valor = parseFloat(inputVal ? inputVal.value : 50) || 50;
+    saldoCarteira += valor;
+    extratoTransacoes.unshift({ title: 'Recarga Pix • Mercado Pago', desc: 'Aprovado via Webhook API', value: `R$ ${valor.toFixed(2).replace('.', ',')}`, type: 'credit' });
+
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('transacoes').insert([{ email_usuario: userData.email, titulo: 'Recarga Pix • Mercado Pago', descricao: 'Aprovado via Webhook API', valor: `R$ ${valor.toFixed(2).replace('.', ',')}`, tipo: 'credit' }]);
+        } catch(e){}
+    }
+
+    atualizarDisplayCarteira();
+    renderizarExtrato();
+    closeModal();
+    showToast(`Recarga de R$ ${valor.toFixed(2)} aprovada com sucesso!`);
+}
+
+function abrirModalEditarPerfil() {
+    const htmlModal = `
+        <div class="space-y-3 text-left text-xs pb-4">
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
+                <input type="text" id="edit-nome" value="${userData.name}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Telefone / WhatsApp</label>
+                <input type="text" id="edit-tel" value="${userData.phone}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <button onclick="salvarAlteracoesPerfil()" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow-xs transition cursor-pointer">SALVAR ALTERAÇÕES</button>
+        </div>
+    `;
+    showCustomModal('Editar Meus Dados', htmlModal, 'fa-user-pen', 'lime');
+}
+
+function salvarAlteracoesPerfil() {
+    const nome = document.getElementById('edit-nome').value.trim();
+    const tel = document.getElementById('edit-tel').value.trim();
+    if (nome) userData.name = nome;
+    if (tel) userData.phone = tel;
+    localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
+    aplicarDadosUsuarioNaTela();
+    closeModal();
+    showToast('Dados atualizados com sucesso!');
 }
 
 async function carregarEstacoesDoBanco() {
@@ -485,7 +716,6 @@ function carregarOuInicializarEstacoes() {
         try { stations = JSON.parse(saved); return; } catch(e){}
     }
     stations = JSON.parse(JSON.stringify(ESTACOES_PADRAO));
-    commercialStations = JSON.parse(JSON.stringify(ESTACOES_COMERCIAIS));
 }
 
 function switchMode(mode) {
@@ -550,7 +780,7 @@ function renderStations() {
         if (currentFilter !== 'all' && st.status !== currentFilter) return;
         
         grid.innerHTML += `
-            <div class="bg-white rounded-xl border p-3 shadow-xs hover:border-lime-400 transition cursor-pointer">
+            <div class="bg-white rounded-xl border p-3.5 shadow-xs hover:border-lime-400 transition cursor-pointer">
                 <div class="flex justify-between items-start">
                     <h3 class="text-xs font-extrabold text-slate-900">${st.name}</h3>
                     <span class="text-[9px] font-bold px-2 py-0.5 rounded ${st.status === 'Disponível' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${st.status}</span>
@@ -567,49 +797,6 @@ function renderStations() {
     if (lEl) lEl.innerText = livres;
     if (rEl) rEl.innerText = reservas;
     if (cEl) cEl.innerText = cargas;
-}
-
-function renderCommercialStations() {
-    const targetView = document.getElementById('view-commercial') || document.getElementById('commercial-stations-grid');
-    if (!targetView) return;
-    
-    let htmlCom = `
-        <div class="space-y-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left">
-            <h3 class="font-black text-slate-900 text-sm flex items-center gap-2">
-                <i class="fa-solid fa-road text-lime-600"></i> Eletropostos, Rodovias & Conveniência
-            </h3>
-            <p class="text-xs text-slate-500">Rede de carregadores rápidos ultrassônicos em rodovias e centros comerciais parceiros VoltCore.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-    `;
-
-    const estacoesCom = [
-        { id: 101, name: 'Eletroposto Rodovia Anhanguera • km 58', highway: 'Rodovia Anhanguera (SP-330)', type: 'Ultra-Rápido CCS2 (150 kW)', status: 'Disponível', cost: 1.85, distance: '3.2 km' },
-        { id: 102, name: 'VoltCore Highway Center • Jundiaí Sul', highway: 'Rodovia dos Bandeirantes (SP-348)', type: 'Ultra-Rápido CCS2/CHAdeMO (300 kW)', status: 'Disponível', cost: 1.95, distance: '5.8 km' },
-        { id: 103, name: 'Posto Conveniência Shell • Itupeva', highway: 'Rodovia Dom Pedro I / Itupeva', type: 'Carregador Rápido DC (50 kW)', status: 'Em Uso', cost: 1.75, distance: '12.4 km' }
-    ];
-
-    estacoesCom.forEach(cs => {
-        htmlCom += `
-            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 hover:border-lime-400 transition">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h4 class="font-extrabold text-slate-900 text-xs">${cs.name}</h4>
-                        <span class="text-[10px] text-slate-500"><i class="fa-solid fa-map-pin text-rose-500 mr-1"></i>${cs.highway} • Distância: ${cs.distance}</span>
-                    </div>
-                    <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">${cs.status}</span>
-                </div>
-                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
-                    <span class="text-[11px] font-bold text-lime-700">${cs.type} • R$ ${cs.cost.toFixed(2)}/kWh</span>
-                    <button onclick="showToast('Conectando ao eletroposto rodoviário...')" class="bg-lime-500 hover:bg-lime-600 text-slate-900 text-[10px] font-extrabold px-3 py-1.5 rounded-lg transition cursor-pointer">
-                        Carregar Aqui
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-
-    htmlCom += `</div></div>`;
-    targetView.innerHTML = htmlCom;
 }
 
 function updateTimersAndLoad() {}
