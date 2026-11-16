@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.48 (TELA DE LOGIN ORIGINAL RESTAURADA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.49 (LOGOTIPO E TELA DE LOGIN UNIFICADOS)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -86,7 +86,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v948', 'true');
+    localStorage.setItem('voltcore_version_v949', 'true');
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -97,7 +97,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthOriginalVoltCore();
+        prepararTelaAuthUnificadaVoltCore();
     }
 
     aplicarControlePermissoesPerfil();
@@ -115,24 +115,24 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO ORIGINAL RESTAURADA (ABAS JÁ TENHO CONTA / CADASTRAR)
+// TELA DE AUTENTICAÇÃO COM LOGOTIPO CIRCULAR PADRONIZADO E FUNCIONAL
 // ==========================================================================
 let modoAuthAtual = 'login';
 
-function prepararTelaAuthOriginalVoltCore() {
+function prepararTelaAuthUnificadaVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
     authBox.innerHTML = `
         <div class="text-center space-y-3.5">
             <div class="flex justify-center">
-                <div class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-md border border-emerald-400 p-2 text-slate-900 font-black text-xl">
-                    <i class="fa-solid fa-bolt"></i>
+                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-lime-400 p-1">
+                    <div class="w-10 h-10 bg-lime-500 rounded-full flex items-center justify-center text-slate-900 font-black text-sm">VF</div>
                 </div>
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">WPS Info • Soluções Inteligentes de Recarga</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Soluções de Recarga</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
@@ -205,7 +205,7 @@ function prepararTelaAuthOriginalVoltCore() {
 
 function alternarModoAuth(modo) {
     modoAuthAtual = modo;
-    prepararTelaAuthOriginalVoltCore();
+    prepararTelaAuthUnificadaVoltCore();
 }
 
 function alternarVisibilidadeSenha(idInput, btn) {
@@ -457,7 +457,7 @@ function logoutApp() {
     localStorage.removeItem('voltcore_user_data');
     document.getElementById('screen-auth').classList.remove('hidden');
     document.getElementById('screen-app').classList.add('hidden');
-    prepararTelaAuthOriginalVoltCore();
+    prepararTelaAuthUnificadaVoltCore();
     showToast('Sessão encerrada com segurança.');
 }
 
@@ -956,7 +956,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v948').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v949').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
