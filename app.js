@@ -1,6 +1,6 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.45 (COMPLETO & REDE COMERCIAL INTEGRAL)
-   Desenvolvido para WPS Info • Cliente: Wanderson Pedro da Silva
+   VOLTCORE PRO • FRONT-END ENGINE V9.46 (IDENTIDADE EXCLUSIVA VOLTCORE)
+   Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
 const SUPABASE_URL = 'https://eoqfuawvljotvyfrcbj.supabase.co';
@@ -65,7 +65,6 @@ const ESTACOES_PADRAO = [
     { id: 8, name: 'VAGA BEL-01 / JUNDIAÍ', condo: 'Belarte Residencial Jundiaí', type: 'Conector Type-2 (22 kW)', status: 'Disponível', user: null, kwh: 0, cost: 1.18, timer: 0, ocppId: 'CP-BEL-01', ocppStatus: 'Online (Connected)' }
 ];
 
-// REDE COMERCIAL DE RODOVIAS E PONTOS PÚBLICOS (TODOS OS 18 ELETROPOSTOS)
 const postosRodoviaComercial = [
     { id_comercial: 101, name: "Posto Ipiranga • Av. Reynaldo Porcari", address: "Av. Reynaldo Porcari, 2100 - Medeiros, Jundiaí/SP", city: "jundiai", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2 (150kW)", status: "Disponível", coords: [-23.1920, -46.9680], ocppId: "CP-ROD-01" },
     { id_comercial: 102, name: "Supermercado Boa • Conveniência Jundiaí", address: "Av. Nove de Julho, 1500 - Jundiaí/SP", city: "jundiai", hours: "07h às 22h", type: "AC", plugs: "Carga Lenta Type-2 (22kW)", status: "Disponível", coords: [-23.1850, -46.8900], ocppId: "CP-ROD-02" },
@@ -88,7 +87,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v945', 'true');
+    localStorage.setItem('voltcore_version_v946', 'true');
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -99,7 +98,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthPadraoTupiCompleta();
+        prepararTelaAuthPadraoVoltCore();
     }
 
     aplicarControlePermissoesPerfil();
@@ -117,11 +116,11 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO COM LOGO WPS INFO & TABS
+// TELA DE AUTENTICAÇÃO COM LOGO EXCLUSIVO VOLTCORE
 // ==========================================================================
 let modoAuthAtual = 'login';
 
-function prepararTelaAuthPadraoTupiCompleta() {
+function prepararTelaAuthPadraoVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
@@ -134,7 +133,7 @@ function prepararTelaAuthPadraoTupiCompleta() {
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
-                <p class="text-[11px] text-slate-500 font-medium">WPS Info • Soluções Inteligentes de Recarga</p>
+                <p class="text-[11px] text-slate-500 font-medium">Soluções Inteligentes de Recarga</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
@@ -188,7 +187,7 @@ function prepararTelaAuthPadraoTupiCompleta() {
                     <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline">Esqueci minha senha</button>
                 </div>
 
-                <button type="button" onclick="processarAuthTupi()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
+                <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
                     ${modoAuthAtual === 'login' ? 'Entrar' : 'Cadastrar Conta'}
                 </button>
             </div>
@@ -204,7 +203,7 @@ function prepararTelaAuthPadraoTupiCompleta() {
 
 function alternarModoAuth(modo) {
     modoAuthAtual = modo;
-    prepararTelaAuthPadraoTupiCompleta();
+    prepararTelaAuthPadraoVoltCore();
 }
 
 function alternarVisibilidadeSenha(idInput, btn) {
@@ -220,7 +219,7 @@ function alternarVisibilidadeSenha(idInput, btn) {
     }
 }
 
-async function processarAuthTupi() {
+async function processarAuthVoltCore() {
     const lgpdCheck = document.getElementById('check-lgpd-login');
     if (lgpdCheck && !lgpdCheck.checked) {
         showToast('Aceite os Termos de Privacidade e LGPD.');
@@ -459,7 +458,7 @@ function logoutApp() {
     localStorage.removeItem('voltcore_user_data');
     document.getElementById('screen-auth').classList.remove('hidden');
     document.getElementById('screen-app').classList.add('hidden');
-    prepararTelaAuthPadraoTupiCompleta();
+    prepararTelaAuthPadraoVoltCore();
     showToast('Sessão encerrada com segurança.');
 }
 
@@ -474,9 +473,6 @@ function abrirTermosPrivacidade() {
     showCustomModal('Termos de Privacidade & LGPD', htmlTermos, 'fa-shield-halved', 'lime');
 }
 
-// ==========================================================================
-// CÂMERA, QR CODE & NAVEGAÇÃO GPS
-// ==========================================================================
 let streamCameraAtiva = null;
 function abrirLeitorQrCodeCamera() {
     const htmlQr = `
@@ -555,9 +551,6 @@ function salvarMeusDados() {
     showToast('Dados cadastrais salvos com sucesso!');
 }
 
-// ==========================================================================
-// GESTÃO DE VEÍCULOS (SUPABASE: public.vehicles)
-// ==========================================================================
 async function carregarVeiculosDoBanco() {
     if (!supabaseClient) return;
     try {
@@ -653,9 +646,6 @@ function renderizarVeiculos() {
     });
 }
 
-// ==========================================================================
-// CARTEIRA E PAGAMENTOS (MERCADO PAGO)
-// ==========================================================================
 async function carregarExtratoDoBanco() {
     if (!supabaseClient) return;
     try {
@@ -937,9 +927,6 @@ async function excluirCartaoSalvo(idx) {
     showToast('Cartão removido!');
 }
 
-// ==========================================================================
-// ESTAÇÕES DE CONDOMÍNIO & SUPABASE REALTIME
-// ==========================================================================
 async function carregarEstacoesDoBanco() {
     if (supabaseClient) {
         try {
@@ -970,7 +957,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v945').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v946').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
@@ -1001,9 +988,6 @@ function carregarOuInicializarEstacoes() {
     stations = JSON.parse(JSON.stringify(ESTACOES_PADRAO));
 }
 
-// ==========================================================================
-// MODO DUAL: CONDOMÍNIO VS. REDE COMERCIAL & MAPA LEAFLET
-// ==========================================================================
 function switchMode(mode) {
     currentMode = mode;
     const btnCondo = document.getElementById('btn-mode-condo');
@@ -1116,8 +1100,6 @@ function plotarMarcadoresMapa(filtroTipo, termoBusca) {
             iconAnchor: [16, 16]
         });
 
-        const lat = p.coords[0];
-        const lng = p.coords[1];
         const popupHtml = `
             <div style="font-family: 'Inter', sans-serif; width: 200px;">
                 <h4 style="font-weight: 800; font-size: 12px; color: #0f172a; margin-bottom: 2px;">${p.name}</h4>
@@ -1141,10 +1123,10 @@ function renderCommercialStations(termoBusca = '') {
     if (!grid) return;
     grid.innerHTML = '';
 
-    let comLivre = 0, comReservado = 0, comCarga = 0;
+    let comLivre = 0, comCarregando = 0;
     postosRodoviaComercial.forEach(p => {
         if (p.status === 'Disponível') comLivre++;
-        if (p.status === 'Em Uso') comCarga++;
+        if (p.status === 'Em Uso') comCarregando++;
 
         if (filtroTipoAtual !== 'ALL' && p.type !== filtroTipoAtual) return;
         if (termoBusca && termoBusca.trim() !== '') {
@@ -1176,7 +1158,7 @@ function renderCommercialStations(termoBusca = '') {
     });
 
     if (document.getElementById('comm-stat-livre')) document.getElementById('comm-stat-livre').innerText = comLivre;
-    if (document.getElementById('comm-stat-carregando')) document.getElementById('comm-stat-carregando').innerText = comCarga;
+    if (document.getElementById('comm-stat-carregando')) document.getElementById('comm-stat-carregando').innerText = comCarregando;
 }
 
 function switchTab(tabId) {
@@ -1248,9 +1230,6 @@ async function startCharging(id) {
     showToast(`Transação OCPP iniciada em ${st.name}`);
 }
 
-// ==========================================================================
-// PAINEL DE GESTÃO CORPORATIVA (ADM MASTER)
-// ==========================================================================
 async function carregarMoradoresDoBanco() {
     if (!supabaseClient) return;
     try {
@@ -1267,22 +1246,68 @@ async function abrirPainelGestao() {
 
 function renderizarConteudoPainelGestao(termoFiltro = '') {
     let htmlMoradores = '';
-    moradoresCondominio.forEach(m => {
-        htmlMoradores += `
-            <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
-                <div><strong>${m.nome}</strong> (${m.condominio})</div>
-                <span class="font-bold text-emerald-700">${m.status || 'Ativo'}</span>
+    if (moradoresCondominio.length === 0) {
+        htmlMoradores = `<p class="text-slate-500 text-xs py-2">Nenhum morador cadastrado na tabela.</p>`;
+    } else {
+        moradoresCondominio.forEach(m => {
+            htmlMoradores += `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex justify-between items-center mb-1.5">
+                    <div>
+                        <p class="font-extrabold text-slate-900">${m.nome || 'Morador'}</p>
+                        <p class="text-[10px] text-slate-500">${m.condominio || 'Condomínio'} • ${m.email || ''}</p>
+                    </div>
+                    <span class="font-bold text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">${m.status || 'Ativo'}</span>
+                </div>
+            `;
+        });
+    }
+
+    const conteudoGestao = `
+        <div class="space-y-3 text-left text-xs pb-4">
+            <div class="bg-slate-900 text-white p-3 rounded-xl flex items-center justify-between">
+                <div>
+                    <h5 class="font-extrabold text-xs">Gestão Operacional de Moradores</h5>
+                    <p class="text-[10px] text-slate-400">Controle Master de Acessos e Unidades</p>
+                </div>
+                <span class="bg-lime-400 text-slate-900 font-black text-[9px] px-2 py-1 rounded">MASTER</span>
+            </div>
+            <div>
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-1">Filtrar Moradores</label>
+                <input type="text" placeholder="Pesquisar por nome ou condomínio..." oninput="filtrarMoradoresPainel(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+            </div>
+            <div class="space-y-2 max-h-60 overflow-y-auto pr-1" id="lista-moradores-painel-container">
+                ${htmlMoradores}
+            </div>
+            <div class="flex gap-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal()" class="flex-1 bg-slate-900 text-white font-extrabold py-2.5 rounded-xl text-xs hover:bg-slate-800 transition cursor-pointer">FECHAR PAINEL</button>
+            </div>
+        </div>
+    `;
+    showCustomModal('Painel ADM Master • VoltCore', conteudoGestao, 'fa-building-shield', 'lime');
+}
+
+function filtrarMoradoresPainel(termo) {
+    const container = document.getElementById('lista-moradores-painel-container');
+    if (!container) return;
+    container.innerHTML = '';
+    const q = (termo || '').toLowerCase();
+    const filtrados = moradoresCondominio.filter(m => (m.nome || '').toLowerCase().includes(q) || (m.condominio || '').toLowerCase().includes(q));
+    
+    if (filtrados.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-xs py-2">Nenhum morador encontrado.</p>`;
+        return;
+    }
+    filtrados.forEach(m => {
+        container.innerHTML += `
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex justify-between items-center mb-1.5">
+                <div>
+                    <p class="font-extrabold text-slate-900">${m.nome || 'Morador'}</p>
+                    <p class="text-[10px] text-slate-500">${m.condominio || 'Condomínio'} • ${m.email || ''}</p>
+                </div>
+                <span class="font-bold text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">${m.status || 'Ativo'}</span>
             </div>
         `;
     });
-    const conteudoGestao = `
-        <div class="space-y-3 text-left text-xs pb-4">
-            <h4 class="font-black text-slate-900 text-sm">Painel ADM Master • Gestão de Moradores</h4>
-            <div class="space-y-2 max-h-60 overflow-y-auto">${htmlMoradores || '<p class="text-slate-500">Nenhum morador.</p>'}</div>
-            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-extrabold py-2.5 rounded-xl">FECHAR</button>
-        </div>
-    `;
-    showCustomModal('Painel ADM Master', conteudoGestao, 'fa-building-shield', 'lime');
 }
 
 function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
