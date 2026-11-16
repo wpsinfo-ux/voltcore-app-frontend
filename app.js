@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.46 (IDENTIDADE EXCLUSIVA VOLTCORE)
+   VOLTCORE PRO • FRONT-END ENGINE V9.47 (LOGOTIPO PADRONIZADO EM TODAS AS TELAS)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -20,7 +20,6 @@ let pixPollingInterval = null;
 let userData = {
     name: "Wanderson Pedro da Silva",
     email: "contato@wpsinfo.com.br",
-    phone: "(11) 99999-9999",
     role: "ADM_MASTER",
     condo: "Belarte Residencial Jundiaí",
     allowedCondos: [
@@ -87,7 +86,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v946', 'true');
+    localStorage.setItem('voltcore_version_v947', 'true');
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -116,7 +115,7 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO COM LOGO EXCLUSIVO VOLTCORE
+// TELA DE AUTENTICAÇÃO COM LOGO PADRONIZADO VOLTCORE
 // ==========================================================================
 let modoAuthAtual = 'login';
 
@@ -127,13 +126,13 @@ function prepararTelaAuthPadraoVoltCore() {
     authBox.innerHTML = `
         <div class="text-center space-y-3.5">
             <div class="flex justify-center">
-                <div class="w-16 h-16 bg-gradient-to-br from-lime-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white">
-                    <i class="fa-solid fa-bolt text-slate-900 text-3xl"></i>
+                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-lime-400 p-1">
+                    <div class="w-10 h-10 bg-lime-500 rounded-full flex items-center justify-center text-slate-900 font-black text-sm">VF</div>
                 </div>
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
-                <p class="text-[11px] text-slate-500 font-medium">Soluções Inteligentes de Recarga</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Soluções de Recarga</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
@@ -267,9 +266,6 @@ async function processarAuthVoltCore() {
     await sincronizarDadosNuvemUsuario();
 }
 
-// ==========================================================================
-// HIERARQUIA E TRAVA ESTRITA DE PERFIL (CONTATO@WPSINFO.COM.BR = ADM_MASTER)
-// ==========================================================================
 function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     if (emailLimpo === 'contato@wpsinfo.com.br') {
@@ -957,7 +953,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v946').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v947').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
@@ -1319,6 +1315,7 @@ function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
     if (customModal) customModal.classList.remove('hidden');
 }
 
+Datação de Fechamento de Modal:
 function closeModal() {
     if (streamCameraAtiva) {
         streamCameraAtiva.getTracks().forEach(t => t.stop());
