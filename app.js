@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.49 (LOGOTIPO E TELA DE LOGIN UNIFICADOS)
+   VOLTCORE PRO • FRONT-END ENGINE V9.50 (LOGOTIPO OFICIAL CORRETO NA TELA DE LOGIN)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -86,7 +86,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v949', 'true');
+    localStorage.setItem('voltcore_version_v950', 'true');
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -97,7 +97,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthUnificadaVoltCore();
+        prepararTelaAuthOficialVoltCore();
     }
 
     aplicarControlePermissoesPerfil();
@@ -115,24 +115,29 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO COM LOGOTIPO CIRCULAR PADRONIZADO E FUNCIONAL
+// TELA DE AUTENTICAÇÃO COM LOGOTIPO OFICIAL CORRETO E FUNCIONAL
 // ==========================================================================
 let modoAuthAtual = 'login';
 
-function prepararTelaAuthUnificadaVoltCore() {
+function prepararTelaAuthOficialVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
     authBox.innerHTML = `
         <div class="text-center space-y-3.5">
-            <div class="flex justify-center">
-                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-lime-400 p-1">
-                    <div class="w-10 h-10 bg-lime-500 rounded-full flex items-center justify-center text-slate-900 font-black text-sm">VF</div>
+            <div class="flex flex-col items-center justify-center space-y-1.5">
+                <div class="w-12 h-12 rounded-full border-2 border-lime-400 flex items-center justify-center bg-white shadow-sm p-0.5">
+                    <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-lime-400 text-base font-black">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Soluções de Recarga</p>
+                <div>
+                    <div class="flex items-center justify-center gap-1.5">
+                        <h1 class="text-base font-black text-slate-900 tracking-tight">VOLT<span class="text-lime-600">CORE</span></h1>
+                        <span class="text-[9px] bg-lime-100 text-lime-800 font-extrabold px-1.5 py-0.5 rounded border border-lime-200">PRO</span>
+                    </div>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">SOLUÇÕES DE RECARGA</p>
+                </div>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
@@ -205,7 +210,7 @@ function prepararTelaAuthUnificadaVoltCore() {
 
 function alternarModoAuth(modo) {
     modoAuthAtual = modo;
-    prepararTelaAuthUnificadaVoltCore();
+    prepararTelaAuthOficialVoltCore();
 }
 
 function alternarVisibilidadeSenha(idInput, btn) {
@@ -457,7 +462,7 @@ function logoutApp() {
     localStorage.removeItem('voltcore_user_data');
     document.getElementById('screen-auth').classList.remove('hidden');
     document.getElementById('screen-app').classList.add('hidden');
-    prepararTelaAuthUnificadaVoltCore();
+    prepararTelaAuthOficialVoltCore();
     showToast('Sessão encerrada com segurança.');
 }
 
@@ -956,7 +961,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v949').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v950').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
