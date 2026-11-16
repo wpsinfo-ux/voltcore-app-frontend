@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.47 (LOGOTIPO PADRONIZADO EM TODAS AS TELAS)
+   VOLTCORE PRO • FRONT-END ENGINE V9.48 (TELA DE LOGIN ORIGINAL RESTAURADA)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -86,7 +86,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v947', 'true');
+    localStorage.setItem('voltcore_version_v948', 'true');
     carregarTudoPersistente();
     
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -97,7 +97,7 @@ window.onload = async function() {
         if (screenApp) screenApp.classList.remove('hidden');
         await sincronizarDadosNuvemUsuario();
     } else {
-        prepararTelaAuthPadraoVoltCore();
+        prepararTelaAuthOriginalVoltCore();
     }
 
     aplicarControlePermissoesPerfil();
@@ -115,29 +115,29 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO COM LOGO PADRONIZADO VOLTCORE
+// TELA DE AUTENTICAÇÃO ORIGINAL RESTAURADA (ABAS JÁ TENHO CONTA / CADASTRAR)
 // ==========================================================================
 let modoAuthAtual = 'login';
 
-function prepararTelaAuthPadraoVoltCore() {
+function prepararTelaAuthOriginalVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
     authBox.innerHTML = `
         <div class="text-center space-y-3.5">
             <div class="flex justify-center">
-                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-lime-400 p-1">
-                    <div class="w-10 h-10 bg-lime-500 rounded-full flex items-center justify-center text-slate-900 font-black text-sm">VF</div>
+                <div class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-md border border-emerald-400 p-2 text-slate-900 font-black text-xl">
+                    <i class="fa-solid fa-bolt"></i>
                 </div>
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 tracking-tight">VOLTCORE <span class="text-lime-600">PRO</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Soluções de Recarga</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">WPS Info • Soluções Inteligentes de Recarga</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
-                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'login' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">Já tenho conta</button>
-                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'cadastro' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">Cadastrar</button>
+                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'login' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
+                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'cadastro' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
             </div>
 
             <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
@@ -182,8 +182,11 @@ function prepararTelaAuthPadraoVoltCore() {
                     </button>
                 </div>
 
-                <div class="flex justify-end">
-                    <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline">Esqueci minha senha</button>
+                <div class="flex justify-between items-center pt-1">
+                    <button type="button" onclick="abrirLeitorQrCodeCamera()" class="text-[10px] font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-qrcode text-lime-600"></i> Leitura QR Code
+                    </button>
+                    <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline cursor-pointer">Esqueci minha senha</button>
                 </div>
 
                 <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
@@ -202,7 +205,7 @@ function prepararTelaAuthPadraoVoltCore() {
 
 function alternarModoAuth(modo) {
     modoAuthAtual = modo;
-    prepararTelaAuthPadraoVoltCore();
+    prepararTelaAuthOriginalVoltCore();
 }
 
 function alternarVisibilidadeSenha(idInput, btn) {
@@ -454,7 +457,7 @@ function logoutApp() {
     localStorage.removeItem('voltcore_user_data');
     document.getElementById('screen-auth').classList.remove('hidden');
     document.getElementById('screen-app').classList.add('hidden');
-    prepararTelaAuthPadraoVoltCore();
+    prepararTelaAuthOriginalVoltCore();
     showToast('Sessão encerrada com segurança.');
 }
 
@@ -521,7 +524,7 @@ function abrirModalMeusDados() {
             </div>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Telefone / WhatsApp</label>
-                <input type="text" id="edit-user-phone" value="${userData.phone}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <input type="text" id="edit-user-phone" value="${userData.phone || ''}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade</label>
@@ -953,7 +956,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v947').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v948').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
@@ -1315,7 +1318,6 @@ function showCustomModal(title, htmlContent, icon = 'fa-bolt', color = 'lime') {
     if (customModal) customModal.classList.remove('hidden');
 }
 
-Datação de Fechamento de Modal:
 function closeModal() {
     if (streamCameraAtiva) {
         streamCameraAtiva.getTracks().forEach(t => t.stop());
