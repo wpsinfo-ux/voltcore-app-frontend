@@ -46,27 +46,59 @@
         .leaflet-popup-tip { background: #ffffff; }
         nav.fixed-bottom-nav { z-index: 99999 !important; pointer-events: auto !important; }
         nav.fixed-bottom-nav button { pointer-events: auto !important; cursor: pointer !important; }
+
+        /* Logotipo VoltCore: recorta a parte inferior da imagem para trocar por "SOLUÇÕES DE RECARGA" */
+        .voltcore-logo-crop {
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            background-color: #ffffff;
+        }
+        .voltcore-logo-crop img {
+            width: 100%;
+            height: auto;
+            max-width: none;
+            object-fit: cover;
+            object-position: top center;
+            display: block;
+        }
+        .voltcore-logo-crop--auth {
+            width: 112px;
+            height: 76px;
+        }
+        .voltcore-logo-crop--auth img {
+            margin-top: -4px;
+        }
+        .voltcore-logo-crop--header {
+            width: 56px;
+            height: 38px;
+        }
+        .voltcore-logo-crop--header img {
+            margin-top: -2px;
+        }
+        .voltcore-subtitulo-recarga {
+            color: #334155;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col antialiased selection:bg-lime-200 selection:text-lime-900">
     <!-- ================= TELA 1: ONBOARDING / LOGIN ================= -->
     <div id="screen-auth" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-3">
         <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3 text-center">
-            <div class="flex flex-col items-center justify-center space-y-1.5">
-                <div class="w-20 h-20 rounded-full border border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-md p-1">
-                    <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="47" fill="none" stroke="#8cc63f" stroke-width="1.5"/>
-                        <path d="M31,29 L47,70 L40,70 L24,29 Z" fill="#2c3542"/>
-                        <path d="M43,29 L60,70 L53,70 L37,29 Z" fill="#334155"/>
-                        <path d="M53,24 L38,54 L57,54 L43,80 L74,38 L56,38 L69,24 Z" fill="#8cc63f"/>
-                    </svg>
+            <div class="flex flex-col items-center justify-center space-y-1">
+                <div class="voltcore-logo-crop voltcore-logo-crop--auth">
+                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                 </div>
                 <div class="leading-tight">
                     <div class="flex items-center justify-center gap-1">
                         <span class="font-black text-slate-800 text-base tracking-tight">VOLT<span class="text-lime-600">CORE</span></span>
                         <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded bg-lime-100 text-lime-900">PRO</span>
                     </div>
-                    <p class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">SOLUÇÕES DE RECARGA</p>
+                    <p class="voltcore-subtitulo-recarga text-[9px] mt-0.5">SOLUÇÕES DE RECARGA</p>
                 </div>
             </div>
 
@@ -105,21 +137,16 @@
     <div id="screen-app" class="hidden flex flex-col h-full w-full bg-slate-50 relative overflow-hidden">
         <!-- Header / Top Bar -->
         <header class="bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between shrink-0 z-20 shadow-xs gap-2">
-            <div class="flex items-center space-x-2.5 min-w-0">
-                <div class="w-10 h-10 rounded-full border border-lime-400 overflow-hidden flex items-center justify-center bg-white shadow-xs shrink-0 p-0.5">
-                    <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="47" fill="none" stroke="#8cc63f" stroke-width="1.5"/>
-                        <path d="M31,29 L47,70 L40,70 L24,29 Z" fill="#2c3542"/>
-                        <path d="M43,29 L60,70 L53,70 L37,29 Z" fill="#334155"/>
-                        <path d="M53,24 L38,54 L57,54 L43,80 L74,38 L56,38 L69,24 Z" fill="#8cc63f"/>
-                    </svg>
+            <div class="flex items-center space-x-2 min-w-0">
+                <div class="voltcore-logo-crop voltcore-logo-crop--header shrink-0">
+                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                 </div>
                 <div class="min-w-0 leading-tight">
                     <div class="flex items-center gap-1.5">
                         <span class="font-black text-slate-800 text-sm tracking-tight">VOLT<span class="text-lime-600">CORE</span></span>
                         <span class="text-[8px] font-extrabold px-1.5 py-0.2 rounded bg-lime-100 text-lime-900 shadow-2xs">PRO</span>
                     </div>
-                    <p class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">SOLUÇÕES DE RECARGA</p>
+                    <p class="voltcore-subtitulo-recarga text-[8px]">SOLUÇÕES DE RECARGA</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 shrink-0">

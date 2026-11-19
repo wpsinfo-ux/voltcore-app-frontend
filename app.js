@@ -17,6 +17,9 @@ let currentMode = 'condo';
 let currentFilter = 'Disponível';
 let pixPollingInterval = null;
 
+const VOLTCORE_LGPD_STORAGE_KEY = 'voltcore_lgpd_accepted_v1';
+const VOLTCORE_CADASTROS_KEY = 'voltcore_cadastros_stage1_v1';
+
 let userData = {
     name: "Wanderson Pedro da Silva",
     email: "contato@wpsinfo.com.br",
@@ -88,7 +91,7 @@ const postosRodoviaComercial = [
 window.onload = async function() {
     localStorage.setItem('voltcore_version_v950', 'true');
     carregarTudoPersistente();
-    
+
     const isLogged = localStorage.getItem('voltcore_logged');
     if (isLogged === 'true') {
         const screenAuth = document.getElementById('screen-auth');
@@ -103,7 +106,7 @@ window.onload = async function() {
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
     carregarOuInicializarEstacoes();
-    
+
     currentFilter = 'Disponível';
     setFilter(currentFilter);
     renderStations();
@@ -115,28 +118,85 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// TELA DE AUTENTICAÇÃO COM LOGOTIPO OFICIAL CORRETO E FUNCIONAL
+// ETAPA 1 - PARTE 1: TELA DE CADASTRO MULTI-TENANT, SENHA, LGPD & PENDÊNCIA
 // ==========================================================================
-let modoAuthAtual = 'login';
+let modoAuthAtual = 'cadastro';
+
+function avaliarRequisitosSenhaVoltCore(senha, confirma = '') {
+    const min8 = senha.length >= 8;
+    const hasUpper = /[A-Z]/.test(senha);
+    const hasLower = /[a-z]/.test(senha);
+    const hasNumber = /\d/.test(senha);
+    const matches = confirma === '' ? true : (senha.length > 0 && senha === confirma);
+
+    return {
+        min8,
+        hasUpper,
+        hasLower,
+        hasNumber,
+        matches,
+        valid: min8 && hasUpper && hasLower && hasNumber && matches
+    };
+}
+
+function atualizarIndicadoresSenhaVoltCore() {
+    const senhaEl = document.getElementById('tupi-senha');
+    const confirmaEl = document.getElementById('tupi-confirma');
+    if (!senhaEl) return;
+
+    const senha = senhaEl.value || '';
+    const confirma = confirmaEl ? (confirmaEl.value || '') : '';
+    const check = avaliarRequisitosSenhaVoltCore(senha, confirma);
+
+    const setBadge = (id, ok) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = ok
+            ? 'text-emerald-700 font-extrabold flex items-center gap-1'
+            : 'text-slate-400 font-semibold flex items-center gap-1';
+    };
+
+    setBadge('req-senha-len', check.min8);
+    setBadge('req-senha-upper', check.hasUpper);
+    setBadge('req-senha-lower', check.hasLower);
+    setBadge('req-senha-num', check.hasNumber);
+    setBadge('req-senha-match', confirma.length > 0 && check.matches);
+    return check;
+}
+
+function atualizarAvisoCondominioCadastro() {
+    const selectCondo = document.getElementById('tupi-condo');
+    const avisoBox = document.getElementById('aviso-vinculo-condo');
+    if (!selectCondo || !avisoBox) return;
+
+    const isAvulso = selectCondo.value.includes('Apenas Eletropostos / Visitante');
+    if (isAvulso) {
+        avisoBox.className = 'p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-medium';
+        avisoBox.innerHTML = 'Vínculo <strong>Avulso / Rodovia</strong>: habilitado para eletropostos públicos/comerciais. Recarga em condomínios exige vínculo e aprovação do síndico.';
+    } else {
+        avisoBox.className = 'p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 font-medium';
+        avisoBox.innerHTML = `Vínculo em <strong>${selectCondo.value}</strong>: conta criada como <strong>Morador (Pendente)</strong>. O início de carga nas vagas do condomínio fica bloqueado até aprovação do síndico.`;
+    }
+}
 
 function prepararTelaAuthOficialVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
+    const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
+
     authBox.innerHTML = `
-        <div class="text-center space-y-3.5">
-            <div class="flex flex-col items-center justify-center space-y-1.5">
-                <div class="w-12 h-12 rounded-full border-2 border-lime-400 flex items-center justify-center bg-white shadow-sm p-0.5">
-                    <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-lime-400 text-base font-black">
-                        <i class="fa-solid fa-bolt"></i>
-                    </div>
+        <div class="text-center space-y-3">
+            <div class="flex flex-col items-center justify-center space-y-1">
+                <div class="voltcore-logo-crop voltcore-logo-crop--auth">
+                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                 </div>
                 <div>
                     <div class="flex items-center justify-center gap-1.5">
                         <h1 class="text-base font-black text-slate-900 tracking-tight">VOLT<span class="text-lime-600">CORE</span></h1>
                         <span class="text-[9px] bg-lime-100 text-lime-800 font-extrabold px-1.5 py-0.5 rounded border border-lime-200">PRO</span>
                     </div>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">SOLUÇÕES DE RECARGA</p>
+                    <p class="voltcore-subtitulo-recarga text-[9px] mt-0.5">SOLUÇÕES DE RECARGA</p>
                 </div>
             </div>
 
@@ -145,44 +205,56 @@ function prepararTelaAuthOficialVoltCore() {
                 <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'cadastro' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
             </div>
 
-            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
-                <input type="checkbox" id="check-lgpd-login" checked class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
+            <div id="box-lgpd-primeiro-cadastro" class="${(modoAuthAtual === 'cadastro' && !jaAceitouLgpd) ? '' : 'hidden'} bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
+                <input type="checkbox" id="check-lgpd-login" ${jaAceitouLgpd ? 'checked' : ''} class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
                 <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
-                    Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a>.
+                    Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (obrigatório no primeiro cadastro).
                 </label>
             </div>
 
-            <div id="auth-form-container" class="space-y-3 text-left">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
-                    <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-
-                <div id="container-extra-cadastro" class="space-y-3 ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
+            <div id="auth-form-container" class="space-y-2.5 text-left">
+                <div id="container-extra-cadastro" class="space-y-2.5 ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
-                        <input type="text" id="tupi-nome" placeholder="Informe o seu nome" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo *</label>
+                        <input type="text" id="tupi-nome" placeholder="Informe seu nome completo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Condomínio de Vínculo (Multi-Tenant)</label>
-                        <select id="tupi-condo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Condomínio de Vínculo (Multi-Tenant) *</label>
+                        <select id="tupi-condo" onchange="atualizarAvisoCondominioCadastro()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
                             ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
                         </select>
+                        <div id="aviso-vinculo-condo" class="mt-1.5"></div>
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail *</label>
+                    <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                 </div>
 
                 <div class="relative">
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Senha</label>
-                    <input type="password" id="tupi-senha" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Senha *</label>
+                    <input type="password" id="tupi-senha" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Mín. 8 caracteres, maiúscula, minúscula e número" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-3 top-7 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                         <i class="fa-solid fa-eye text-xs"></i>
                     </button>
                 </div>
 
+                <div id="container-regras-senha" class="${modoAuthAtual === 'cadastro' ? '' : 'hidden'} bg-slate-50 border border-slate-200 rounded-xl p-2 text-[9px] space-y-1">
+                    <div class="font-extrabold text-slate-700 uppercase">Regras obrigatórias de senha:</div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <span id="req-senha-len" class="text-slate-400 font-semibold flex items-center gap-1">• Mínimo 8 caracteres</span>
+                        <span id="req-senha-upper" class="text-slate-400 font-semibold flex items-center gap-1">• 1 letra maiúscula</span>
+                        <span id="req-senha-lower" class="text-slate-400 font-semibold flex items-center gap-1">• 1 letra minúscula</span>
+                        <span id="req-senha-num" class="text-slate-400 font-semibold flex items-center gap-1">• 1 número</span>
+                        <span id="req-senha-match" class="text-slate-400 font-semibold flex items-center gap-1 col-span-2">• Confirmação igual à senha</span>
+                    </div>
+                </div>
+
                 <div id="container-confirma-senha" class="relative ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha</label>
-                    <input type="password" id="tupi-confirma" placeholder="Confirme sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha *</label>
+                    <input type="password" id="tupi-confirma" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Repita sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-7 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                         <i class="fa-solid fa-eye text-xs"></i>
                     </button>
                 </div>
@@ -200,12 +272,15 @@ function prepararTelaAuthOficialVoltCore() {
             </div>
 
             <div class="pt-2 border-t border-slate-100 flex justify-center gap-3 text-xs">
-                <button onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
+                <button type="button" onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
                 <span class="text-slate-300">•</span>
-                <button onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
+                <button type="button" onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
             </div>
         </div>
     `;
+
+    atualizarAvisoCondominioCadastro();
+    atualizarIndicadoresSenhaVoltCore();
 }
 
 function alternarModoAuth(modo) {
@@ -227,14 +302,8 @@ function alternarVisibilidadeSenha(idInput, btn) {
 }
 
 async function processarAuthVoltCore() {
-    const lgpdCheck = document.getElementById('check-lgpd-login');
-    if (lgpdCheck && !lgpdCheck.checked) {
-        showToast('Aceite os Termos de Privacidade e LGPD.');
-        return;
-    }
-
-    const email = document.getElementById('tupi-email').value.trim().toLowerCase();
-    const senha = document.getElementById('tupi-senha').value.trim();
+    const email = (document.getElementById('tupi-email')?.value || '').trim().toLowerCase();
+    const senha = (document.getElementById('tupi-senha')?.value || '').trim();
 
     if (!email || !email.includes('@') || !senha) {
         showToast('Preencha o e-mail e a senha corretamente.');
@@ -242,23 +311,70 @@ async function processarAuthVoltCore() {
     }
 
     if (modoAuthAtual === 'cadastro') {
-        const nome = document.getElementById('tupi-nome').value.trim();
-        const condo = document.getElementById('tupi-condo').value;
-        const confirma = document.getElementById('tupi-confirma').value.trim();
+        const nome = (document.getElementById('tupi-nome')?.value || '').trim();
+        const condo = document.getElementById('tupi-condo')?.value || CONDOS_DISPONIVEIS[0];
+        const confirma = (document.getElementById('tupi-confirma')?.value || '').trim();
+        const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
+        const lgpdCheck = document.getElementById('check-lgpd-login');
 
-        if (!nome) { showToast('Informe seu nome completo.'); return; }
-        if (senha !== confirma) { showToast('As senhas não coincidem.'); return; }
+        if (!nome || nome.length < 3) {
+            showToast('Informe seu nome completo.');
+            return;
+        }
+
+        if (!jaAceitouLgpd && lgpdCheck && !lgpdCheck.checked) {
+            showToast('Aceite os Termos de Privacidade e LGPD para concluir o primeiro cadastro.');
+            return;
+        }
+
+        const checkSenha = avaliarRequisitosSenhaVoltCore(senha, confirma);
+        if (!checkSenha.min8 || !checkSenha.hasUpper || !checkSenha.hasLower || !checkSenha.hasNumber) {
+            showToast('A senha deve ter no mínimo 8 caracteres, 1 maiúscula, 1 minúscula e 1 número.');
+            return;
+        }
+        if (senha !== confirma) {
+            showToast('A confirmação de senha não coincide.');
+            return;
+        }
+
+        const isAvulso = condo.includes('Apenas Eletropostos / Visitante');
+        const statusInicial = isAvulso ? 'Aprovado' : 'Pendente';
 
         userData.name = nome;
         userData.email = email;
         userData.condo = condo;
-        userData.role = 'MORADOR';
+        userData.allowedCondos = isAvulso ? [] : [condo];
+        userData.role = isAvulso ? 'AVULSO' : 'MORADOR';
+        userData.statusAprovacao = statusInicial;
         userData.lgpdAccepted = true;
-        showToast('Cadastro realizado com sucesso!');
+
+        localStorage.setItem(VOLTCORE_LGPD_STORAGE_KEY, 'true');
+
+        try {
+            const listaCadastros = JSON.parse(localStorage.getItem(VOLTCORE_CADASTROS_KEY) || '[]');
+            listaCadastros.unshift({
+                name: nome,
+                email,
+                condo,
+                role: userData.role,
+                statusAprovacao: statusInicial,
+                lgpdAccepted: true,
+                createdAt: new Date().toISOString()
+            });
+            localStorage.setItem(VOLTCORE_CADASTROS_KEY, JSON.stringify(listaCadastros));
+        } catch (e) {}
+
+        showToast(
+            isAvulso
+                ? 'Cadastro avulso concluído! Habilitado para eletropostos públicos/comerciais.'
+                : 'Cadastro enviado! Status: Pendente até aprovação do síndico para vagas do condomínio.'
+        );
     } else {
         userData.email = email;
         avaliarPermissaoPorEmail(email);
-        userData.lgpdAccepted = true;
+        if (localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true') {
+            userData.lgpdAccepted = true;
+        }
         showToast(`Bem-vindo, ${userData.role}!`);
     }
 
@@ -271,6 +387,7 @@ async function processarAuthVoltCore() {
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
+    renderStations();
     await sincronizarDadosNuvemUsuario();
 }
 
@@ -278,16 +395,20 @@ function avaliarPermissaoPorEmail(email) {
     const emailLimpo = (email || '').trim().toLowerCase();
     if (emailLimpo === 'contato@wpsinfo.com.br') {
         userData.role = 'ADM_MASTER';
+        userData.statusAprovacao = 'Aprovado';
         userData.name = 'Wanderson Pedro da Silva (ADM Master)';
         userData.allowedCondos = CONDOS_DISPONIVEIS;
     } else {
         userData.role = 'MORADOR';
-        userData.allowedCondos = [];
+        userData.allowedCondos = userData.condo ? [userData.condo] : [];
         if (emailLimpo === 'wandersonp_s@hotmail.com') {
             userData.name = 'Wanderson Pedro da Silva';
             userData.condo = 'Belarte Residencial Jundiaí';
+            userData.allowedCondos = ['Belarte Residencial Jundiaí'];
+            if (!userData.statusAprovacao) userData.statusAprovacao = 'Aprovado';
         } else {
             userData.name = emailLimpo.split('@')[0] || 'Condômino';
+            if (!userData.statusAprovacao) userData.statusAprovacao = 'Pendente';
         }
     }
 }
@@ -378,6 +499,7 @@ async function realizarLoginBiometrico() {
         aplicarDadosUsuarioNaTela();
         aplicarControlePermissoesPerfil();
         configurarPermissoesCondominioPorUsuario();
+        renderStations();
         await sincronizarDadosNuvemUsuario();
         await carregarEstacoesDoBanco();
         showToast('Biometria validada com sucesso!');
@@ -396,6 +518,7 @@ async function realizarLoginGoogle() {
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
+    renderStations();
     await sincronizarDadosNuvemUsuario();
     await carregarEstacoesDoBanco();
     showToast('Login com Google realizado');
@@ -404,16 +527,19 @@ async function realizarLoginGoogle() {
 function carregarTudoPersistente() {
     const savedUser = localStorage.getItem('voltcore_user_data');
     if (savedUser) { try { userData = JSON.parse(savedUser); } catch(e){} }
+    if (localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true') {
+        userData.lgpdAccepted = true;
+    }
     if (userData.email) avaliarPermissaoPorEmail(userData.email);
     aplicarDadosUsuarioNaTela();
-    
+
     const savedVehicles = localStorage.getItem('voltcore_vehicles');
     if (savedVehicles) { try { meusVeiculos = JSON.parse(savedVehicles); } catch(e){} }
     renderizarVeiculos();
 
     const savedWallet = localStorage.getItem('voltcore_wallet_balance');
     if (savedWallet !== null) saldoCarteira = parseFloat(savedWallet);
-    
+
     const savedExtrato = localStorage.getItem('voltcore_extrato');
     if (savedExtrato) { try { extratoTransacoes = JSON.parse(savedExtrato); } catch(e){} }
 
@@ -434,7 +560,10 @@ function aplicarDadosUsuarioNaTela() {
     if (img && userData.photo) img.src = userData.photo;
     if (nameEl) nameEl.innerText = userData.name || 'Wanderson Pedro da Silva';
     if (emailEl) emailEl.innerText = userData.email || 'contato@wpsinfo.com.br';
-    if (condoEl) condoEl.innerText = userData.condo;
+    if (condoEl) {
+        const statusTag = (userData.role === 'MORADOR' && userData.statusAprovacao === 'Pendente') ? ' • Pendente Síndico' : '';
+        condoEl.innerText = `${userData.condo}${statusTag}`;
+    }
 }
 
 function configurarPermissoesCondominioPorUsuario() {
@@ -445,11 +574,12 @@ function configurarPermissoesCondominioPorUsuario() {
         CONDOS_DISPONIVEIS.forEach(c => { selectCondo.innerHTML += `<option value="${c}">${c}</option>`; });
         selectCondo.disabled = false;
     } else {
-        selectCondo.innerHTML = `<option value="${userData.condo}">${userData.condo}</option>`;
+        const condoAtual = userData.condo || CONDOS_DISPONIVEIS[0];
+        selectCondo.innerHTML = `<option value="${condoAtual}">${condoAtual}</option>`;
         selectCondo.disabled = true;
     }
     const savedCondo = localStorage.getItem('voltcore_selected_condo');
-    if (savedCondo && (userData.role === 'ADM_MASTER' || userData.allowedCondos.includes(savedCondo))) {
+    if (savedCondo && (userData.role === 'ADM_MASTER' || (userData.allowedCondos && userData.allowedCondos.includes(savedCondo)))) {
         selectCondo.value = savedCondo;
     } else {
         selectCondo.value = userData.condo || "Belarte Residencial Jundiaí";
@@ -504,6 +634,11 @@ function abrirLeitorQrCodeCamera() {
 }
 
 function simularLeituraQrSucesso() {
+    if (userData.role === 'MORADOR' && userData.statusAprovacao === 'Pendente' && currentMode === 'condo') {
+        closeModal();
+        showToast('Acesso bloqueado: seu cadastro em condomínio aguarda aprovação do síndico.');
+        return;
+    }
     closeModal();
     showCustomModal('Comando OCPP RemoteStartTransaction Enviado', `
         <div class="space-y-2 text-center pb-2">
@@ -517,8 +652,13 @@ function simularLeituraQrSucesso() {
 }
 
 function abrirModalMeusDados() {
+    const statusLabel = userData.statusAprovacao || 'Aprovado';
     const htmlDados = `
         <div class="space-y-2 text-left pb-4">
+            <div class="p-2 rounded-xl bg-slate-100 border border-slate-200 text-[10px] flex items-center justify-between">
+                <span class="font-bold text-slate-600">Perfil / Status:</span>
+                <span class="font-extrabold text-slate-900">${userData.role} • ${statusLabel}</span>
+            </div>
             <div>
                 <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Nome Completo</label>
                 <input type="text" id="edit-user-name" value="${userData.name}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
@@ -729,7 +869,7 @@ async function processarPagamentoPix() {
     const inputVal = document.getElementById('input-valor-deposito').value;
     const valor = parseFloat(inputVal.replace(/[^\d]/g, '')) / 100;
     if (!valor || isNaN(valor) || valor < 1.00) { showToast('Mínimo R$ 1,00.'); return; }
-    
+
     showToast('Gerando cobrança PIX oficial no Mercado Pago...');
     try {
         const resposta = await fetch(`${BACKEND_URL}/api/pagamento/pix`, {
@@ -1083,7 +1223,7 @@ function plotarMarcadoresMapa(filtroTipo, termoBusca) {
     if (!leafletMap) return;
     currentMarkers.forEach(m => leafletMap.removeLayer(m));
     currentMarkers = [];
-    
+
     let encontrados = 0;
     postosRodoviaComercial.forEach(p => {
         if (filtroTipo !== 'ALL' && p.type !== filtroTipo) return;
@@ -1142,7 +1282,7 @@ function renderCommercialStations(termoBusca = '') {
 
         const isDC = p.type === 'DC';
         const corTag = isDC ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-lime-100 text-lime-800 border-lime-200';
-        
+
         grid.innerHTML += `
             <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2 flex flex-col justify-between">
                 <div>
@@ -1193,6 +1333,7 @@ function renderStations() {
     let livre = 0, reservado = 0, carregando = 0;
     const selectCondo = document.getElementById('select-condo');
     const currentCondo = selectCondo ? selectCondo.value : userData.condo;
+    const isPendenteCondo = userData.role === 'MORADOR' && userData.statusAprovacao === 'Pendente';
 
     stations.forEach(st => {
         if (userData.role !== 'ADM_MASTER' && st.condo !== currentCondo) return;
@@ -1201,7 +1342,7 @@ function renderStations() {
         if (st.status === 'Em Uso') carregando++;
 
         if (currentFilter !== 'all' && st.status !== currentFilter) return;
-        
+
         grid.innerHTML += `
             <div class="bg-white rounded-xl border p-3 shadow-xs hover:border-lime-400 transition">
                 <div class="flex justify-between items-start">
@@ -1209,8 +1350,11 @@ function renderStations() {
                     <span class="text-[9px] font-bold px-2 py-0.5 rounded ${st.status === 'Disponível' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${st.status}</span>
                 </div>
                 <p class="text-[9px] text-slate-500 mt-1">${st.condo} • ID: ${st.ocppId}</p>
+                ${isPendenteCondo ? `<p class="text-[9px] text-amber-700 font-bold mt-1">Pendente de aprovação do síndico para uso em condomínio.</p>` : ''}
                 <div class="flex gap-2 mt-3">
-                    <button onclick="startCharging(${st.id})" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold py-1.5 rounded-lg text-[10px] cursor-pointer">Iniciar Carga</button>
+                    <button onclick="startCharging(${st.id})" class="flex-1 ${isPendenteCondo ? 'bg-slate-200 text-slate-600' : 'bg-lime-500 hover:bg-lime-600 text-slate-900'} font-bold py-1.5 rounded-lg text-[10px] cursor-pointer">
+                        ${isPendenteCondo ? 'Aguardando Síndico' : 'Iniciar Carga'}
+                    </button>
                 </div>
             </div>
         `;
@@ -1224,6 +1368,10 @@ function renderStations() {
 function updateTimersAndLoad() {}
 
 async function startCharging(id) {
+    if (userData.role === 'MORADOR' && userData.statusAprovacao === 'Pendente') {
+        showToast('Bloqueado: seu cadastro em condomínio está Pendente de aprovação do síndico.');
+        return;
+    }
     const st = stations.find(s => s.id === id);
     if (!st) return;
     st.status = 'Em Uso';
@@ -1296,7 +1444,7 @@ function filtrarMoradoresPainel(termo) {
     container.innerHTML = '';
     const q = (termo || '').toLowerCase();
     const filtrados = moradoresCondominio.filter(m => (m.nome || '').toLowerCase().includes(q) || (m.condominio || '').toLowerCase().includes(q));
-    
+
     if (filtrados.length === 0) {
         container.innerHTML = `<p class="text-slate-500 text-xs py-2">Nenhum morador encontrado.</p>`;
         return;
