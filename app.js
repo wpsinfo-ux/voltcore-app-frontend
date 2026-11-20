@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.63 (FIX MOBILE LOGO CROP & ASSINATURA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.64 (VOLTCORE VISÍVEL NO MOBILE SEM "SOLUÇÕES DE CARGA")
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -116,8 +116,8 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop {
-            width: 144px;
-            height: 88px;
+            width: 150px;
+            height: 102px;
             overflow: hidden;
             display: flex;
             align-items: flex-start;
@@ -125,7 +125,7 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop img {
-            width: 158px;
+            width: 162px;
             height: auto;
             max-width: none;
             object-fit: contain;
@@ -187,13 +187,13 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop--header {
             width: 64px;
-            height: 41px;
+            height: 45px;
         }
         .voltcore-logo-crop--header img {
             width: 72px;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
             display: block;
             background: #ffffff;
         }
@@ -256,7 +256,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v963', 'true');
+    localStorage.setItem('voltcore_version_v964', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1311,7 +1311,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v963').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v964').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
