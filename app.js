@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.72 (COMPLETO • GITHUB + VERCEL + RENDER)
+   VOLTCORE PRO • FRONT-END ENGINE V9.73 (COMPLETO • GITHUB + VERCEL + RENDER)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -119,8 +119,8 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop {
             position: relative;
-            width: 164px;
-            height: 116px;
+            width: 176px;
+            height: 132px;
             overflow: hidden;
             display: flex;
             align-items: flex-start;
@@ -128,7 +128,7 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop img {
-            width: 164px;
+            width: 176px;
             height: auto;
             max-width: none;
             object-fit: contain;
@@ -136,33 +136,19 @@ function garantirEstilosLogoVoltCore() {
             display: block;
             background: #ffffff;
         }
-        .voltcore-logo-crop::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 16px;
-            background: #ffffff;
-            pointer-events: none;
-            z-index: 1;
-        }
         @media (min-width: 640px) {
             .voltcore-logo-crop {
-                width: 180px;
-                height: 126px;
+                width: 196px;
+                height: 146px;
             }
             .voltcore-logo-crop img {
-                width: 180px;
-            }
-            .voltcore-logo-crop::after {
-                height: 18px;
+                width: 196px;
             }
         }
         .voltcore-pro-selo {
             position: relative;
             margin-left: 8px;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
             background: #a3e635;
             color: #0f172a;
             font-size: 9px;
@@ -177,7 +163,7 @@ function garantirEstilosLogoVoltCore() {
             flex-shrink: 0;
         }
         .voltcore-assinatura-recarga {
-            margin-top: 4px;
+            margin-top: 6px;
             font-size: 10px;
             font-weight: 900;
             letter-spacing: 0.14em;
@@ -211,37 +197,26 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop--header {
             position: relative;
-            width: 112px;
-            height: 78px;
+            width: 118px;
+            height: 88px;
             overflow: hidden;
         }
         .voltcore-logo-crop--header img {
-            width: 112px;
+            width: 118px;
             max-width: none;
             object-fit: contain;
             transform: translateY(0px);
             display: block;
             background: #ffffff;
         }
-        .voltcore-logo-crop--header::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 11px;
-            background: #ffffff;
-            pointer-events: none;
-            z-index: 1;
-        }
         .voltcore-pro-selo--header {
             font-size: 8px;
             padding: 2px 6px;
             margin-left: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
         }
         .voltcore-assinatura-recarga--header {
-            margin-top: 2px;
+            margin-top: 3px;
             font-size: 8px;
             letter-spacing: 0.12em;
             text-align: center;
@@ -296,7 +271,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v972', 'true');
+    localStorage.setItem('voltcore_version_v973', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1352,7 +1327,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v972').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v973').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
