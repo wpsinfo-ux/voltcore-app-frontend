@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.64 (VOLTCORE VISÍVEL NO MOBILE SEM "SOLUÇÕES DE CARGA")
+   VOLTCORE PRO • FRONT-END ENGINE V9.65 (CADASTRO À ESQUERDA + LGPD VISÍVEL)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -256,7 +256,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v964', 'true');
+    localStorage.setItem('voltcore_version_v965', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -352,7 +352,6 @@ function prepararTelaAuthOficialVoltCore() {
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
-    const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
     const isCadastro = modoAuthAtual === 'cadastro';
 
     authBox.innerHTML = `
@@ -370,15 +369,8 @@ function prepararTelaAuthOficialVoltCore() {
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
-                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
                 <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
-            </div>
-
-            <div id="box-lgpd-primeiro-cadastro" class="${(isCadastro && !jaAceitouLgpd) ? '' : 'hidden'} bg-slate-50 p-2 rounded-xl border border-slate-200 text-left flex items-start gap-2">
-                <input type="checkbox" id="check-lgpd-login" ${jaAceitouLgpd ? 'checked' : ''} class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer shrink-0">
-                <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
-                    Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (obrigatório no primeiro cadastro).
-                </label>
+                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
             </div>
 
             <div id="auth-form-container" class="space-y-2 text-left">
@@ -440,6 +432,13 @@ function prepararTelaAuthOficialVoltCore() {
                             <span id="req-senha-match" class="text-slate-400 font-semibold flex items-center gap-1 col-span-2">• Senhas coincidem</span>
                         </div>
                     </div>
+
+                    <div id="box-lgpd-primeiro-cadastro" class="bg-slate-50 p-2 rounded-xl border border-slate-200 text-left flex items-start gap-2">
+                        <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer shrink-0">
+                        <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
+                            Li e concordo com os <a href="#" onclick="event.preventDefault(); abrirTermosPrivacidade();" class="text-lime-700 font-extrabold underline">Termos de Privacidade e LGPD</a> para uso da plataforma VoltCore.
+                        </label>
+                    </div>
                 </div>
 
                 <div class="flex justify-between items-center pt-0.5">
@@ -497,7 +496,6 @@ async function processarAuthVoltCore() {
         const condo = document.getElementById('tupi-condo')?.value || CONDOS_DISPONIVEIS[0];
         const senha = (document.getElementById('tupi-senha')?.value || '').trim();
         const confirma = (document.getElementById('tupi-confirma')?.value || '').trim();
-        const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
         const lgpdCheck = document.getElementById('check-lgpd-login');
 
         if (!nome || nome.length < 3) {
@@ -505,8 +503,8 @@ async function processarAuthVoltCore() {
             return;
         }
 
-        if (!jaAceitouLgpd && lgpdCheck && !lgpdCheck.checked) {
-            showToast('Aceite os Termos de Privacidade e LGPD para concluir o primeiro cadastro.');
+        if (lgpdCheck && !lgpdCheck.checked) {
+            showToast('Marque o aceite dos Termos de Privacidade e LGPD para cadastrar.');
             return;
         }
 
@@ -810,7 +808,7 @@ function abrirTermosPrivacidade() {
     const htmlTermos = `
         <div class="space-y-3 text-left text-xs leading-relaxed pb-4">
             <h4 class="font-bold text-slate-900 text-sm">Política de Privacidade & LGPD • VoltCore</h4>
-            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018).</p>
+            <p class="text-slate-600">A <strong>VoltCore Soluções de Recarga Inteligente</strong> opera sob estrita conformidade com a LGPD (Lei nº 13.709/2018). Seus dados de cadastro, veículo, histórico de recargas e vínculo condominial são utilizados exclusivamente para autenticação, operação de recarga e faturamento.</p>
             <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs mt-2 cursor-pointer">Voltar</button>
         </div>
     `;
@@ -863,10 +861,11 @@ function simularLeituraQrSucesso() {
 
 function abrirModalMeusDados() {
     const statusLabel = userData.statusAprovacao || 'Aprovado';
+    const isMaster = userData.role === 'ADM_MASTER';
     const htmlDados = `
         <div class="space-y-2 text-left pb-4">
             <div class="p-2 rounded-xl bg-slate-100 border border-slate-200 text-[10px] flex items-center justify-between">
-                <span class="font-bold text-slate-600">Perfil / Status:</span>
+                <span class="font-bold text-slate-600">Perfil / Status (travado):</span>
                 <span class="font-extrabold text-slate-900">${userData.role} • ${statusLabel}</span>
             </div>
             <div>
@@ -882,8 +881,8 @@ function abrirModalMeusDados() {
                 <input type="text" id="edit-user-phone" value="${userData.phone || ''}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade</label>
-                <input type="text" id="edit-user-condo" value="${userData.condo}" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Unidade ${!isMaster ? '(travado)' : ''}</label>
+                <input type="text" id="edit-user-condo" value="${userData.condo}" ${!isMaster ? 'readonly' : ''} class="w-full ${!isMaster ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-slate-50'} border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
             </div>
             <div class="flex gap-2 pt-2">
                 <button onclick="salvarMeusDados()" class="flex-1 bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer">SALVAR DADOS</button>
@@ -897,7 +896,9 @@ function abrirModalMeusDados() {
 function salvarMeusDados() {
     userData.name = document.getElementById('edit-user-name').value;
     userData.phone = document.getElementById('edit-user-phone').value;
-    userData.condo = document.getElementById('edit-user-condo').value;
+    if (userData.role === 'ADM_MASTER') {
+        userData.condo = document.getElementById('edit-user-condo').value;
+    }
     localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
     aplicarDadosUsuarioNaTela();
     configurarPermissoesCondominioPorUsuario();
@@ -1311,7 +1312,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v964').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v965').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
