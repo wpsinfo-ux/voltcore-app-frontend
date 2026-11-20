@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.51 (ETAPA 1 COMPLETA + LOGO/LAYOUT WEB)
+   VOLTCORE PRO • FRONT-END ENGINE V9.52 (ETAPA 1 COMPLETA + LOGO/LAYOUT WEB/MOBILE)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -89,7 +89,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v951', 'true');
+    localStorage.setItem('voltcore_version_v952', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -188,11 +188,11 @@ function prepararTelaAuthOficialVoltCore() {
 
     authBox.innerHTML = `
         <div class="text-center space-y-2.5">
-            <!-- Marca VoltCore em destaque, sem repetir "VOLTCORE", selo PRO no canto e "SOLUÇÕES DE RECARGA" -->
-            <div class="flex flex-col items-center justify-center">
+            <!-- Marca VoltCore completa (símbolo + VOLTCORE), sem duplicar texto, selo PRO no canto e SOLUÇÕES DE RECARGA -->
+            <div class="flex flex-col items-center justify-center pt-1">
                 <div class="voltcore-brand-lockup">
                     <span class="voltcore-brand-badge-pro">PRO</span>
-                    <div class="voltcore-logo-crop voltcore-logo-crop--auth">
+                    <div class="voltcore-logo-frame voltcore-logo-frame--auth">
                         <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                     </div>
                 </div>
@@ -1141,7 +1141,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v951').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v952').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}

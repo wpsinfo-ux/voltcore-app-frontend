@@ -47,18 +47,18 @@
         nav.fixed-bottom-nav { z-index: 99999 !important; pointer-events: auto !important; }
         nav.fixed-bottom-nav button { pointer-events: auto !important; cursor: pointer !important; }
 
-        /* Logotipo VoltCore: destaque maior, sem repetir "VOLTCORE", com selo PRO no canto e "SOLUÇÕES DE RECARGA" legível */
+        /* Logotipo VoltCore limpo, visível por inteiro (símbolo + VOLTCORE), selo PRO sem corte e SOLUÇÕES DE RECARGA */
         .voltcore-brand-lockup {
             position: relative;
             display: inline-flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 4px 20px 2px 20px;
+            padding: 8px 26px 2px 26px;
         }
         .voltcore-brand-badge-pro {
             position: absolute;
-            top: 0;
+            top: 2px;
             right: 0;
             background-color: #ecfccb;
             color: #365314;
@@ -70,50 +70,40 @@
             padding: 3px 6px;
             border-radius: 9999px;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+            z-index: 2;
         }
-        .voltcore-logo-crop {
-            overflow: hidden;
+        .voltcore-logo-frame {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
             background-color: #ffffff;
         }
-        .voltcore-logo-crop img {
-            width: 100%;
-            height: auto;
-            max-width: none;
-            object-fit: cover;
-            object-position: top center;
+        .voltcore-logo-frame--auth img {
+            width: auto;
+            height: 84px;
+            max-width: 220px;
+            object-fit: contain;
             display: block;
         }
-        .voltcore-logo-crop--auth {
-            width: 184px;
-            height: 92px;
-        }
-        .voltcore-logo-crop--auth img {
-            transform: scale(1.24);
-            transform-origin: center 22%;
-        }
-        .voltcore-logo-crop--header {
-            width: 76px;
-            height: 38px;
-        }
-        .voltcore-logo-crop--header img {
-            transform: scale(1.24);
-            transform-origin: center 22%;
+        .voltcore-logo-frame--header img {
+            width: auto;
+            height: 34px;
+            max-width: 110px;
+            object-fit: contain;
+            display: block;
         }
         .voltcore-subtitulo-recarga {
             color: #334155;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.16em;
         }
     </style>
 </head>
 <body class="h-full flex flex-col antialiased selection:bg-lime-200 selection:text-lime-900">
     <!-- ================= TELA 1: ONBOARDING / LOGIN / CADASTRO ================= -->
-    <div id="screen-auth" class="fixed inset-0 bg-slate-900 z-50 flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-md sm:max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-3 text-center my-auto">
+    <div id="screen-auth" class="fixed inset-0 bg-slate-900 z-50 flex items-start sm:items-center justify-center p-3 pt-6 sm:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-md sm:max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-3 text-center">
             <!-- Preenchido dinamicamente por prepararTelaAuthOficialVoltCore() em app.js -->
         </div>
     </div>
@@ -124,9 +114,9 @@
         <header class="bg-white border-b border-slate-200 px-3 py-2 flex items-center justify-between shrink-0 z-20 shadow-xs gap-2">
             <div class="flex items-center space-x-2 min-w-0">
                 <div class="flex flex-col items-start shrink-0">
-                    <div class="voltcore-brand-lockup" style="padding: 2px 18px 0 0;">
-                        <span class="voltcore-brand-badge-pro" style="font-size: 7.5px; padding: 2px 5px;">PRO</span>
-                        <div class="voltcore-logo-crop voltcore-logo-crop--header">
+                    <div class="voltcore-brand-lockup" style="padding: 4px 22px 0 0;">
+                        <span class="voltcore-brand-badge-pro" style="top: 0; right: 0; font-size: 7.5px; padding: 2px 5px;">PRO</span>
+                        <div class="voltcore-logo-frame voltcore-logo-frame--header">
                             <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                         </div>
                     </div>
