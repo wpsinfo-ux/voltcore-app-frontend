@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.62 (VOLTCORE SEM "SOLUÇÕES DE CARGA" NO LOGO)
+   VOLTCORE PRO • FRONT-END ENGINE V9.63 (FIX MOBILE LOGO CROP & ASSINATURA)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -116,8 +116,8 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop {
-            width: 146px;
-            height: 102px;
+            width: 144px;
+            height: 88px;
             overflow: hidden;
             display: flex;
             align-items: flex-start;
@@ -125,11 +125,11 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop img {
-            width: 162px;
+            width: 158px;
             height: auto;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-4px);
+            transform: translateY(-2px);
             display: block;
             background: #ffffff;
         }
@@ -145,8 +145,8 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-pro-selo {
             position: absolute;
-            bottom: 4px;
-            right: -34px;
+            bottom: 3px;
+            right: -32px;
             background: #a3e635;
             color: #0f172a;
             font-size: 9px;
@@ -157,18 +157,20 @@ function garantirEstilosLogoVoltCore() {
             border-radius: 999px;
             border: 1px solid #84cc16;
             z-index: 2;
+            white-space: nowrap;
         }
         .voltcore-assinatura-recarga {
             margin-top: 6px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: #0f172a;
-            line-height: 1.2;
+            line-height: 1.25;
             text-align: center;
             width: 100%;
             background: #ffffff;
+            white-space: nowrap;
         }
         @media (min-width: 640px) {
             .voltcore-assinatura-recarga {
@@ -185,13 +187,13 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop--header {
             width: 64px;
-            height: 45px;
+            height: 41px;
         }
         .voltcore-logo-crop--header img {
             width: 72px;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             display: block;
             background: #ffffff;
         }
@@ -204,9 +206,10 @@ function garantirEstilosLogoVoltCore() {
         .voltcore-assinatura-recarga--header {
             margin-top: 2px;
             font-size: 8px;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.09em;
             text-align: left;
             width: auto;
+            white-space: nowrap;
         }
         .voltcore-subtitulo-recarga {
             display: none !important;
@@ -253,7 +256,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v962', 'true');
+    localStorage.setItem('voltcore_version_v963', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1308,7 +1311,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v962').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v963').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
