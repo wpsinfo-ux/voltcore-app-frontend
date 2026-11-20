@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.50 (LOGOTIPO OFICIAL CORRETO NA TELA DE LOGIN)
+   VOLTCORE PRO • FRONT-END ENGINE V9.51 (ETAPA 1 COMPLETA + LOGO/LAYOUT WEB)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -89,7 +89,7 @@ const postosRodoviaComercial = [
 ];
 
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v950', 'true');
+    localStorage.setItem('voltcore_version_v951', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -118,7 +118,7 @@ window.onload = async function() {
 };
 
 // ==========================================================================
-// ETAPA 1 - PARTE 1: TELA DE CADASTRO MULTI-TENANT, SENHA, LGPD & PENDÊNCIA
+// ETAPA 1 (PARTES 1 E 2): AUTENTICAÇÃO, CADASTRO MULTI-TENANT & LOGO/LAYOUT
 // ==========================================================================
 let modoAuthAtual = 'cadastro';
 
@@ -172,10 +172,10 @@ function atualizarAvisoCondominioCadastro() {
     const isAvulso = selectCondo.value.includes('Apenas Eletropostos / Visitante');
     if (isAvulso) {
         avisoBox.className = 'p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-medium';
-        avisoBox.innerHTML = 'Vínculo <strong>Avulso / Rodovia</strong>: habilitado para eletropostos públicos/comerciais. Recarga em condomínios exige vínculo e aprovação do síndico.';
+        avisoBox.innerHTML = 'Vínculo <strong>Avulso / Rodovia</strong>: habilitado para eletropostos públicos/comerciais.';
     } else {
         avisoBox.className = 'p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 font-medium';
-        avisoBox.innerHTML = `Vínculo em <strong>${selectCondo.value}</strong>: conta criada como <strong>Morador (Pendente)</strong>. O início de carga nas vagas do condomínio fica bloqueado até aprovação do síndico.`;
+        avisoBox.innerHTML = `Vínculo em <strong>${selectCondo.value}</strong>: conta criada como <strong>Morador (Pendente)</strong> até aprovação do síndico para vagas do condomínio.`;
     }
 }
 
@@ -184,94 +184,111 @@ function prepararTelaAuthOficialVoltCore() {
     if (!authBox) return;
 
     const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
+    const isCadastro = modoAuthAtual === 'cadastro';
 
     authBox.innerHTML = `
-        <div class="text-center space-y-3">
-            <div class="flex flex-col items-center justify-center space-y-1">
-                <div class="voltcore-logo-crop voltcore-logo-crop--auth">
-                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
-                </div>
-                <div>
-                    <div class="flex items-center justify-center gap-1.5">
-                        <h1 class="text-base font-black text-slate-900 tracking-tight">VOLT<span class="text-lime-600">CORE</span></h1>
-                        <span class="text-[9px] bg-lime-100 text-lime-800 font-extrabold px-1.5 py-0.5 rounded border border-lime-200">PRO</span>
+        <div class="text-center space-y-2.5">
+            <!-- Marca VoltCore em destaque, sem repetir "VOLTCORE", selo PRO no canto e "SOLUÇÕES DE RECARGA" -->
+            <div class="flex flex-col items-center justify-center">
+                <div class="voltcore-brand-lockup">
+                    <span class="voltcore-brand-badge-pro">PRO</span>
+                    <div class="voltcore-logo-crop voltcore-logo-crop--auth">
+                        <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                     </div>
-                    <p class="voltcore-subtitulo-recarga text-[9px] mt-0.5">SOLUÇÕES DE RECARGA</p>
                 </div>
+                <p class="voltcore-subtitulo-recarga text-[10px] mt-1">SOLUÇÕES DE RECARGA</p>
             </div>
 
+            <!-- Seletor de Abas: Já tenho conta / Cadastrar -->
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
-                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'login' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
-                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${modoAuthAtual === 'cadastro' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
+                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
+                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
             </div>
 
-            <div id="box-lgpd-primeiro-cadastro" class="${(modoAuthAtual === 'cadastro' && !jaAceitouLgpd) ? '' : 'hidden'} bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
-                <input type="checkbox" id="check-lgpd-login" ${jaAceitouLgpd ? 'checked' : ''} class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer">
+            <!-- Aceite LGPD obrigatório apenas no primeiro cadastro -->
+            <div id="box-lgpd-primeiro-cadastro" class="${(isCadastro && !jaAceitouLgpd) ? '' : 'hidden'} bg-slate-50 p-2 rounded-xl border border-slate-200 text-left flex items-start gap-2">
+                <input type="checkbox" id="check-lgpd-login" ${jaAceitouLgpd ? 'checked' : ''} class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer shrink-0">
                 <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
                     Concordo com os <a href="#" onclick="abrirTermosPrivacidade()" class="text-lime-600 font-extrabold underline">Termos de Privacidade e LGPD</a> (obrigatório no primeiro cadastro).
                 </label>
             </div>
 
-            <div id="auth-form-container" class="space-y-2.5 text-left">
-                <div id="container-extra-cadastro" class="space-y-2.5 ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
+            <!-- Formulário de Login ou Cadastro -->
+            <div id="auth-form-container" class="space-y-2 text-left">
+                <div id="container-extra-cadastro" class="space-y-2 ${isCadastro ? '' : 'hidden'}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Nome Completo *</label>
+                            <input type="text" id="tupi-nome" placeholder="Seu nome completo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Vínculo *</label>
+                            <select id="tupi-condo" onchange="atualizarAvisoCondominioCadastro()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                                ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="aviso-vinculo-condo"></div>
+                </div>
+
+                <div class="grid grid-cols-1 ${isCadastro ? 'sm:grid-cols-1' : 'sm:grid-cols-2'} gap-2">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo *</label>
-                        <input type="text" id="tupi-nome" placeholder="Informe seu nome completo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">E-mail *</label>
+                        <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Condomínio de Vínculo (Multi-Tenant) *</label>
-                        <select id="tupi-condo" onchange="atualizarAvisoCondominioCadastro()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
-                            ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                        </select>
-                        <div id="aviso-vinculo-condo" class="mt-1.5"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail *</label>
-                    <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                </div>
-
-                <div class="relative">
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Senha *</label>
-                    <input type="password" id="tupi-senha" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Mín. 8 caracteres, maiúscula, minúscula e número" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-3 top-7 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
-                        <i class="fa-solid fa-eye text-xs"></i>
-                    </button>
-                </div>
-
-                <div id="container-regras-senha" class="${modoAuthAtual === 'cadastro' ? '' : 'hidden'} bg-slate-50 border border-slate-200 rounded-xl p-2 text-[9px] space-y-1">
-                    <div class="font-extrabold text-slate-700 uppercase">Regras obrigatórias de senha:</div>
-                    <div class="grid grid-cols-2 gap-1">
-                        <span id="req-senha-len" class="text-slate-400 font-semibold flex items-center gap-1">• Mínimo 8 caracteres</span>
-                        <span id="req-senha-upper" class="text-slate-400 font-semibold flex items-center gap-1">• 1 letra maiúscula</span>
-                        <span id="req-senha-lower" class="text-slate-400 font-semibold flex items-center gap-1">• 1 letra minúscula</span>
-                        <span id="req-senha-num" class="text-slate-400 font-semibold flex items-center gap-1">• 1 número</span>
-                        <span id="req-senha-match" class="text-slate-400 font-semibold flex items-center gap-1 col-span-2">• Confirmação igual à senha</span>
+                    <div class="${isCadastro ? 'hidden' : 'relative'}">
+                        <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Senha *</label>
+                        <input type="password" id="tupi-senha-login" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha-login', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                            <i class="fa-solid fa-eye text-xs"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div id="container-confirma-senha" class="relative ${modoAuthAtual === 'cadastro' ? '' : 'hidden'}">
-                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Confirme sua Senha *</label>
-                    <input type="password" id="tupi-confirma" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Repita sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 pr-10 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                    <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-3 top-7 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
-                        <i class="fa-solid fa-eye text-xs"></i>
-                    </button>
+                <!-- Campos de Senha e Confirmação no Cadastro -->
+                <div id="container-campos-senha-cadastro" class="${isCadastro ? 'space-y-2' : 'hidden'}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="relative">
+                            <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Senha *</label>
+                            <input type="password" id="tupi-senha" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Crie uma senha forte" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Confirme sua Senha *</label>
+                            <input type="password" id="tupi-confirma" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Repita a senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="container-regras-senha" class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[9px] space-y-1">
+                        <div class="font-extrabold text-slate-700 uppercase">Regras obrigatórias de senha:</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                            <span id="req-senha-len" class="text-slate-400 font-semibold flex items-center gap-1">• Mín. 8 caracteres</span>
+                            <span id="req-senha-upper" class="text-slate-400 font-semibold flex items-center gap-1">• 1 maiúscula</span>
+                            <span id="req-senha-lower" class="text-slate-400 font-semibold flex items-center gap-1">• 1 minúscula</span>
+                            <span id="req-senha-num" class="text-slate-400 font-semibold flex items-center gap-1">• 1 número</span>
+                            <span id="req-senha-match" class="text-slate-400 font-semibold flex items-center gap-1 col-span-2">• Senhas coincidem</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-1">
+                <div class="flex justify-between items-center pt-0.5">
                     <button type="button" onclick="abrirLeitorQrCodeCamera()" class="text-[10px] font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 cursor-pointer">
                         <i class="fa-solid fa-qrcode text-lime-600"></i> Leitura QR Code
                     </button>
                     <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline cursor-pointer">Esqueci minha senha</button>
                 </div>
 
-                <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-3 rounded-xl text-xs shadow transition cursor-pointer">
-                    ${modoAuthAtual === 'login' ? 'Entrar' : 'Cadastrar Conta'}
+                <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer">
+                    ${isCadastro ? 'Cadastrar Conta' : 'Entrar'}
                 </button>
             </div>
 
-            <div class="pt-2 border-t border-slate-100 flex justify-center gap-3 text-xs">
+            <div class="pt-2 border-t border-slate-100 flex justify-center gap-4 text-xs">
                 <button type="button" onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
                 <span class="text-slate-300">•</span>
                 <button type="button" onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
@@ -291,28 +308,28 @@ function alternarModoAuth(modo) {
 function alternarVisibilidadeSenha(idInput, btn) {
     const input = document.getElementById(idInput);
     if (!input) return;
-    const icon = btn.querySelector('i');
+    const icon = btn ? btn.querySelector('i') : null;
     if (input.type === 'password') {
         input.type = 'text';
-        icon.className = 'fa-solid fa-eye-slash text-xs text-lime-600';
+        if (icon) icon.className = 'fa-solid fa-eye-slash text-xs text-lime-600';
     } else {
         input.type = 'password';
-        icon.className = 'fa-solid fa-eye text-xs';
+        if (icon) icon.className = 'fa-solid fa-eye text-xs';
     }
 }
 
 async function processarAuthVoltCore() {
     const email = (document.getElementById('tupi-email')?.value || '').trim().toLowerCase();
-    const senha = (document.getElementById('tupi-senha')?.value || '').trim();
 
-    if (!email || !email.includes('@') || !senha) {
-        showToast('Preencha o e-mail e a senha corretamente.');
+    if (!email || !email.includes('@')) {
+        showToast('Informe um e-mail válido.');
         return;
     }
 
     if (modoAuthAtual === 'cadastro') {
         const nome = (document.getElementById('tupi-nome')?.value || '').trim();
         const condo = document.getElementById('tupi-condo')?.value || CONDOS_DISPONIVEIS[0];
+        const senha = (document.getElementById('tupi-senha')?.value || '').trim();
         const confirma = (document.getElementById('tupi-confirma')?.value || '').trim();
         const jaAceitouLgpd = localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true' || Boolean(userData && userData.lgpdAccepted);
         const lgpdCheck = document.getElementById('check-lgpd-login');
@@ -352,7 +369,7 @@ async function processarAuthVoltCore() {
 
         try {
             const listaCadastros = JSON.parse(localStorage.getItem(VOLTCORE_CADASTROS_KEY) || '[]');
-            listaCadastros.unshift({
+            const registroNovo = {
                 name: nome,
                 email,
                 condo,
@@ -360,8 +377,10 @@ async function processarAuthVoltCore() {
                 statusAprovacao: statusInicial,
                 lgpdAccepted: true,
                 createdAt: new Date().toISOString()
-            });
-            localStorage.setItem(VOLTCORE_CADASTROS_KEY, JSON.stringify(listaCadastros));
+            };
+            const filtrada = listaCadastros.filter(item => item.email !== email);
+            filtrada.unshift(registroNovo);
+            localStorage.setItem(VOLTCORE_CADASTROS_KEY, JSON.stringify(filtrada));
         } catch (e) {}
 
         showToast(
@@ -370,8 +389,29 @@ async function processarAuthVoltCore() {
                 : 'Cadastro enviado! Status: Pendente até aprovação do síndico para vagas do condomínio.'
         );
     } else {
+        const senhaLogin = (document.getElementById('tupi-senha-login')?.value || '').trim();
+        if (!senhaLogin) {
+            showToast('Informe sua senha para entrar.');
+            return;
+        }
+
+        let cadastroLocal = null;
+        try {
+            const listaCadastros = JSON.parse(localStorage.getItem(VOLTCORE_CADASTROS_KEY) || '[]');
+            cadastroLocal = listaCadastros.find(item => item.email === email) || null;
+        } catch (e) {}
+
         userData.email = email;
         avaliarPermissaoPorEmail(email);
+
+        if (cadastroLocal && userData.role !== 'ADM_MASTER') {
+            userData.name = cadastroLocal.name || userData.name;
+            userData.condo = cadastroLocal.condo || userData.condo;
+            userData.role = cadastroLocal.role || 'MORADOR';
+            userData.statusAprovacao = cadastroLocal.statusAprovacao || 'Pendente';
+            userData.allowedCondos = userData.condo ? [userData.condo] : [];
+        }
+
         if (localStorage.getItem(VOLTCORE_LGPD_STORAGE_KEY) === 'true') {
             userData.lgpdAccepted = true;
         }
@@ -1101,7 +1141,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v950').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v951').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
