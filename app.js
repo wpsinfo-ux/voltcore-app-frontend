@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.53 (ETAPA 1 COMPLETA + LOGO GRANDE WEB/MOBILE)
+   VOLTCORE PRO • FRONT-END ENGINE V9.54 (ETAPA 1 COMPLETA + LOGO PROPORCIONAL AUTH & APP)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -89,7 +89,9 @@ const postosRodoviaComercial = [
 ];
 
 function garantirEstilosLogoVoltCore() {
-    if (document.getElementById('voltcore-logo-runtime-style')) return;
+    const oldStyle = document.getElementById('voltcore-logo-runtime-style');
+    if (oldStyle) oldStyle.remove();
+
     const style = document.createElement('style');
     style.id = 'voltcore-logo-runtime-style';
     style.textContent = `
@@ -98,7 +100,10 @@ function garantirEstilosLogoVoltCore() {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 8px 18px 2px 18px;
+            padding: 8px 20px 4px 12px;
+        }
+        .voltcore-brand-lockup--compact {
+            padding: 4px 14px 2px 6px;
         }
         .voltcore-brand-badge-pro {
             position: absolute;
@@ -116,6 +121,10 @@ function garantirEstilosLogoVoltCore() {
             box-shadow: 0 2px 6px rgba(132, 204, 22, 0.35);
             z-index: 2;
         }
+        .voltcore-brand-lockup--compact .voltcore-brand-badge-pro {
+            font-size: 8px;
+            padding: 2px 5px;
+        }
         .voltcore-logo-frame {
             display: inline-flex;
             align-items: center;
@@ -123,8 +132,8 @@ function garantirEstilosLogoVoltCore() {
             overflow: visible;
         }
         .voltcore-logo-frame--auth {
-            width: 176px;
-            height: 82px;
+            width: 196px;
+            height: 98px;
         }
         .voltcore-logo-frame--auth img {
             width: 100%;
@@ -134,23 +143,78 @@ function garantirEstilosLogoVoltCore() {
         }
         @media (min-width: 640px) {
             .voltcore-logo-frame--auth {
-                width: 210px;
-                height: 94px;
+                width: 236px;
+                height: 112px;
+            }
+        }
+        .voltcore-logo-frame--header {
+            width: 112px;
+            height: 44px;
+        }
+        .voltcore-logo-frame--header img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        @media (min-width: 640px) {
+            .voltcore-logo-frame--header {
+                width: 132px;
+                height: 50px;
             }
         }
         .voltcore-subtitulo-recarga {
-            font-weight: 800;
-            letter-spacing: 0.22em;
-            color: #0f172a;
-            text-transform: uppercase;
+            display: none !important;
         }
     `;
     document.head.appendChild(style);
 }
 
+function aplicarLogoNaTelaInterna() {
+    garantirEstilosLogoVoltCore();
+    const screenApp = document.getElementById('screen-app');
+    if (!screenApp) return;
+
+    // Remove qualquer subtítulo duplicado "SOLUÇÕES DE RECARGA" fora do logo
+    screenApp.querySelectorAll('*').forEach(el => {
+        if (el.children.length === 0) {
+            const txt = (el.textContent || '').trim().toUpperCase();
+            if (txt === 'SOLUÇÕES DE RECARGA' || txt === 'SOLUCOES DE RECARGA') {
+                el.style.display = 'none';
+            }
+        }
+    });
+
+    // Ajusta imagens do logo dentro da tela interna para ficarem proporcionais ao cabeçalho
+    screenApp.querySelectorAll('img[src*="logo-voltcore"]').forEach(img => {
+        if (!img.closest('.voltcore-logo-frame--header')) {
+            const parent = img.parentElement;
+            if (parent) {
+                parent.classList.add('voltcore-logo-frame', 'voltcore-logo-frame--header');
+                parent.style.overflow = 'visible';
+            }
+            img.className = '';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+        }
+        const wrapper = img.closest('.voltcore-logo-frame--header')?.parentElement;
+        if (wrapper && !wrapper.classList.contains('voltcore-brand-lockup')) {
+            wrapper.classList.add('voltcore-brand-lockup', 'voltcore-brand-lockup--compact');
+            if (!wrapper.querySelector('.voltcore-brand-badge-pro')) {
+                const badge = document.createElement('span');
+                badge.className = 'voltcore-brand-badge-pro';
+                badge.textContent = 'PRO';
+                wrapper.appendChild(badge);
+            }
+        }
+    });
+}
+
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
-    localStorage.setItem('voltcore_version_v953', 'true');
+    aplicarLogoNaTelaInterna();
+    localStorage.setItem('voltcore_version_v954', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -159,6 +223,7 @@ window.onload = async function() {
         const screenApp = document.getElementById('screen-app');
         if (screenAuth) screenAuth.classList.add('hidden');
         if (screenApp) screenApp.classList.remove('hidden');
+        aplicarLogoNaTelaInterna();
         await sincronizarDadosNuvemUsuario();
     } else {
         prepararTelaAuthOficialVoltCore();
@@ -250,7 +315,7 @@ function prepararTelaAuthOficialVoltCore() {
 
     authBox.innerHTML = `
         <div class="text-center space-y-2.5">
-            <!-- Marca VoltCore completa (símbolo + VOLTCORE), sem duplicar texto, selo PRO no canto e SOLUÇÕES DE RECARGA -->
+            <!-- Marca VoltCore única e proporcional, sem texto duplicado abaixo -->
             <div class="flex flex-col items-center justify-center pt-1">
                 <div class="voltcore-brand-lockup">
                     <span class="voltcore-brand-badge-pro">PRO</span>
@@ -258,7 +323,6 @@ function prepararTelaAuthOficialVoltCore() {
                         <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
                     </div>
                 </div>
-                <p class="voltcore-subtitulo-recarga text-[10px] mt-1">SOLUÇÕES DE RECARGA</p>
             </div>
 
             <!-- Seletor de Abas: Já tenho conta / Cadastrar -->
@@ -486,6 +550,7 @@ async function processarAuthVoltCore() {
 
     document.getElementById('screen-auth').classList.add('hidden');
     document.getElementById('screen-app').classList.remove('hidden');
+    aplicarLogoNaTelaInterna();
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
@@ -598,6 +663,7 @@ async function realizarLoginBiometrico() {
         localStorage.setItem('voltcore_user_data', JSON.stringify(userData));
         document.getElementById('screen-auth').classList.add('hidden');
         document.getElementById('screen-app').classList.remove('hidden');
+        aplicarLogoNaTelaInterna();
         aplicarDadosUsuarioNaTela();
         aplicarControlePermissoesPerfil();
         configurarPermissoesCondominioPorUsuario();
@@ -617,6 +683,7 @@ async function realizarLoginGoogle() {
     localStorage.setItem('voltcore_biometric_email', userData.email);
     document.getElementById('screen-auth').classList.add('hidden');
     document.getElementById('screen-app').classList.remove('hidden');
+    aplicarLogoNaTelaInterna();
     aplicarDadosUsuarioNaTela();
     aplicarControlePermissoesPerfil();
     configurarPermissoesCondominioPorUsuario();
@@ -655,6 +722,7 @@ function carregarTudoPersistente() {
 }
 
 function aplicarDadosUsuarioNaTela() {
+    aplicarLogoNaTelaInterna();
     const img = document.getElementById('user-profile-img');
     const nameEl = document.getElementById('user-display-name');
     const emailEl = document.getElementById('user-display-email');
@@ -1203,7 +1271,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v953').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v954').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
@@ -1421,6 +1489,7 @@ function switchTab(tabId) {
             btn.classList.add('text-lime-600');
         }
     });
+    aplicarLogoNaTelaInterna();
 }
 
 function setFilter(status) {
