@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.60 (RECORTE ACIMA DO LETREIRO + SOLUÇÕES DE RECARGA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.61 (VOLTCORE INTEGRO + SOLUÇÕES DE RECARGA)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -116,8 +116,8 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop {
-            width: 136px;
-            height: 92px;
+            width: 146px;
+            height: 114px;
             overflow: hidden;
             display: flex;
             align-items: flex-start;
@@ -125,27 +125,27 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
         }
         .voltcore-logo-crop img {
-            width: 164px;
+            width: 162px;
             height: auto;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-6px);
+            transform: translateY(-4px);
             display: block;
             background: #ffffff;
         }
         @media (min-width: 640px) {
             .voltcore-logo-crop {
-                width: 152px;
-                height: 102px;
+                width: 162px;
+                height: 126px;
             }
             .voltcore-logo-crop img {
-                width: 184px;
-                transform: translateY(-7px);
+                width: 180px;
+                transform: translateY(-4px);
             }
         }
         .voltcore-pro-selo {
             position: absolute;
-            bottom: 4px;
+            bottom: 6px;
             right: -34px;
             background: #a3e635;
             color: #0f172a;
@@ -159,7 +159,7 @@ function garantirEstilosLogoVoltCore() {
             z-index: 2;
         }
         .voltcore-assinatura-recarga {
-            margin-top: 5px;
+            margin-top: 6px;
             font-size: 11px;
             font-weight: 900;
             letter-spacing: 0.14em;
@@ -184,21 +184,21 @@ function garantirEstilosLogoVoltCore() {
             justify-content: flex-start;
         }
         .voltcore-logo-crop--header {
-            width: 58px;
-            height: 38px;
+            width: 64px;
+            height: 50px;
         }
         .voltcore-logo-crop--header img {
-            width: 70px;
+            width: 72px;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             display: block;
             background: #ffffff;
         }
         .voltcore-pro-selo--header {
             font-size: 7px;
             padding: 2px 5px;
-            bottom: 1px;
+            bottom: 2px;
             right: -24px;
         }
         .voltcore-assinatura-recarga--header {
@@ -253,7 +253,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v960', 'true');
+    localStorage.setItem('voltcore_version_v961', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -354,7 +354,7 @@ function prepararTelaAuthOficialVoltCore() {
 
     authBox.innerHTML = `
         <div class="text-center space-y-2.5 bg-white">
-            <!-- Logo VoltCore recortado acima do letreiro miúdo + selo PRO + frase Soluções de Recarga abaixo -->
+            <!-- Logo VoltCore íntegro (V + raio + VOLTCORE) + selo PRO + frase Soluções de Recarga abaixo -->
             <div class="flex flex-col items-center justify-center pt-1 pb-0.5">
                 <div class="voltcore-marca-bloco">
                     <div class="voltcore-logo-centro">
@@ -1313,7 +1313,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v960').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v961').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
