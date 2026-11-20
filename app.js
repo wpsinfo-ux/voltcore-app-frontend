@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.65 (CADASTRO À ESQUERDA + LGPD VISÍVEL)
+   VOLTCORE PRO • FRONT-END ENGINE V9.66 (FIX SELO PRO DUPLICADO NO HEADER INTERNO)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -181,32 +181,33 @@ function garantirEstilosLogoVoltCore() {
         .voltcore-marca-bloco--header {
             width: auto;
             align-items: flex-start;
+            gap: 2px;
         }
         .voltcore-logo-centro--header {
             justify-content: flex-start;
         }
         .voltcore-logo-crop--header {
-            width: 64px;
-            height: 45px;
+            width: 72px;
+            height: 49px;
         }
         .voltcore-logo-crop--header img {
-            width: 72px;
+            width: 78px;
             max-width: none;
             object-fit: contain;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             display: block;
             background: #ffffff;
         }
         .voltcore-pro-selo--header {
-            font-size: 7px;
-            padding: 2px 5px;
+            font-size: 8px;
+            padding: 2px 6px;
             bottom: 2px;
-            right: -24px;
+            right: -28px;
         }
         .voltcore-assinatura-recarga--header {
             margin-top: 2px;
-            font-size: 8px;
-            letter-spacing: 0.09em;
+            font-size: 8.5px;
+            letter-spacing: 0.1em;
             text-align: left;
             width: auto;
             white-space: nowrap;
@@ -223,40 +224,38 @@ function aplicarLogoNaTelaInterna() {
     const screenApp = document.getElementById('screen-app');
     if (!screenApp) return;
 
-    screenApp.querySelectorAll('.voltcore-assinatura-recarga--header, .voltcore-subtitulo-recarga').forEach(el => el.remove());
+    const header = screenApp.querySelector('header') || screenApp;
+    header.querySelectorAll('.voltcore-assinatura-recarga--header, .voltcore-subtitulo-recarga').forEach(el => el.remove());
 
-    screenApp.querySelectorAll('img[src*="logo-voltcore"]').forEach(img => {
-        const crop = img.parentElement;
-        if (crop) {
-            crop.className = 'voltcore-logo-crop voltcore-logo-crop--header';
-            const centro = crop.parentElement;
-            if (centro) {
-                centro.className = 'voltcore-logo-centro voltcore-logo-centro--header';
-                if (!centro.querySelector('.voltcore-pro-selo')) {
-                    const badge = document.createElement('span');
-                    badge.className = 'voltcore-pro-selo voltcore-pro-selo--header';
-                    badge.textContent = 'PRO';
-                    centro.appendChild(badge);
-                }
-                const bloco = centro.parentElement;
-                if (bloco) {
-                    bloco.className = 'voltcore-marca-bloco voltcore-marca-bloco--header';
-                    if (!bloco.querySelector('.voltcore-assinatura-recarga--header')) {
-                        const caption = document.createElement('span');
-                        caption.className = 'voltcore-assinatura-recarga voltcore-assinatura-recarga--header';
-                        caption.textContent = 'Soluções de Recarga';
-                        bloco.appendChild(caption);
-                    }
-                }
-            }
+    header.querySelectorAll('span, div').forEach(el => {
+        if (el.children.length === 0 && (el.textContent || '').trim() === 'PRO') {
+            el.remove();
         }
     });
+
+    const img = header.querySelector('img[src*="logo-voltcore"]');
+    if (!img) return;
+
+    const containerRaiz = img.closest('a, div.flex, div');
+    if (!containerRaiz) return;
+
+    containerRaiz.innerHTML = `
+        <div class="voltcore-marca-bloco voltcore-marca-bloco--header">
+            <div class="voltcore-logo-centro voltcore-logo-centro--header">
+                <div class="voltcore-logo-crop voltcore-logo-crop--header">
+                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
+                </div>
+                <span class="voltcore-pro-selo voltcore-pro-selo--header">PRO</span>
+            </div>
+            <span class="voltcore-assinatura-recarga voltcore-assinatura-recarga--header">Soluções de Recarga</span>
+        </div>
+    `;
 }
 
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v965', 'true');
+    localStorage.setItem('voltcore_version_v966', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1312,7 +1311,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v965').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v966').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
