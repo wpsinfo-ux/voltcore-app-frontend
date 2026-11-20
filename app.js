@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.52 (ETAPA 1 COMPLETA + LOGO/LAYOUT WEB/MOBILE)
+   VOLTCORE PRO • FRONT-END ENGINE V9.53 (ETAPA 1 COMPLETA + LOGO GRANDE WEB/MOBILE)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -88,8 +88,69 @@ const postosRodoviaComercial = [
     { id_comercial: 118, name: "Eletroposto Divisa Paraguai (Ciudad del Este)", address: "Zona Franca - Divisa Brasil/Paraguai", city: "paraguai", hours: "24 horas", type: "DC", plugs: "Ultrarrápida CCS2/GB/T (150kW)", status: "Disponível", coords: [-25.5097, -54.6111], ocppId: "CP-ROD-18" }
 ];
 
+function garantirEstilosLogoVoltCore() {
+    if (document.getElementById('voltcore-logo-runtime-style')) return;
+    const style = document.createElement('style');
+    style.id = 'voltcore-logo-runtime-style';
+    style.textContent = `
+        .voltcore-brand-lockup {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 18px 2px 18px;
+        }
+        .voltcore-brand-badge-pro {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #a3e635;
+            color: #0f172a;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            padding: 3px 7px;
+            border-radius: 999px;
+            border: 1px solid #84cc16;
+            box-shadow: 0 2px 6px rgba(132, 204, 22, 0.35);
+            z-index: 2;
+        }
+        .voltcore-logo-frame {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+        .voltcore-logo-frame--auth {
+            width: 176px;
+            height: 82px;
+        }
+        .voltcore-logo-frame--auth img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        @media (min-width: 640px) {
+            .voltcore-logo-frame--auth {
+                width: 210px;
+                height: 94px;
+            }
+        }
+        .voltcore-subtitulo-recarga {
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 window.onload = async function() {
-    localStorage.setItem('voltcore_version_v952', 'true');
+    garantirEstilosLogoVoltCore();
+    localStorage.setItem('voltcore_version_v953', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -180,6 +241,7 @@ function atualizarAvisoCondominioCadastro() {
 }
 
 function prepararTelaAuthOficialVoltCore() {
+    garantirEstilosLogoVoltCore();
     const authBox = document.querySelector('#screen-auth > div');
     if (!authBox) return;
 
@@ -1141,7 +1203,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v952').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v953').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
