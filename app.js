@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.66 (FIX SELO PRO DUPLICADO NO HEADER INTERNO)
+   VOLTCORE PRO • FRONT-END ENGINE V9.69 (COMPLETO • GITHUB + VERCEL + RENDER)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -180,18 +180,20 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-marca-bloco--header {
             width: auto;
-            align-items: flex-start;
-            gap: 2px;
+            align-items: center;
+            padding-left: 8px;
+            padding-right: 12px;
         }
         .voltcore-logo-centro--header {
-            justify-content: flex-start;
+            justify-content: center;
+            padding-right: 18px;
         }
         .voltcore-logo-crop--header {
-            width: 72px;
-            height: 49px;
+            width: 96px;
+            height: 64px;
         }
         .voltcore-logo-crop--header img {
-            width: 78px;
+            width: 106px;
             max-width: none;
             object-fit: contain;
             transform: translateY(-1px);
@@ -202,13 +204,13 @@ function garantirEstilosLogoVoltCore() {
             font-size: 8px;
             padding: 2px 6px;
             bottom: 2px;
-            right: -28px;
+            right: -12px;
         }
         .voltcore-assinatura-recarga--header {
             margin-top: 2px;
-            font-size: 8.5px;
-            letter-spacing: 0.1em;
-            text-align: left;
+            font-size: 8px;
+            letter-spacing: 0.11em;
+            text-align: center;
             width: auto;
             white-space: nowrap;
         }
@@ -255,7 +257,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v966', 'true');
+    localStorage.setItem('voltcore_version_v969', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1311,7 +1313,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v966').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v969').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
