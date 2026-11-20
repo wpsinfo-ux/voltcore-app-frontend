@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.58 (LOGO EQUILIBRADO + SOLUÇÕES RECARGA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.59 (LOGO CENTRALIZADO + SOLUÇÕES DE RECARGA)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -101,55 +101,39 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff !important;
         }
         .voltcore-marca-bloco {
-            display: inline-flex;
+            display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background: #ffffff;
+        }
+        .voltcore-logo-centro {
+            position: relative;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             background: #ffffff;
         }
-        .voltcore-logo-wrap {
-            position: relative;
-            display: inline-flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-right: 32px;
-            padding-bottom: 2px;
-            background: #ffffff;
-        }
-        .voltcore-logo-crop {
-            width: 124px;
-            height: 82px;
-            overflow: hidden;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            background: #ffffff;
-        }
-        .voltcore-logo-crop img {
-            width: 172px;
-            height: 172px;
-            max-width: none;
+        .voltcore-logo-img {
+            width: 148px;
+            height: auto;
+            max-height: 116px;
             object-fit: contain;
-            transform: scale(1.24) translateY(-10px);
-            transform-origin: center center;
             display: block;
+            margin: 0 auto;
             background: #ffffff;
         }
         @media (min-width: 640px) {
-            .voltcore-logo-crop {
-                width: 140px;
-                height: 92px;
-            }
-            .voltcore-logo-crop img {
-                width: 194px;
-                height: 194px;
-                transform: scale(1.24) translateY(-11px);
+            .voltcore-logo-img {
+                width: 168px;
+                max-height: 132px;
             }
         }
-        .voltcore-pro-rodape {
+        .voltcore-pro-selo {
             position: absolute;
-            bottom: 2px;
-            right: 0;
+            bottom: 4px;
+            right: -34px;
             background: #a3e635;
             color: #0f172a;
             font-size: 9px;
@@ -162,52 +146,46 @@ function garantirEstilosLogoVoltCore() {
             z-index: 2;
         }
         .voltcore-assinatura-recarga {
-            margin-top: 4px;
+            margin-top: 6px;
             font-size: 11px;
             font-weight: 900;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             color: #0f172a;
-            line-height: 1.15;
+            line-height: 1.2;
             text-align: center;
+            width: 100%;
             background: #ffffff;
         }
         @media (min-width: 640px) {
             .voltcore-assinatura-recarga {
                 font-size: 12px;
+                letter-spacing: 0.16em;
             }
         }
         .voltcore-marca-bloco--header {
+            width: auto;
             align-items: flex-start;
         }
-        .voltcore-logo-wrap--header {
-            padding-right: 24px;
-            padding-bottom: 1px;
+        .voltcore-logo-centro--header {
+            justify-content: flex-start;
         }
-        .voltcore-logo-crop--header {
-            width: 62px;
-            height: 40px;
+        .voltcore-logo-img--header {
+            width: 64px;
+            max-height: 48px;
         }
-        .voltcore-logo-crop--header img {
-            width: 86px;
-            height: 86px;
-            max-width: none;
-            object-fit: contain;
-            transform: scale(1.24) translateY(-5px);
-            transform-origin: center center;
-            display: block;
-            background: #ffffff;
-        }
-        .voltcore-pro-rodape--header {
+        .voltcore-pro-selo--header {
             font-size: 7px;
             padding: 2px 5px;
-            bottom: 1px;
+            bottom: 2px;
+            right: -24px;
         }
         .voltcore-assinatura-recarga--header {
             margin-top: 2px;
             font-size: 8px;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.1em;
             text-align: left;
+            width: auto;
         }
         .voltcore-subtitulo-recarga {
             display: none !important;
@@ -224,27 +202,26 @@ function aplicarLogoNaTelaInterna() {
     screenApp.querySelectorAll('.voltcore-assinatura-recarga--header, .voltcore-subtitulo-recarga').forEach(el => el.remove());
 
     screenApp.querySelectorAll('img[src*="logo-voltcore"]').forEach(img => {
-        const frame = img.parentElement;
-        if (frame) {
-            frame.className = 'voltcore-logo-crop voltcore-logo-crop--header';
-            const wrap = frame.parentElement;
-            if (wrap) {
-                wrap.className = 'voltcore-logo-wrap voltcore-logo-wrap--header';
-                if (!wrap.querySelector('.voltcore-pro-rodape')) {
-                    const badge = document.createElement('span');
-                    badge.className = 'voltcore-pro-rodape voltcore-pro-rodape--header';
-                    badge.textContent = 'PRO';
-                    wrap.appendChild(badge);
-                }
-                const bloco = wrap.parentElement;
-                if (bloco) {
-                    bloco.className = 'voltcore-marca-bloco voltcore-marca-bloco--header';
-                    if (!bloco.querySelector('.voltcore-assinatura-recarga--header')) {
-                        const caption = document.createElement('span');
-                        caption.className = 'voltcore-assinatura-recarga voltcore-assinatura-recarga--header';
-                        caption.textContent = 'Soluções Recarga';
-                        bloco.appendChild(caption);
-                    }
+        img.className = 'voltcore-logo-img voltcore-logo-img--header';
+        img.style.transform = 'none';
+
+        const centro = img.parentElement;
+        if (centro) {
+            centro.className = 'voltcore-logo-centro voltcore-logo-centro--header';
+            if (!centro.querySelector('.voltcore-pro-selo')) {
+                const badge = document.createElement('span');
+                badge.className = 'voltcore-pro-selo voltcore-pro-selo--header';
+                badge.textContent = 'PRO';
+                centro.appendChild(badge);
+            }
+            const bloco = centro.parentElement;
+            if (bloco) {
+                bloco.className = 'voltcore-marca-bloco voltcore-marca-bloco--header';
+                if (!bloco.querySelector('.voltcore-assinatura-recarga--header')) {
+                    const caption = document.createElement('span');
+                    caption.className = 'voltcore-assinatura-recarga voltcore-assinatura-recarga--header';
+                    caption.textContent = 'Soluções de Recarga';
+                    bloco.appendChild(caption);
                 }
             }
         }
@@ -254,7 +231,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v958', 'true');
+    localStorage.setItem('voltcore_version_v959', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -355,16 +332,14 @@ function prepararTelaAuthOficialVoltCore() {
 
     authBox.innerHTML = `
         <div class="text-center space-y-2.5 bg-white">
-            <!-- Logo VoltCore equilibrado sem círculo, com assinatura Soluções Recarga abaixo e selo PRO -->
+            <!-- Logo VoltCore centralizado + selo PRO + frase Soluções de Recarga abaixo -->
             <div class="flex flex-col items-center justify-center pt-1 pb-0.5">
                 <div class="voltcore-marca-bloco">
-                    <div class="voltcore-logo-wrap">
-                        <div class="voltcore-logo-crop">
-                            <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
-                        </div>
-                        <span class="voltcore-pro-rodape">PRO</span>
+                    <div class="voltcore-logo-centro">
+                        <img src="./assets/logo-voltcore.png" alt="Logo VoltCore" class="voltcore-logo-img">
+                        <span class="voltcore-pro-selo">PRO</span>
                     </div>
-                    <p class="voltcore-assinatura-recarga">Soluções Recarga</p>
+                    <p class="voltcore-assinatura-recarga">Soluções de Recarga</p>
                 </div>
             </div>
 
@@ -1314,7 +1289,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v958').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v959').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
