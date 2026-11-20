@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.61 (VOLTCORE INTEGRO + SOLUÇÕES DE RECARGA)
+   VOLTCORE PRO • FRONT-END ENGINE V9.62 (VOLTCORE SEM "SOLUÇÕES DE CARGA" NO LOGO)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -117,7 +117,7 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop {
             width: 146px;
-            height: 114px;
+            height: 102px;
             overflow: hidden;
             display: flex;
             align-items: flex-start;
@@ -136,7 +136,7 @@ function garantirEstilosLogoVoltCore() {
         @media (min-width: 640px) {
             .voltcore-logo-crop {
                 width: 162px;
-                height: 126px;
+                height: 113px;
             }
             .voltcore-logo-crop img {
                 width: 180px;
@@ -145,7 +145,7 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-pro-selo {
             position: absolute;
-            bottom: 6px;
+            bottom: 4px;
             right: -34px;
             background: #a3e635;
             color: #0f172a;
@@ -185,7 +185,7 @@ function garantirEstilosLogoVoltCore() {
         }
         .voltcore-logo-crop--header {
             width: 64px;
-            height: 50px;
+            height: 45px;
         }
         .voltcore-logo-crop--header img {
             width: 72px;
@@ -253,7 +253,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v961', 'true');
+    localStorage.setItem('voltcore_version_v962', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -354,7 +354,6 @@ function prepararTelaAuthOficialVoltCore() {
 
     authBox.innerHTML = `
         <div class="text-center space-y-2.5 bg-white">
-            <!-- Logo VoltCore íntegro (V + raio + VOLTCORE) + selo PRO + frase Soluções de Recarga abaixo -->
             <div class="flex flex-col items-center justify-center pt-1 pb-0.5">
                 <div class="voltcore-marca-bloco">
                     <div class="voltcore-logo-centro">
@@ -367,13 +366,11 @@ function prepararTelaAuthOficialVoltCore() {
                 </div>
             </div>
 
-            <!-- Seletor de Abas: Já tenho conta / Cadastrar -->
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
                 <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
                 <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
             </div>
 
-            <!-- Aceite LGPD obrigatório apenas no primeiro cadastro -->
             <div id="box-lgpd-primeiro-cadastro" class="${(isCadastro && !jaAceitouLgpd) ? '' : 'hidden'} bg-slate-50 p-2 rounded-xl border border-slate-200 text-left flex items-start gap-2">
                 <input type="checkbox" id="check-lgpd-login" ${jaAceitouLgpd ? 'checked' : ''} class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer shrink-0">
                 <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
@@ -381,7 +378,6 @@ function prepararTelaAuthOficialVoltCore() {
                 </label>
             </div>
 
-            <!-- Formulário de Login ou Cadastro -->
             <div id="auth-form-container" class="space-y-2 text-left">
                 <div id="container-extra-cadastro" class="space-y-2 ${isCadastro ? '' : 'hidden'}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -413,7 +409,6 @@ function prepararTelaAuthOficialVoltCore() {
                     </div>
                 </div>
 
-                <!-- Campos de Senha e Confirmação no Cadastro -->
                 <div id="container-campos-senha-cadastro" class="${isCadastro ? 'space-y-2' : 'hidden'}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div class="relative">
@@ -1313,7 +1308,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v961').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v962').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
