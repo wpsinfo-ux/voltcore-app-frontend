@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.77 (COMPLETO • GITHUB + VERCEL + RENDER)
+   VOLTCORE PRO • FRONT-END ENGINE V9.78 (COMPLETO • GITHUB + VERCEL + RENDER)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -101,8 +101,10 @@ function garantirEstilosLogoVoltCore() {
             --voltcore-dark: #0f172a;
         }
         #screen-auth > div {
-            max-width: 560px !important;
+            max-width: 500px !important;
             width: 100% !important;
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
             background: #ffffff !important;
         }
         #screen-app header {
@@ -123,6 +125,7 @@ function garantirEstilosLogoVoltCore() {
             width: 100%;
             background: #ffffff;
             overflow: visible;
+            line-height: 1;
         }
         .voltcore-logo-centro {
             position: relative;
@@ -132,9 +135,10 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
             overflow: visible;
             width: fit-content;
+            line-height: 1;
         }
         .voltcore-logo-img {
-            width: 250px;
+            width: 170px;
             max-width: 100%;
             height: auto;
             object-fit: contain;
@@ -143,34 +147,34 @@ function garantirEstilosLogoVoltCore() {
         }
         @media (min-width: 640px) {
             .voltcore-logo-img {
-                width: 285px;
+                width: 198px;
             }
         }
-        /* Posicionado exatamente no rodapé do E de CORE (linha inferior de VOLTCORE, logo à direita do E) */
+        /* Selo PRO encostado no rodapé do E de CORE */
         .voltcore-pro-selo {
             position: absolute;
             right: 13%;
             bottom: 24.5%;
             background: var(--voltcore-lime);
             color: var(--voltcore-dark);
-            font-size: 8.5px;
+            font-size: 7.5px;
             font-weight: 900;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
             line-height: 1;
-            padding: 2px 5px;
+            padding: 1.5px 4.5px;
             border-radius: 4px;
             border: 1px solid var(--voltcore-lime-border);
             z-index: 4;
             white-space: nowrap;
             pointer-events: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         @media (min-width: 640px) {
             .voltcore-pro-selo {
                 right: 13.5%;
                 bottom: 24.5%;
-                font-size: 9.5px;
-                padding: 2px 6px;
+                font-size: 8.5px;
+                padding: 2px 5px;
             }
         }
         .voltcore-assinatura-recarga,
@@ -194,7 +198,7 @@ function garantirEstilosLogoVoltCore() {
             width: fit-content;
         }
         .voltcore-logo-img--header {
-            width: 158px;
+            width: 142px;
             height: auto;
             object-fit: contain;
             display: block;
@@ -202,7 +206,7 @@ function garantirEstilosLogoVoltCore() {
         }
         @media (min-width: 640px) {
             .voltcore-logo-img--header {
-                width: 186px;
+                width: 164px;
             }
         }
         .voltcore-pro-selo--header {
@@ -212,11 +216,11 @@ function garantirEstilosLogoVoltCore() {
             background: var(--voltcore-lime);
             color: var(--voltcore-dark);
             border: 1px solid var(--voltcore-lime-border);
-            font-size: 7.5px;
+            font-size: 7px;
             font-weight: 900;
             letter-spacing: 0.04em;
             line-height: 1;
-            padding: 1.5px 4.5px;
+            padding: 1.5px 4px;
             border-radius: 4px;
             z-index: 4;
             white-space: nowrap;
@@ -226,8 +230,8 @@ function garantirEstilosLogoVoltCore() {
             .voltcore-pro-selo--header {
                 right: 13.5%;
                 bottom: 24.5%;
-                font-size: 8.5px;
-                padding: 2px 5px;
+                font-size: 8px;
+                padding: 1.5px 5px;
             }
         }
     `;
@@ -274,7 +278,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v977', 'true');
+    localStorage.setItem('voltcore_version_v978', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -357,10 +361,10 @@ function atualizarAvisoCondominioCadastro() {
 
     const isAvulso = selectCondo.value.includes('Apenas Eletropostos / Visitante');
     if (isAvulso) {
-        avisoBox.className = 'p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-medium';
+        avisoBox.className = 'p-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 font-medium leading-snug';
         avisoBox.innerHTML = 'Vínculo <strong>Avulso / Rodovia</strong>: habilitado para eletropostos públicos/comerciais.';
     } else {
-        avisoBox.className = 'p-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-800 font-medium';
+        avisoBox.className = 'p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[10px] text-amber-800 font-medium leading-snug';
         avisoBox.innerHTML = `Vínculo em <strong>${selectCondo.value}</strong>: conta criada como <strong>Morador (Pendente)</strong> até aprovação do síndico para vagas do condomínio.`;
     }
 }
@@ -373,8 +377,8 @@ function prepararTelaAuthOficialVoltCore() {
     const isCadastro = modoAuthAtual === 'cadastro';
 
     authBox.innerHTML = `
-        <div class="text-center space-y-2.5 bg-white">
-            <div class="flex flex-col items-center justify-center pt-1 pb-0.5">
+        <div class="text-center space-y-2 bg-white">
+            <div class="flex flex-col items-center justify-center pt-0.5 pb-0">
                 <div class="voltcore-marca-bloco">
                     <div class="voltcore-logo-centro">
                         <img src="./assets/logo-voltcore.png" alt="Logo VoltCore" class="voltcore-logo-img">
@@ -384,20 +388,20 @@ function prepararTelaAuthOficialVoltCore() {
             </div>
 
             <div class="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
-                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
-                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-2 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
+                <button type="button" id="tab-btn-cadastro" onclick="alternarModoAuth('cadastro')" class="flex-1 py-1.5 text-xs font-black rounded-lg transition ${isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Cadastrar</button>
+                <button type="button" id="tab-btn-login" onclick="alternarModoAuth('login')" class="flex-1 py-1.5 text-xs font-black rounded-lg transition ${!isCadastro ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'} cursor-pointer">Já tenho conta</button>
             </div>
 
-            <div id="auth-form-container" class="space-y-2 text-left">
-                <div id="container-extra-cadastro" class="space-y-2 ${isCadastro ? '' : 'hidden'}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div id="auth-form-container" class="space-y-1.5 text-left">
+                <div id="container-extra-cadastro" class="space-y-1.5 ${isCadastro ? '' : 'hidden'}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         <div>
                             <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Nome Completo *</label>
-                            <input type="text" id="tupi-nome" placeholder="Seu nome completo" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                            <input type="text" id="tupi-nome" placeholder="Seu nome completo" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Condomínio / Vínculo *</label>
-                            <select id="tupi-condo" onchange="atualizarAvisoCondominioCadastro()" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
+                            <select id="tupi-condo" onchange="atualizarAvisoCondominioCadastro()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:ring-2 focus:ring-lime-500 focus:outline-none cursor-pointer">
                                 ${CONDOS_DISPONIVEIS.map(c => `<option value="${c}">${c}</option>`).join('')}
                             </select>
                         </div>
@@ -405,41 +409,41 @@ function prepararTelaAuthOficialVoltCore() {
                     <div id="aviso-vinculo-condo"></div>
                 </div>
 
-                <div class="grid grid-cols-1 ${isCadastro ? 'sm:grid-cols-1' : 'sm:grid-cols-2'} gap-2">
+                <div class="grid grid-cols-1 ${isCadastro ? 'sm:grid-cols-1' : 'sm:grid-cols-2'} gap-1.5">
                     <div>
                         <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">E-mail *</label>
-                        <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        <input type="email" id="tupi-email" placeholder="seuemail@dominio.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
                     </div>
                     <div class="${isCadastro ? 'hidden' : 'relative'}">
                         <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Senha *</label>
-                        <input type="password" id="tupi-senha-login" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                        <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha-login', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <input type="password" id="tupi-senha-login" placeholder="Sua senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 pr-8 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                        <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha-login', this)" class="absolute right-2 top-5 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                             <i class="fa-solid fa-eye text-xs"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="container-campos-senha-cadastro" class="${isCadastro ? 'space-y-2' : 'hidden'}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div id="container-campos-senha-cadastro" class="${isCadastro ? 'space-y-1.5' : 'hidden'}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         <div class="relative">
                             <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Senha *</label>
-                            <input type="password" id="tupi-senha" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Crie uma senha forte" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                            <input type="password" id="tupi-senha" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Crie uma senha forte" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 pr-8 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-senha', this)" class="absolute right-2 top-5 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
                         <div class="relative">
                             <label class="block text-[9px] font-bold text-slate-600 uppercase mb-0.5">Confirme sua Senha *</label>
-                            <input type="password" id="tupi-confirma" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Repita a senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 pr-9 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
-                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-2.5 top-6 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                            <input type="password" id="tupi-confirma" oninput="atualizarIndicadoresSenhaVoltCore()" placeholder="Repita a senha" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 pr-8 text-xs font-medium focus:ring-2 focus:ring-lime-500 focus:outline-none">
+                            <button type="button" onclick="alternarVisibilidadeSenha('tupi-confirma', this)" class="absolute right-2 top-5 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div id="container-regras-senha" class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-[9px] space-y-1">
+                    <div id="container-regras-senha" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-[9px] space-y-0.5">
                         <div class="font-extrabold text-slate-700 uppercase">Regras obrigatórias de senha:</div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-0.5">
                             <span id="req-senha-len" class="text-slate-400 font-semibold flex items-center gap-1">• Mín. 8 caracteres</span>
                             <span id="req-senha-upper" class="text-slate-400 font-semibold flex items-center gap-1">• 1 maiúscula</span>
                             <span id="req-senha-lower" class="text-slate-400 font-semibold flex items-center gap-1">• 1 minúscula</span>
@@ -448,8 +452,8 @@ function prepararTelaAuthOficialVoltCore() {
                         </div>
                     </div>
 
-                    <div id="box-lgpd-primeiro-cadastro" class="bg-slate-50 p-2 rounded-xl border border-slate-200 text-left flex items-start gap-2">
-                        <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-4 h-4 cursor-pointer shrink-0">
+                    <div id="box-lgpd-primeiro-cadastro" class="bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200 text-left flex items-start gap-2">
+                        <input type="checkbox" id="check-lgpd-login" class="mt-0.5 rounded text-lime-600 focus:ring-lime-500 w-3.5 h-3.5 cursor-pointer shrink-0">
                         <label for="check-lgpd-login" class="text-[10px] text-slate-700 leading-tight cursor-pointer">
                             Li e concordo com os <a href="#" onclick="event.preventDefault(); abrirTermosPrivacidade();" class="text-lime-700 font-extrabold underline">Termos de Privacidade e LGPD</a> para uso da plataforma VoltCore.
                         </label>
@@ -463,12 +467,12 @@ function prepararTelaAuthOficialVoltCore() {
                     <button type="button" onclick="abrirModalEsqueciSenha()" class="text-[10px] font-bold text-lime-700 hover:underline cursor-pointer">Esqueci minha senha</button>
                 </div>
 
-                <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2.5 rounded-xl text-xs shadow transition cursor-pointer">
+                <button type="button" onclick="processarAuthVoltCore()" id="btn-tupi-acao" class="w-full bg-lime-500 hover:bg-lime-600 text-slate-900 font-extrabold py-2 rounded-xl text-xs shadow transition cursor-pointer">
                     ${isCadastro ? 'Cadastrar Conta' : 'Entrar'}
                 </button>
             </div>
 
-            <div class="pt-2 border-t border-slate-100 flex justify-center gap-4 text-xs">
+            <div class="pt-1.5 border-t border-slate-100 flex justify-center gap-4 text-xs">
                 <button type="button" onclick="realizarLoginBiometrico()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-solid fa-fingerprint text-lime-600 mr-1"></i> Biometria</button>
                 <span class="text-slate-300">•</span>
                 <button type="button" onclick="realizarLoginGoogle()" class="text-slate-600 font-bold hover:text-slate-900 cursor-pointer"><i class="fa-brands fa-google text-rose-500 mr-1"></i> Google</button>
@@ -1327,7 +1331,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v977').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v978').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
