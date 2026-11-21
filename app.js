@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.73 (COMPLETO • GITHUB + VERCEL + RENDER)
+   VOLTCORE PRO • FRONT-END ENGINE V9.75 (COMPLETO • GITHUB + VERCEL + RENDER)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -117,31 +117,15 @@ function garantirEstilosLogoVoltCore() {
             background: #ffffff;
             overflow: visible;
         }
-        .voltcore-logo-crop {
-            position: relative;
-            width: 176px;
-            height: 132px;
-            overflow: hidden;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            background: #ffffff;
-        }
-        .voltcore-logo-crop img {
+        .voltcore-logo-img {
             width: 176px;
             height: auto;
-            max-width: none;
             object-fit: contain;
-            transform: translateY(0px);
             display: block;
             background: #ffffff;
         }
         @media (min-width: 640px) {
-            .voltcore-logo-crop {
-                width: 196px;
-                height: 146px;
-            }
-            .voltcore-logo-crop img {
+            .voltcore-logo-img {
                 width: 196px;
             }
         }
@@ -162,28 +146,14 @@ function garantirEstilosLogoVoltCore() {
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .voltcore-assinatura-recarga {
-            margin-top: 6px;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #0f172a;
-            line-height: 1.25;
-            text-align: center;
-            width: 100%;
-            background: #ffffff;
-            white-space: nowrap;
-        }
-        @media (min-width: 640px) {
-            .voltcore-assinatura-recarga {
-                font-size: 12px;
-                letter-spacing: 0.18em;
-            }
+        .voltcore-assinatura-recarga,
+        .voltcore-assinatura-recarga--header,
+        .voltcore-subtitulo-recarga {
+            display: none !important;
         }
         .voltcore-marca-bloco--header {
             width: auto;
-            min-width: 165px;
+            min-width: 145px;
             flex-shrink: 0;
             align-items: center;
             padding-left: 8px;
@@ -195,17 +165,10 @@ function garantirEstilosLogoVoltCore() {
             align-items: flex-end;
             overflow: visible;
         }
-        .voltcore-logo-crop--header {
-            position: relative;
-            width: 118px;
-            height: 88px;
-            overflow: hidden;
-        }
-        .voltcore-logo-crop--header img {
-            width: 118px;
-            max-width: none;
+        .voltcore-logo-img--header {
+            width: 116px;
+            height: auto;
             object-fit: contain;
-            transform: translateY(0px);
             display: block;
             background: #ffffff;
         }
@@ -214,17 +177,6 @@ function garantirEstilosLogoVoltCore() {
             padding: 2px 6px;
             margin-left: 6px;
             margin-bottom: 6px;
-        }
-        .voltcore-assinatura-recarga--header {
-            margin-top: 3px;
-            font-size: 8px;
-            letter-spacing: 0.12em;
-            text-align: center;
-            width: auto;
-            white-space: nowrap;
-        }
-        .voltcore-subtitulo-recarga {
-            display: none !important;
         }
     `;
     document.head.appendChild(style);
@@ -258,12 +210,9 @@ function aplicarLogoNaTelaInterna() {
     containerRaiz.innerHTML = `
         <div class="voltcore-marca-bloco voltcore-marca-bloco--header">
             <div class="voltcore-logo-centro voltcore-logo-centro--header">
-                <div class="voltcore-logo-crop voltcore-logo-crop--header">
-                    <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
-                </div>
+                <img src="./assets/logo-voltcore.png" alt="Logo VoltCore" class="voltcore-logo-img voltcore-logo-img--header">
                 <span class="voltcore-pro-selo voltcore-pro-selo--header">PRO</span>
             </div>
-            <span class="voltcore-assinatura-recarga voltcore-assinatura-recarga--header">Soluções de Recarga</span>
         </div>
     `;
 }
@@ -271,7 +220,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v973', 'true');
+    localStorage.setItem('voltcore_version_v975', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -374,12 +323,9 @@ function prepararTelaAuthOficialVoltCore() {
             <div class="flex flex-col items-center justify-center pt-1 pb-0.5">
                 <div class="voltcore-marca-bloco">
                     <div class="voltcore-logo-centro">
-                        <div class="voltcore-logo-crop">
-                            <img src="./assets/logo-voltcore.png" alt="Logo VoltCore">
-                        </div>
+                        <img src="./assets/logo-voltcore.png" alt="Logo VoltCore" class="voltcore-logo-img">
                         <span class="voltcore-pro-selo">PRO</span>
                     </div>
-                    <p class="voltcore-assinatura-recarga">Soluções de Recarga</p>
                 </div>
             </div>
 
@@ -1327,7 +1273,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v973').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v975').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
