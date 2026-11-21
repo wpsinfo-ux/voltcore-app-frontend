@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOLTCORE PRO • FRONT-END ENGINE V9.78 (COMPLETO • GITHUB + VERCEL + RENDER)
+   VOLTCORE PRO • FRONT-END ENGINE V9.79 (COMPLETO • GITHUB + VERCEL + RENDER)
    Desenvolvido para VoltCore • Gestão Inteligente de Recarga
    ========================================================================== */
 
@@ -111,9 +111,13 @@ function garantirEstilosLogoVoltCore() {
             display: flex !important;
             align-items: center !important;
             justify-content: space-between !important;
-            padding-left: 8px !important;
-            padding-right: 12px !important;
-            gap: 8px !important;
+            min-height: 76px !important;
+            height: auto !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            padding-left: 12px !important;
+            padding-right: 16px !important;
+            gap: 12px !important;
             background: #ffffff !important;
             overflow: visible !important;
         }
@@ -150,7 +154,6 @@ function garantirEstilosLogoVoltCore() {
                 width: 198px;
             }
         }
-        /* Selo PRO encostado no rodapé do E de CORE */
         .voltcore-pro-selo {
             position: absolute;
             right: 13%;
@@ -183,55 +186,65 @@ function garantirEstilosLogoVoltCore() {
             display: none !important;
         }
         .voltcore-marca-bloco--header {
-            width: auto;
-            flex-shrink: 0;
-            align-items: flex-start;
-            justify-content: flex-start;
-            padding-left: 0;
-            padding-right: 6px;
-            overflow: visible;
+            width: auto !important;
+            min-width: 165px !important;
+            flex-shrink: 0 !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 8px !important;
+            overflow: visible !important;
         }
         .voltcore-logo-centro--header {
-            justify-content: flex-start;
-            align-items: center;
-            overflow: visible;
-            width: fit-content;
+            position: relative !important;
+            display: inline-flex !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            overflow: visible !important;
+            width: fit-content !important;
         }
         .voltcore-logo-img--header {
-            width: 142px;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            background: #ffffff;
+            width: 165px !important;
+            min-width: 165px !important;
+            max-width: none !important;
+            height: auto !important;
+            object-fit: contain !important;
+            display: block !important;
+            background: #ffffff !important;
         }
         @media (min-width: 640px) {
+            .voltcore-marca-bloco--header {
+                min-width: 195px !important;
+            }
             .voltcore-logo-img--header {
-                width: 164px;
+                width: 195px !important;
+                min-width: 195px !important;
             }
         }
         .voltcore-pro-selo--header {
-            position: absolute;
-            right: 13%;
-            bottom: 24.5%;
-            background: var(--voltcore-lime);
-            color: var(--voltcore-dark);
-            border: 1px solid var(--voltcore-lime-border);
-            font-size: 7px;
-            font-weight: 900;
-            letter-spacing: 0.04em;
-            line-height: 1;
-            padding: 1.5px 4px;
-            border-radius: 4px;
-            z-index: 4;
-            white-space: nowrap;
-            pointer-events: none;
+            position: absolute !important;
+            right: 13% !important;
+            bottom: 24.5% !important;
+            background: var(--voltcore-lime) !important;
+            color: var(--voltcore-dark) !important;
+            border: 1px solid var(--voltcore-lime-border) !important;
+            font-size: 7.5px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.04em !important;
+            line-height: 1 !important;
+            padding: 1.5px 4.5px !important;
+            border-radius: 4px !important;
+            z-index: 5 !important;
+            white-space: nowrap !important;
+            pointer-events: none !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
         }
         @media (min-width: 640px) {
             .voltcore-pro-selo--header {
-                right: 13.5%;
-                bottom: 24.5%;
-                font-size: 8px;
-                padding: 1.5px 5px;
+                right: 13.5% !important;
+                bottom: 24.5% !important;
+                font-size: 8.5px !important;
+                padding: 2px 5px !important;
             }
         }
     `;
@@ -258,8 +271,9 @@ function aplicarLogoNaTelaInterna() {
     const containerRaiz = img.closest('a, div.flex, div');
     if (!containerRaiz) return;
 
-    containerRaiz.classList.remove('w-12', 'w-14', 'w-16', 'w-20', 'w-24', 'w-28', 'w-32', 'max-w-xs', 'max-w-sm', 'overflow-hidden');
+    containerRaiz.classList.remove('w-8', 'w-10', 'w-12', 'w-14', 'w-16', 'w-20', 'w-24', 'w-28', 'w-32', 'h-8', 'h-10', 'h-12', 'max-w-xs', 'max-w-sm', 'overflow-hidden');
     containerRaiz.style.width = 'auto';
+    containerRaiz.style.height = 'auto';
     containerRaiz.style.maxWidth = 'none';
     containerRaiz.style.marginLeft = '0';
     containerRaiz.style.marginRight = 'auto';
@@ -278,7 +292,7 @@ function aplicarLogoNaTelaInterna() {
 window.onload = async function() {
     garantirEstilosLogoVoltCore();
     aplicarLogoNaTelaInterna();
-    localStorage.setItem('voltcore_version_v978', 'true');
+    localStorage.setItem('voltcore_version_v979', 'true');
     carregarTudoPersistente();
 
     const isLogged = localStorage.getItem('voltcore_logged');
@@ -1331,7 +1345,7 @@ async function carregarEstacoesDoBanco() {
 function configurarSupabaseRealtime() {
     if (!supabaseClient) return;
     try {
-        supabaseClient.channel('tabela-pontos-sync-v978').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
+        supabaseClient.channel('tabela-pontos-sync-v979').on('postgres_changes', { event: '*', schema: 'public', table: 'pontos_recarga' }, () => {
             carregarEstacoesDoBanco();
         }).subscribe();
     } catch (err) {}
